@@ -50,7 +50,7 @@ CREATE TABLE location_details(
 	city VARCHAR(30) NOT NULL
 );
 
-CREATE TABLE trip(
+CREATE TABLE trips(
 	trip_id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
 	origin_location_id BIGINT REFERENCES location_details (location_id) NOT NULL,
 	destination_location_id BIGINT REFERENCES location_details (location_id) NOT NULL,
@@ -64,4 +64,16 @@ CREATE TABLE trip(
 	total_capacity int NOT NULL,
 	reserved_capacity int DEFAULT 0, 
     CONSTRAINT fill_capacity CHECK (reserved_capacity <= total_capacity)
+);
+
+CREATE TYPE trip_type AS ENUM ('TRAIN', 'BUS', 'FLIGHT');
+CREATE TYPE age_range AS ENUM ('ADULT', 'CHILD', 'BABY');
+
+CREATE TABLE tickets(
+	trip_id BIGINT REFERENCES trips(trip_id) NOT NULL,
+	age age_range NOT NULL DEFAULT 'ADULT',
+	price NUMERIC NOT NULL,
+	CONSTRAINT positive_price CHECK (price >= 0),
+	trip_vehicle trip_type NOT NULL,
+	PRIMARY KEY (trip_id, age) 
 );
