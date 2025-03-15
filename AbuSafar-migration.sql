@@ -29,3 +29,16 @@ CREATE TABLE user_contact (
         contact_info ~ '^\+?[0-9\s().-]{7,20}$'
     )
 );
+
+CREATE TYPE report_link AS ENUM ('RESERVATION', 'TICKET');
+CREATE TYPE report_status AS ENUM ('PENDING', 'REVIEWED');
+
+CREATE TABLE reports (
+                         report_id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+                         user_id BIGINT REFERENCES users(user_id),
+                         link_type report_link NOT NULL,
+                         link_id BIGINT NOT NULL,
+                         topic VARCHAR(100) NOT NULL,
+                         content TEXT NOT NULL,
+                         report_status report_status NOT NULL DEFAULT 'PENDING'
+);
