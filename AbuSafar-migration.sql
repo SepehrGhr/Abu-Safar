@@ -34,11 +34,34 @@ CREATE TYPE report_link AS ENUM ('RESERVATION', 'TICKET');
 CREATE TYPE report_status AS ENUM ('PENDING', 'REVIEWED');
 
 CREATE TABLE reports (
-                         report_id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-                         user_id BIGINT REFERENCES users(user_id),
-                         link_type report_link NOT NULL,
-                         link_id BIGINT NOT NULL,
-                         topic VARCHAR(100) NOT NULL,
-                         content TEXT NOT NULL,
-                         report_status report_status NOT NULL DEFAULT 'PENDING'
+    report_id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    user_id BIGINT REFERENCES users(user_id),
+    link_type report_link NOT NULL,
+    link_id BIGINT NOT NULL,
+    topic VARCHAR(100) NOT NULL,
+    content TEXT NOT NULL,
+    report_status report_status NOT NULL DEFAULT 'PENDING'
+);
+
+CREATE TABLE location_details(
+	location_id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+	country VARCHAR(30) NOT NULL,
+	province VARCHAR(30) NOT NULL,
+	city VARCHAR(30) NOT NULL
+);
+
+CREATE TABLE trip(
+	trip_id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+	origin_location_id BIGINT REFERENCES location_details (location_id) NOT NULL,
+	destination_location_id BIGINT REFERENCES location_details (location_id) NOT NULL,
+	departure_date DATE NOT NULL,
+	departure_time TIME NOT NULL,
+	arrival_date DATE NOT NULL,
+	arrival_time TIME NOT NULL,
+	CONSTRAINT arrival_after_departure CHECK (arrival_date >= departure_date AND arrival_time > departure_time),
+	vehicle_company VARCHAR(30), 
+	stop_count int DEFAULT 0,
+	total_capacity int NOT NULL,
+	reserved_capacity int DEFAULT 0, 
+    CONSTRAINT fill_capacity CHECK (reserved_capacity <= total_capacity)
 );
