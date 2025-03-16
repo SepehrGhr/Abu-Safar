@@ -24,9 +24,9 @@ CREATE TABLE user_contact (
     contact_info VARCHAR(255) UNIQUE NOT NULL,
     PRIMARY KEY (user_id, contact_type),
     CONSTRAINT valid_email_phone CHECK (
-        contact_info ~* '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,63}$'
+        (contact_type = 'EMAIL' AND contact_info ~* '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$')
         OR
-        contact_info ~ '^\+?[0-9\s().-]{7,20}$'
+        (contact_type = 'PHONE_NUMBER' AND contact_info ~ '^\+?[1-9][0-9\s().-]{7,20}$')
     )
 );
 
@@ -115,7 +115,7 @@ CREATE TABLE payments(
     user_id BIGINT REFERENCES users (user_id) ON DELETE SET NULL,
 	payment_status payment_status NOT NULL DEFAULT 'PENDING',
 	payment_type payment_means NOT NULL DEFAULT 'CARD',
-	payment_timestamp TIMESTAMPTZ NOT NULL,
+	payment_timestamp TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     price NUMERIC NOT NULL,
 	CONSTRAINT positive_price CHECK (price >= 0)
 );
@@ -136,8 +136,8 @@ CREATE TYPE flight_class AS ENUM ('Economy class', 'Business class', 'First clas
 CREATE TABLE flights(
 	trip_id BIGINT PRIMARY KEY REFERENCES trips(trip_id) ON DELETE CASCADE,
 	class flight_class NOT NULL DEFAULT 'Economy class',
-	departure_airport VARCHAR(20) NOT NULL,
-	arrival_airport VARCHAR(20) NOT NULL
+	departure_airport VARCHAR(50) NOT NULL,
+	arrival_airport VARCHAR(50) NOT NULL
 );
 
 CREATE TYPE bus_class AS ENUM ('VIP', 'Standard', 'Sleeper');
