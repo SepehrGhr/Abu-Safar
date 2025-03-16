@@ -155,3 +155,11 @@ CREATE INDEX idx_reports_user_id ON reports(user_id);
 CREATE INDEX idx_reports_status ON reports(report_status);
 
 CREATE INDEX idx_location_details_city ON location_details(city);
+
+CREATE INDEX idx_departure_timestamp ON trips (departure_timestamp);
+
+CREATE INDEX idx_trips_origin_destination_location ON trips(origin_location_id, destination_location_id);
+
+CREATE VIEW ordered_trips AS
+SELECT * FROM trips
+ORDER BY departure_timestamp ASC;
