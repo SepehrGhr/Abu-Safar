@@ -39,3 +39,33 @@ INSERT INTO reservations (user_id, reservation_datetime, expiration_datetime, re
 (2, '2023-11-26 11:00:00', '2023-11-26 11:10:00', 'PAID'),
 (3, '2023-11-27 12:00:00', '2023-11-27 12:10:00', 'CANCELLED');
 
+INSERT INTO one_way_reservation (reservation_id, trip_id, age, chair_number) VALUES
+(1, 1, 'ADULT', 5),
+(2, 2, 'CHILD', 10);
+
+INSERT INTO two_way_reservation (reservation_id, ticket_one_trip_id, ticket_one_age, ticket_two_trip_id, ticket_two_age, chair_number_one, chair_number_two) VALUES
+(3, 3, 'ADULT', 4, 'ADULT', 15, 20);
+
+INSERT INTO payments (reservation_id, user_id, payment_status, payment_type, price) VALUES
+(1, 1, 'PENDING', 'CARD', 50.00),
+(2, 2, 'SUCCESSFUL', 'WALLET', 80.00),
+(3, 3, 'UNSUCCESSFUL', 'CRYPTO', 200.00);
+
+INSERT INTO additional_services (trip_id, service_type) VALUES
+(1, 'Internet'),
+(2, 'Food service'),
+(3, 'Bed');
+
+INSERT INTO trains (trip_id, stars) VALUES
+(2, 4);
+
+INSERT INTO flights (trip_id, class, departure_airport, arrival_airport) VALUES
+(3, 'Economy class', 'JFK', 'LAX'),
+(4, 'Business class', 'LAX', 'ORD');
+
+INSERT INTO buses (trip_id, class, chair_type) VALUES
+(1, 'VIP', '1-2');
+
+INSERT INTO reports (user_id, link_type, link_id, topic, content, report_status) VALUES
+(1, 'RESERVATION', 1, 'Issue with reservation', 'My reservation was not confirmed.', 'PENDING'),
+(2, 'TICKET', 2, 'Ticket price discrepancy', 'The ticket price was higher than advertised.', 'REVIEWED');
