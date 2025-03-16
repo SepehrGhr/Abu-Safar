@@ -163,3 +163,17 @@ CREATE INDEX idx_trips_origin_destination_location ON trips(origin_location_id, 
 CREATE VIEW ordered_trips AS
 SELECT * FROM trips
 ORDER BY departure_timestamp ASC;
+
+CREATE INDEX idx_tickets_trip_vehicle ON tickets(trip_vehicle);
+
+CREATE INDEX idx_reservations_user_id ON reservations(user_id);
+CREATE INDEX idx_reservations_reservation_datetime ON reservations(reservation_datetime);
+
+CREATE INDEX idx_one_way_reservation_trip_age ON one_way_reservation(trip_id, age);
+
+CREATE INDEX idx_two_way_reservation_ticket_one ON two_way_reservation(ticket_one_trip_id, ticket_one_age);
+CREATE INDEX idx_two_way_reservation_ticket_two ON two_way_reservation(ticket_two_trip_id, ticket_two_age);
+
+
+
+
