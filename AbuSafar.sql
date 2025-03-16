@@ -147,3 +147,11 @@ CREATE TABLE buses(
 	class bus_class NOT NULL DEFAULT 'Standard',
 	chair_type chair_count_type NOT NULL DEFAULT '2-2'
 );
+
+CREATE INDEX idx_users_user_role ON users (user_role);
+CREATE INDEX idx_users_name ON users (first_name, last_name);
+
+CREATE INDEX idx_reports_user_id ON reports(user_id);
+CREATE INDEX idx_reports_status ON reports(report_status);
+
+CREATE INDEX idx_location_details_city ON location_details(city);
