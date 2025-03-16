@@ -105,3 +105,45 @@ CREATE TABLE two_way_reservation (
     chair_number_one SMALLINT NOT NULL CHECK (chair_number_one > 0),
     chair_number_two SMALLINT NOT NULL CHECK (chair_number_two > 0)
 );
+
+CREATE TYPE payment_status AS ENUM ('SUCCESSFUL', 'UNSUCCESSFUL', 'PENDING');
+CREATE TYPE payment_means AS ENUM ('CARD', 'WALLET', 'CRYPTO');
+
+CREATE TABLE payments(
+	payment_id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+	reservation_id BIGINT REFERENCES reservations (reservation_id) ON DELETE CASCADE,
+    user_id BIGINT REFERENCES users (user_id) ON DELETE SET NULL,
+	payment_status payment_status NOT NULL DEFAULT 'PENDING',
+	payment_type payment_means NOT NULL DEFAULT 'CARD',
+	payment_timestamp TIMESTAMPTZ NOT NULL,
+    price NUMERIC NOT NULL,
+	CONSTRAINT positive_price CHECK (price >= 0)
+);
+
+CREATE TYPE service_type AS ENUM ('Internet', 'Food service', 'Bed');
+CREATE TABLE additional_services(
+	trip_id BIGINT PRIMARY KEY REFERENCES trips(trip_id) ON DELETE CASCADE,
+	service_type service_type NOT NULL
+);
+
+CREATE TABLE trains(
+	trip_id BIGINT PRIMARY KEY REFERENCES trips(trip_id) ON DELETE CASCADE,
+	stars SMALLINT NOT NULL DEFAULT 3,
+    CONSTRAINT train_star_range CHECK (stars >= 1 AND stars <= 5)
+);
+
+CREATE TYPE flight_class AS ENUM ('Economy class', 'Business class', 'First class');
+CREATE TABLE flights(
+	trip_id BIGINT PRIMARY KEY REFERENCES trips(trip_id) ON DELETE CASCADE,
+	class flight_class NOT NULL DEFAULT 'Economy class',
+	departure_airport VARCHAR(20) NOT NULL,
+	arrival_airport VARCHAR(20) NOT NULL
+);
+
+CREATE TYPE bus_class AS ENUM ('VIP', 'Standard', 'Sleeper');
+CREATE TYPE chair_count_type AS ENUM ('1-2', '2-2');
+CREATE TABLE buses(
+	trip_id BIGINT PRIMARY KEY REFERENCES trips(trip_id) ON DELETE CASCADE,
+	class bus_class NOT NULL DEFAULT 'Standard',
+	chair_type chair_count_type NOT NULL DEFAULT '2-2'
+);
