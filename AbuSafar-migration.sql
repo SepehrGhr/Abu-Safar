@@ -24,8 +24,8 @@ CREATE TABLE user_contact (
     contact_info VARCHAR(255) UNIQUE NOT NULL,
     PRIMARY KEY (user_id, contact_type),
     CONSTRAINT valid_email_phone CHECK (
-        contact_info ~* '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,63}$' 
-        OR 
+        contact_info ~* '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,63}$'
+        OR
         contact_info ~ '^\+?[0-9\s().-]{7,20}$'
     )
 );
@@ -50,20 +50,18 @@ CREATE TABLE location_details(
 	city VARCHAR(30) NOT NULL
 );
 
-CREATE TABLE trips(
-	trip_id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-	origin_location_id BIGINT REFERENCES location_details (location_id) NOT NULL,
-	destination_location_id BIGINT REFERENCES location_details (location_id) NOT NULL,
-	departure_date DATE NOT NULL,
-	departure_time TIME NOT NULL,
-	arrival_date DATE NOT NULL,
-	arrival_time TIME NOT NULL,
-	CONSTRAINT arrival_after_departure CHECK (arrival_date >= departure_date AND arrival_time > departure_time),
-	vehicle_company VARCHAR(30), 
-	stop_count int DEFAULT 0,
-	total_capacity int NOT NULL,
-	reserved_capacity int DEFAULT 0, 
-    CONSTRAINT fill_capacity CHECK (reserved_capacity <= total_capacity)
+CREATE TABLE trips (
+    trip_id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    origin_location_id BIGINT REFERENCES location_details(location_id) NOT NULL,
+    destination_location_id BIGINT REFERENCES location_details(location_id) NOT NULL,
+    departure_timestamp TIMESTAMPTZ NOT NULL,
+    arrival_timestamp TIMESTAMPTZ NOT NULL,
+    vehicle_company VARCHAR(100),
+    stop_count SMALLINT DEFAULT 0 CHECK (stop_count >= 0),
+    total_capacity SMALLINT NOT NULL CHECK (total_capacity > 0),
+    reserved_capacity SMALLINT DEFAULT 0 CHECK (reserved_capacity >= 0),
+    CONSTRAINT fill_capacity CHECK (reserved_capacity <= total_capacity),
+    CONSTRAINT valid_timing CHECK (arrival_timestamp > departure_timestamp)
 );
 
 CREATE TYPE trip_type AS ENUM ('TRAIN', 'BUS', 'FLIGHT');
@@ -75,5 +73,35 @@ CREATE TABLE tickets(
 	price NUMERIC NOT NULL,
 	CONSTRAINT positive_price CHECK (price >= 0),
 	trip_vehicle trip_type NOT NULL,
-	PRIMARY KEY (trip_id, age) 
+	PRIMARY KEY (trip_id, age)
+);
+
+CREATE TYPE reserve_status AS ENUM ('RESERVED', 'CANCELLED', 'PAID');
+CREATE TABLE reservations (
+    reservation_id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    user_id BIGINT REFERENCES users(user_id) ON DELETE CASCADE NOT NULL,
+    reservation_datetime TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    expiration_datetime TIMESTAMPTZ NOT NULL DEFAULT NOW() + INTERVAL '10 minutes',
+    reserve_status reserve_status NOT NULL DEFAULT 'RESERVED',
+    CONSTRAINT expiration_after_reservation CHECK (expiration_datetime > reservation_datetime)
+);
+
+CREATE TABLE one_way_reservation (
+    reservation_id BIGINT PRIMARY KEY REFERENCES reservations(reservation_id) ON DELETE CASCADE NOT NULL,
+    trip_id BIGINT NOT NULL,
+    age age_range NOT NULL,
+    FOREIGN KEY (trip_id, age) REFERENCES tickets(trip_id, age) ON DELETE CASCADE,
+    chair_number SMALLINT NOT NULL CHECK (chair_number > 0)
+);
+
+CREATE TABLE two_way_reservation (
+    reservation_id BIGINT PRIMARY KEY REFERENCES reservations(reservation_id) ON DELETE CASCADE NOT NULL,
+    ticket_one_trip_id BIGINT NOT NULL,
+    ticket_one_age age_range NOT NULL,
+    ticket_two_trip_id BIGINT NOT NULL,
+    ticket_two_age age_range NOT NULL,
+    FOREIGN KEY (ticket_one_trip_id, ticket_one_age) REFERENCES tickets(trip_id, age) ON DELETE CASCADE,
+    FOREIGN KEY (ticket_two_trip_id, ticket_two_age) REFERENCES tickets(trip_id, age) ON DELETE CASCADE,
+    chair_number_one SMALLINT NOT NULL CHECK (chair_number_one > 0),
+    chair_number_two SMALLINT NOT NULL CHECK (chair_number_two > 0)
 );
