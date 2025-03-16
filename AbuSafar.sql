@@ -174,6 +174,9 @@ CREATE INDEX idx_one_way_reservation_trip_age ON one_way_reservation(trip_id, ag
 CREATE INDEX idx_two_way_reservation_ticket_one ON two_way_reservation(ticket_one_trip_id, ticket_one_age);
 CREATE INDEX idx_two_way_reservation_ticket_two ON two_way_reservation(ticket_two_trip_id, ticket_two_age);
 
+CREATE INDEX idx_payments_reservation_id ON payments(reservation_id);
+CREATE INDEX idx_payments_user_id ON payments(user_id);
+
 
 
 
