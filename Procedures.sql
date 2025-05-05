@@ -24,6 +24,33 @@ FETCH ALL FROM my_cursor;
 CLOSE my_cursor;
 COMMIT;
 
+--=====================2======================--
+CREATE OR REPLACE PROCEDURE get_cancelled_user_first_names_by_admin_contact(
+    IN contact_input VARCHAR,
+    IN contact_type_input contact_type,
+    INOUT result_set REFCURSOR
+)
+    LANGUAGE plpgsql
+AS $$
+BEGIN
+    OPEN result_set FOR
+        SELECT DISTINCT uz.first_name
+        FROM users u
+                 JOIN user_contact uc ON u.user_id = uc.user_id
+                 JOIN reservations rsv ON rsv.cancelled_by = u.user_id
+                 JOIN users uz ON rsv.user_id = uz.user_id
+        WHERE uc.contact_info = contact_input
+          AND uc.contact_type = contact_type_input
+          AND u.user_role = 'ADMIN';
+END;
+$$;
+
+--===========
+BEGIN;
+CALL get_cancelled_user_first_names_by_admin_contact('7846241223', 'PHONE_NUMBER', 'my_cursor');
+FETCH ALL FROM my_cursor;
+COMMIT;
+
 --=====================3======================--
 CREATE OR REPLACE PROCEDURE get_reservations_by_origin_city(
     IN city_name VARCHAR,
@@ -49,6 +76,50 @@ BEGIN;
 CALL get_reservations_by_origin_city('Babol', 'my_cursor');
 FETCH ALL FROM my_cursor;
 CLOSE my_cursor;
+COMMIT;
+
+--=====================4======================--
+
+CREATE OR REPLACE PROCEDURE search_reservations_by_string(
+    IN search_input TEXT,
+    INOUT result_set REFCURSOR
+)
+    LANGUAGE plpgsql
+AS $$
+BEGIN
+    OPEN result_set FOR
+        SELECT DISTINCT r.*
+        FROM reservations r
+                 JOIN users u ON r.user_id = u.user_id
+                 JOIN trips t ON EXISTS (
+                SELECT 1 FROM ticket_reservation tr
+                WHERE tr.reservation_id = r.reservation_id AND tr.trip_id = t.trip_id
+            )
+                 LEFT JOIN buses b ON t.trip_id = b.trip_id
+                 LEFT JOIN flights f ON t.trip_id = f.trip_id
+                 JOIN location_details origin ON t.origin_location_id = origin.location_id
+                 JOIN location_details dest ON t.destination_location_id = dest.location_id
+        WHERE
+                u.first_name ILIKE '%' || search_input || '%'
+           OR u.last_name ILIKE '%' || search_input || '%'
+           OR b.class::TEXT ILIKE '%' || search_input || '%'
+           OR f.class::TEXT ILIKE '%' || search_input || '%'
+           OR origin.city ILIKE '%' || search_input || '%'
+           OR dest.city ILIKE '%' || search_input || '%'
+           OR origin.province ILIKE '%' || search_input || '%'
+           OR dest.province ILIKE '%' || search_input || '%'
+           OR origin.country ILIKE '%' || search_input || '%'
+           OR dest.country ILIKE '%' || search_input || '%';
+END;
+$$;
+
+--===========
+BEGIN;
+
+CALL search_reservations_by_string('Ir', 'result_cursor');
+
+FETCH ALL FROM result_cursor;
+
 COMMIT;
 
 --=====================5======================--
