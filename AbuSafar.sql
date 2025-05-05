@@ -92,7 +92,7 @@ CREATE TABLE reservations
     reserve_status       reserve_status                                      NOT NULL DEFAULT 'RESERVED',
     CONSTRAINT expiration_after_reservation CHECK (expiration_datetime > reservation_datetime),
     is_round_trip        BOOLEAN                                             NOT NULL DEFAULT false,
-    cancelled_by         BIGINT REFERENCES users (user_id) ON DELETE CASCADE NOT NULL
+    cancelled_by         BIGINT DEFAULT NULL REFERENCES users(user_id) ON DELETE CASCADE
 );
 
 CREATE TABLE ticket_reservation
