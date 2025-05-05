@@ -26,33 +26,42 @@ SELECT users.* FROM users
 	ORDER BY rsv.reservation_datetime DESC LIMIT 1;
 
 --6
-SELECT DISTINCT ON (user_contact.user_id) user_contact.contact_info FROM user_contact
-	JOIN payments ON user_contact.user_id = payments.user_id AND payments.payment_status = 'SUCCESSFUL'
-	GROUP BY user_contact.contact_info, user_contact.user_id
-	HAVING SUM(price) > (
-		SELECT AVG(user_price_sum) FROM 
-		(SELECT SUM(price) AS user_price_sum FROM
-		users JOIN payments ON users.user_id = payments.user_id  AND payments.payment_status = 'SUCCESSFUL'
-		GROUP BY users.user_id
-	));
+WITH user_totals AS (
+    SELECT user_id, SUM(price) AS total_payment
+    FROM payments
+    WHERE payment_status = 'SUCCESSFUL'
+    GROUP BY user_id
+),
+avg_total AS (
+    SELECT AVG(total_payment) AS avg_payment FROM user_totals
+)
+SELECT DISTINCT ON (uc.user_id) uc.contact_info
+FROM user_totals ut
+JOIN avg_total avg ON ut.total_payment > avg.avg_payment
+JOIN user_contact uc ON uc.user_id = ut.user_id;
 
 --7
-SELECT trip_vehicle, COUNT(*) AS ticket_count FROM tickets GROUP BY trip_vehicle;
+SELECT trip_vehicle, COUNT(*) AS ticket_count FROM tickets 
+	JOIN ticket_reservation t_r ON tickets.trip_id = t_r.trip_id AND tickets.age = t_r.age
+	JOIN reservations rsv ON rsv.reservation_id = t_r.reservation_id
+	WHERE rsv.reserve_status = 'PAID'
+	GROUP BY trip_vehicle;
 
 --8
 SELECT first_name, last_name FROM users
 	JOIN reservations rsv ON users.user_id = rsv.user_id
-	JOIN ticket_reservation t_r ON rsv.reservation_id = t_r.reservation_id
+	JOIN ticket_reservation t_r ON rsv.reservation_id = t_r.reservation_id AND rsv.reserve_status = 'PAID'
 	GROUP BY users.user_id, users.first_name, users.last_name
 	ORDER BY COUNT(*) DESC LIMIT 3;
 
 --9
-SELECT COUNT(*), loc.city FROM ticket_reservation t_r
+SELECT COUNT(*) AS ticket_count, loc.city FROM ticket_reservation t_r
 	JOIN trips ON t_r.trip_id = trips.trip_id
 	JOIN location_details loc ON trips.origin_location_id = loc.location_id
-	WHERE loc.state = 'TEHRAN'
+	JOIN reservations rsv ON rsv.reservation_id = t_r.reservation_id 
+	AND rsv.reserve_status = 'PAID'
+	WHERE loc.province = 'Tehran' 
 	GROUP BY loc.city;
-
 --10
 SELECT loc.city FROM users 
 	JOIN reservations rsv ON users.user_id = rsv.user_id
