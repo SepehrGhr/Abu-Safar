@@ -78,7 +78,7 @@ FETCH ALL FROM my_cursor;
 CLOSE my_cursor;
 COMMIT;
 
---=====================4======================--
+--=4======================--
 
 CREATE OR REPLACE PROCEDURE search_reservations_by_string(
     IN search_input TEXT,

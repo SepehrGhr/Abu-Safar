@@ -27,11 +27,13 @@ SELECT users.* FROM users
 
 --6
 SELECT DISTINCT ON (user_contact.user_id) user_contact.contact_info FROM user_contact
-	JOIN payments ON user_contact.user_id = payments.user_id 
+	JOIN payments ON user_contact.user_id = payments.user_id AND payments.payment_status = 'SUCCESSFUL'
 	GROUP BY user_contact.contact_info, user_contact.user_id
 	HAVING SUM(price) > (
-		SELECT AVG(user_price_sum) FROM (SELECT SUM(price) AS user_price_sum FROM
-		users JOIN payments ON users.user_id = payments.user_id GROUP BY users.user_id
+		SELECT AVG(user_price_sum) FROM 
+		(SELECT SUM(price) AS user_price_sum FROM
+		users JOIN payments ON users.user_id = payments.user_id  AND payments.payment_status = 'SUCCESSFUL'
+		GROUP BY users.user_id
 	));
 
 --7
