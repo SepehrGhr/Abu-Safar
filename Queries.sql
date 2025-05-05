@@ -1,17 +1,24 @@
 --1
-SELECT first_name, last_name, reservation_id FROM users LEFT JOIN reservations 
+SELECT first_name, last_name FROM users LEFT JOIN reservations 
  ON users.user_id = reservations.user_id WHERE reservation_id IS NULL;
 --2
-SELECT first_name, last_name FROM users JOIN reservations 
+SELECT DISTINCT ON (users.user_id) first_name, last_name FROM users JOIN reservations 
  ON users.user_id = reservations.user_id
- GROUP BY users.user_id ;
+ WHERE reservations.reserve_status = 'PAID';
 --3
-SELECT users.first_name, DATE_TRUNC('month' , payment_timestamp) AS m, SUM(price) FROM payments JOIN users ON users.user_id = payments.user_id
- GROUP BY  m, users.user_id;
+SELECT users.first_name, users.last_name, TO_CHAR(payment_timestamp, 'Month') AS "month", SUM(price) FROM payments 
+	JOIN users ON users.user_id = payments.user_id
+	WHERE payments.payment_status = 'SUCCESSFUL'
+	GROUP BY  "month", users.user_id;
 --4
-SELECT users.first_name, users.last_name, city FROM users JOIN reservations
- ON users.user_id = reservations.user_id GROUP BY users.user_id 
- HAVING count(*) = 1;
+SELECT users.first_name, users.last_name, loc.city FROM users 
+	JOIN reservations rsv ON users.user_id = rsv.user_id
+	JOIN ticket_reservation t_r ON rsv.reservation_id = t_r.reservation_id
+	JOIN trips ON t_r.trip_id = trips.trip_id
+	JOIN location_details loc ON loc.location_id = trips.origin_location_id
+		GROUP BY loc.city, users.user_id 
+		HAVING COUNT(*) = 1
+		ORDER BY loc.city;
 
 --5
 SELECT users.* FROM users 
