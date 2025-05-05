@@ -168,33 +168,38 @@ FROM cancelled
 WHERE count = (SELECT MAX(count) FROM cancelled);
 
 --19
-DELETE FROM reservations rvs
-USING users u
+DELETE
+FROM reservations rvs
+    USING users u
 WHERE u.user_id = rvs.user_id
   AND u.last_name = 'Reddington'
   AND rvs.reserve_status = 'CANCELLED';
 
 --20
-DELETE FROM reservations rvs
-  AND rvs.reserve_status = 'CANCELLED';
+DELETE
+FROM reservations rvs
+WHERE rvs.reserve_status = 'CANCELLED';
 
 --21
-UPDATE tickets
-SET price = price * 90 / 100
-FROM trips
-WHERE trips.trip_id = tickets.trip_id
-  AND tickets.trip_vehicle = 'FLIGHT'
-  AND trips.vehicle_company = 'MAHAN';
+UPDATE tickets t
+SET price = price * 0.9
+WHERE t.trip_id IN (SELECT tr.trip_id
+                    FROM ticket_reservation tr
+                             JOIN reservations rsv ON tr.reservation_id = rsv.reservation_id
+                             JOIN trips trip ON trip.trip_id = tr.trip_id
+                    WHERE rsv.reserve_status = 'PAID'
+                      AND DATE(rsv.reservation_datetime) = CURRENT_DATE - 1
+                      AND trip.vehicle_company = 'MAHAN');
+
 
 --22
-SELECT topic, COUNT(*)
-FROM reports
-WHERE link_type = 'TICKET'
-  AND link_id = (SELECT link_id
-                 FROM reports
-                 WHERE link_type = 'TICKET'
-                 GROUP BY link_id
-                 ORDER BY count(*) DESC
-                 LIMIT 1)
-GROUP BY topic;
-?top same 1s?
+WITH report_counts AS (SELECT link_id, COUNT(*) AS cnt
+                       FROM reports
+                       WHERE link_type = 'RESERVATION'
+                       GROUP BY link_id),
+     max_reports AS (SELECT MAX(cnt) AS max_count
+                     FROM report_counts)
+SELECT r.topic, rc.cnt
+FROM reports r
+         JOIN report_counts rc ON r.link_id = rc.link_id
+         JOIN max_reports mr ON rc.cnt = mr.max_count;
