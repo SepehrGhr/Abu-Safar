@@ -166,8 +166,17 @@ WITH cancelled AS (SELECT last_name, COUNT(*) AS count
 SELECT last_name
 FROM cancelled
 WHERE count = (SELECT MAX(count) FROM cancelled);
+
+--19
+DELETE FROM reservations rvs
+USING users u
+WHERE u.user_id = rvs.user_id
+  AND u.last_name = 'Reddington'
+  AND rvs.reserve_status = 'CANCELLED';
+
 --20
-DELETE
+DELETE FROM reservations rvs
+  AND rvs.reserve_status = 'CANCELLED';
 
 --21
 UPDATE tickets
