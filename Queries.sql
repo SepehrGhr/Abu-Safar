@@ -93,44 +93,56 @@ SELECT first_name, last_name
 FROM users
          JOIN reservations rsv ON rsv.user_id = users.user_id
          JOIN ticket_reservation t_r ON rsv.reservation_id = t_r.reservation_id AND rsv.reserve_status = 'PAID'
-GROUP BY users.user_id HAVING COUNT(*) >= 2;
+GROUP BY users.user_id
+HAVING COUNT(*) >= 2;
 
 --13
 SELECT first_name, last_name
 FROM users
          LEFT JOIN reservations rsv ON rsv.user_id = users.user_id
          LEFT JOIN ticket_reservation t_r ON rsv.reservation_id = t_r.reservation_id AND rsv.reserve_status = 'PAID'
-		 LEFT JOIN tickets ON tickets.trip_id = t_r.trip_id AND tickets.age = t_r.age
-		 WHERE tickets.trip_vehicle = 'TRAIN' OR rsv.user_id IS NULL
+         LEFT JOIN tickets ON tickets.trip_id = t_r.trip_id AND tickets.age = t_r.age
+WHERE tickets.trip_vehicle = 'TRAIN'
+   OR rsv.user_id IS NULL
 GROUP BY users.user_id
 HAVING COUNT(*) <= 2;
 
 --14
-SELECT DISTINCT ON (user_contact.user_id) user_contact.contact_info FROM user_contact 
-	JOIN (SELECT uv.user_id FROM (SELECT users.user_id, tck.trip_vehicle FROM users
-	JOIN reservations rsv ON USERS.user_id = rsv.user_id
-         JOIN ticket_reservation t_r ON rsv.reservation_id = t_r.reservation_id
-         JOIN tickets tck ON tck.trip_id = t_r.trip_id
-GROUP BY USERS.user_id, tck.trip_vehicle) as uv
-GROUP BY uv.user_id
-HAVING COUNT(*) = 2) AS uv_count
-ON uv_count.user_id = user_contact.user_id;
+SELECT DISTINCT ON (user_contact.user_id) user_contact.contact_info
+FROM user_contact
+         JOIN (SELECT uv.user_id
+               FROM (SELECT users.user_id, tck.trip_vehicle
+                     FROM users
+                              JOIN reservations rsv ON USERS.user_id = rsv.user_id
+                              JOIN ticket_reservation t_r ON rsv.reservation_id = t_r.reservation_id
+                              JOIN tickets tck ON tck.trip_id = t_r.trip_id
+                     GROUP BY USERS.user_id, tck.trip_vehicle) as uv
+               GROUP BY uv.user_id
+               HAVING COUNT(*) = 2) AS uv_count
+              ON uv_count.user_id = user_contact.user_id;
 
 --15
-SELECT trips.*
-FROM reservations
-    JOIN ticket_reservation t_r
-ON reservations.reservation_id = t_r.reservation_id
-    JOIN trips ON trips.trip_id = t_r.trip_id
-WHERE reservations.reservation_datetime::date = CURRENT_DATE
-ORDER BY reservations.reservation_datetime ASC;
+SELECT rsv.*
+FROM reservations rsv
+WHERE rsv.reservation_datetime::date = CURRENT_DATE
+  AND rsv.reserve_status = 'PAID'
+ORDER BY rsv.reservation_datetime;
 
 --16
-SELECT trips.*
-FROM reservations
-         JOIN ticket_reservation t_r ON reservations.reservation_id = t_r.reservation_id
-         JOIN trips ON trips.trip_id = t_r.trip_id
-GROUP BY tickets.trip_id, tickets.age WHERE reservations.report_status = 'PAID', COUNT()
+WITH t AS (SELECT t_r.trip_id AS trip_id, t_r.age as age, COUNT(*) AS counts
+           FROM reservations rsv
+                    JOIN ticket_reservation t_r ON rsv.reservation_id = t_r.reservation_id
+               AND rsv.reserve_status = 'PAID'
+                    JOIN trips ON trips.trip_id = t_r.trip_id
+           GROUP BY t_r.trip_id, t_r.age),
+     second_highest AS (SELECT DISTINCT counts
+                        FROM t
+                        ORDER BY counts DESC
+                        LIMIT 1 OFFSET 1)
+SELECT trips.*, t.age
+FROM t
+         JOIN trips ON t.trip_id = trips.trip_id
+WHERE counts = (SELECT counts FROM second_highest);
 
 
 --20
