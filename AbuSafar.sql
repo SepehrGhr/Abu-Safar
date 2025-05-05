@@ -180,3 +180,60 @@ CREATE INDEX idx_reservations_reservation_datetime ON reservations (reservation_
 
 CREATE INDEX idx_payments_reservation_id ON payments (reservation_id);
 CREATE INDEX idx_payments_user_id ON payments (user_id);
+
+-----------------------------------------------------------
+CREATE OR REPLACE FUNCTION increment_reserved_capacity()
+    RETURNS TRIGGER AS
+$$
+DECLARE
+    available_capacity SMALLINT;
+BEGIN
+    SELECT total_capacity - reserved_capacity
+    INTO available_capacity
+    FROM trips
+    WHERE trip_id = NEW.trip_id;
+
+    IF available_capacity <= 0 THEN
+        RAISE EXCEPTION 'Trip % is fully booked.', NEW.trip_id;
+    END IF;
+
+    UPDATE trips
+    SET reserved_capacity = reserved_capacity + 1
+    WHERE trip_id = NEW.trip_id;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+---------
+CREATE TRIGGER trg_increment_reserved_capacity
+    AFTER INSERT
+    ON ticket_reservation
+    FOR EACH ROW
+EXECUTE FUNCTION increment_reserved_capacity();
+--------------
+CREATE OR REPLACE FUNCTION update_reservation_status_to_paid()
+    RETURNS TRIGGER AS
+$$
+BEGIN
+    IF NEW.payment_status = 'SUCCESSFUL' THEN
+        UPDATE reservations
+        SET reserve_status = 'PAID'
+        WHERE reservation_id = NEW.reservation_id;
+    END IF;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+------------
+CREATE TRIGGER trg_payment_insert_successful
+    AFTER INSERT
+    ON payments
+    FOR EACH ROW
+EXECUTE FUNCTION update_reservation_status_to_paid();
+-----
+CREATE TRIGGER trg_payment_update_successful
+    AFTER UPDATE OF payment_status
+    ON payments
+    FOR EACH ROW
+    WHEN (NEW.payment_status = 'SUCCESSFUL' AND OLD.payment_status IS DISTINCT FROM 'SUCCESSFUL')
+EXECUTE FUNCTION update_reservation_status_to_paid();
