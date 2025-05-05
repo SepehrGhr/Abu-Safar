@@ -144,7 +144,28 @@ FROM t
          JOIN trips ON t.trip_id = trips.trip_id
 WHERE counts = (SELECT counts FROM second_highest);
 
+--17
+WITH cancel_counts AS (SELECT users.user_id, users.first_name, users.last_name, COUNT(*) AS cancel_count
+                       FROM users
+                                JOIN reservations ON users.user_id = reservations.cancelled_by
+                       WHERE users.user_role = 'ADMIN'
+                       GROUP BY users.user_id),
+     total_admin_cancels AS (SELECT SUM(cancel_count) AS total_cancels
+                             FROM cancel_counts)
+SELECT *,
+       ROUND(100.0 * cancel_count / (SELECT total_cancels FROM total_admin_cancels), 2) AS cancel_percentage
+FROM cancel_counts
+WHERE cancel_count = (SELECT MAX(cancel_count) FROM cancel_counts)
 
+--18
+WITH cancelled AS (SELECT last_name, COUNT(*) AS count
+                   FROM users
+                            JOIN reservations rsv ON users.user_id = rsv.user_id
+                   WHERE rsv.reserve_status = 'CANCELLED'
+                   GROUP BY users.user_id)
+SELECT last_name
+FROM cancelled
+WHERE count = (SELECT MAX(count) FROM cancelled);
 --20
 DELETE
 
