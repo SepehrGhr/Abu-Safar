@@ -155,7 +155,7 @@ WITH cancel_counts AS (SELECT users.user_id, users.first_name, users.last_name, 
 SELECT *,
        ROUND(100.0 * cancel_count / (SELECT total_cancels FROM total_admin_cancels), 2) AS cancel_percentage
 FROM cancel_counts
-WHERE cancel_count = (SELECT MAX(cancel_count) FROM cancel_counts)
+WHERE cancel_count = (SELECT MAX(cancel_count) FROM cancel_counts);
 
 --18
 WITH cancelled AS (SELECT last_name, COUNT(*) AS count
