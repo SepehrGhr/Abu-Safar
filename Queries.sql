@@ -13,7 +13,7 @@ SELECT users.first_name, users.last_name, TO_CHAR(payment_timestamp, 'Month') AS
 --4
 SELECT users.first_name, users.last_name, loc.city FROM users 
 	JOIN reservations rsv ON users.user_id = rsv.user_id
-	JOIN ticket_reservation t_r ON rsv.reservation_id = t_r.reservation_id
+	JOIN ticket_reservation t_r ON rsv.reservation_id = t_r.reservation_id AND rsv.reserve_status = 'PAID'
 	JOIN trips ON t_r.trip_id = trips.trip_id
 	JOIN location_details loc ON loc.location_id = trips.origin_location_id
 		GROUP BY loc.city, users.user_id 
@@ -21,11 +21,9 @@ SELECT users.first_name, users.last_name, loc.city FROM users
 		ORDER BY loc.city;
 
 --5
-SELECT users.* FROM users 
+SELECT users.* FROM users
 	JOIN reservations rsv ON users.user_id = rsv.user_id
-	JOIN ticket_reservation t_r ON rsv.reservation_id = t_r.reservation_id
-	JOIN trips ON t_r.trip_id = trips.trip_id
-		ORDER BY trips.departure_timestamp DESC LIMIT 1;
+	ORDER BY rsv.reservation_datetime DESC LIMIT 1;
 
 --6
 SELECT DISTINCT ON (user_contact.user_id) user_contact.contact_info FROM user_contact
