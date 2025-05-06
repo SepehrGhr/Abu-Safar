@@ -91,8 +91,7 @@ WHERE user_role = 'ADMIN';
 --12
 SELECT first_name, last_name
 FROM users
-         JOIN reservations rsv ON rsv.user_id = users.user_id
-         JOIN ticket_reservation t_r ON rsv.reservation_id = t_r.reservation_id AND rsv.reserve_status = 'PAID'
+         JOIN reservations rsv ON rsv.user_id = users.user_id AND rsv.reserve_status = 'PAID'
 GROUP BY users.user_id
 HAVING COUNT(*) >= 2;
 
@@ -118,7 +117,7 @@ FROM user_contact
                               JOIN tickets tck ON tck.trip_id = t_r.trip_id
                      GROUP BY USERS.user_id, tck.trip_vehicle) as uv
                GROUP BY uv.user_id
-               HAVING COUNT(*) = 2) AS uv_count
+               HAVING COUNT(*) = 3) AS uv_count
               ON uv_count.user_id = user_contact.user_id;
 
 --15
