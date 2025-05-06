@@ -167,6 +167,7 @@ CREATE INDEX idx_location_details_city ON location_details (city);
 CREATE INDEX idx_departure_timestamp ON trips (departure_timestamp);
 
 CREATE INDEX idx_trips_origin_destination_location ON trips (origin_location_id, destination_location_id);
+CREATE INDEX idx_trips_origin ON trips (trip_id, origin_location_id);
 
 CREATE VIEW ordered_trips AS
 SELECT *
@@ -177,9 +178,15 @@ CREATE INDEX idx_tickets_trip_vehicle ON tickets (trip_vehicle);
 
 CREATE INDEX idx_reservations_user_id ON reservations (user_id);
 CREATE INDEX idx_reservations_reservation_datetime ON reservations (reservation_datetime);
+CREATE INDEX idx_reservations_status ON reservations(reserve_status);
+CREATE INDEX idx_reservations_datetime_user ON reservations(reservation_datetime DESC, user_id);
 
 CREATE INDEX idx_payments_reservation_id ON payments (reservation_id);
 CREATE INDEX idx_payments_user_id ON payments (user_id);
+CREATE INDEX idx_payments_user_status_time ON payments(payment_status, user_id, payment_timestamp);
+
+CREATE INDEX idx_ticket_reservation_res_id ON ticket_reservation(reservation_id, trip_id);
+
 
 -----------------------------------------------------------
 CREATE OR REPLACE FUNCTION increment_reserved_capacity()
