@@ -82,7 +82,6 @@ FROM users
 WHERE users.sign_up_date =
       (SELECT MIN(sign_up_date) FROM users);
 
-
 --11
 SELECT first_name, last_name
 FROM users

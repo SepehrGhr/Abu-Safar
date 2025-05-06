@@ -159,10 +159,13 @@ CREATE TABLE buses
 CREATE INDEX idx_users_user_role ON users (user_role);
 CREATE INDEX idx_users_name ON users (first_name, last_name);
 
+CREATE INDEX idx_user_contact_user ON user_contact(contact_info);
+
 CREATE INDEX idx_reports_user_id ON reports (user_id);
 CREATE INDEX idx_reports_status ON reports (report_status);
 
-CREATE INDEX idx_location_details_city ON location_details (city);
+CREATE INDEX idx_location_location_id_city ON location_details(location_id, city);
+CREATE INDEX idx_location_province_city ON location_details(province, city, location_id);
 
 CREATE INDEX idx_departure_timestamp ON trips (departure_timestamp);
 
@@ -175,6 +178,7 @@ FROM trips
 ORDER BY departure_timestamp ASC;
 
 CREATE INDEX idx_tickets_trip_vehicle ON tickets (trip_vehicle);
+CREATE INDEX idx_tickets_trip_age ON tickets(trip_id, age, trip_vehicle);
 
 CREATE INDEX idx_reservations_user_id ON reservations (user_id);
 CREATE INDEX idx_reservations_reservation_datetime ON reservations (reservation_datetime);
@@ -184,8 +188,11 @@ CREATE INDEX idx_reservations_datetime_user ON reservations(reservation_datetime
 CREATE INDEX idx_payments_reservation_id ON payments (reservation_id);
 CREATE INDEX idx_payments_user_id ON payments (user_id);
 CREATE INDEX idx_payments_user_status_time ON payments(payment_status, user_id, payment_timestamp);
+CREATE INDEX idx_payments_user_status ON payments(user_id, payment_status);
 
 CREATE INDEX idx_ticket_reservation_res_id ON ticket_reservation(reservation_id, trip_id);
+CREATE INDEX idx_ticket_reservation_reservation_id ON ticket_reservation(reservation_id);
+CREATE INDEX idx_ticket_reservation_trip_id ON ticket_reservation(trip_id);
 
 
 -----------------------------------------------------------
