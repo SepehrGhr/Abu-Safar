@@ -1,9 +1,9 @@
 --1
 SELECT first_name, last_name
 FROM users
-         LEFT JOIN reservations
-                   ON users.user_id = reservations.user_id
-WHERE reservation_id IS NULL;
+WHERE NOT EXISTS (
+  SELECT 1 FROM reservations WHERE reservations.user_id = users.user_id
+);
 --2
 SELECT DISTINCT ON (users.user_id) first_name, last_name
 FROM users
