@@ -163,6 +163,8 @@ CREATE INDEX idx_user_contact_user ON user_contact(contact_info);
 
 CREATE INDEX idx_reports_user_id ON reports (user_id);
 CREATE INDEX idx_reports_status ON reports (report_status);
+CREATE INDEX idx_reports_type_linkid ON reports(link_type, link_id);
+
 
 CREATE INDEX idx_location_location_id_city ON location_details(location_id, city);
 CREATE INDEX idx_location_province_city ON location_details(province, city, location_id);
@@ -179,11 +181,14 @@ ORDER BY departure_timestamp ASC;
 
 CREATE INDEX idx_tickets_trip_vehicle ON tickets (trip_vehicle);
 CREATE INDEX idx_tickets_trip_age ON tickets(trip_id, age, trip_vehicle);
+CREATE INDEX idx_tickets_trip_id ON tickets(trip_id);
 
 CREATE INDEX idx_reservations_user_id ON reservations (user_id);
 CREATE INDEX idx_reservations_reservation_datetime ON reservations (reservation_datetime);
-CREATE INDEX idx_reservations_status ON reservations(reserve_status);
+CREATE INDEX idx_reservations_status_user_id ON reservations(reserve_status, user_id);
 CREATE INDEX idx_reservations_datetime_user ON reservations(reservation_datetime DESC, user_id);
+CREATE INDEX idx_reservations_user_status_id ON reservations(user_id, reserve_status, reservation_id);
+CREATE INDEX idx_reservations_cancelled_by ON reservations(cancelled_by);
 
 CREATE INDEX idx_payments_reservation_id ON payments (reservation_id);
 CREATE INDEX idx_payments_user_id ON payments (user_id);
