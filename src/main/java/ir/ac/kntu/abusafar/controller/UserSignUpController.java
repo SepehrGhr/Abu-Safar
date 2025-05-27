@@ -26,7 +26,7 @@ public class UserSignUpController {
     }
 
     @PostMapping("/signup")
-    public ResponseEntity<?> signUpUser(@Valid @RequestBody SignUpRequestDTO signUpRequest) {
+    public ResponseEntity<BaseResponse<UserInfoDTO>> signUpUser(@Valid @RequestBody SignUpRequestDTO signUpRequest) {
         return ResponseEntity.status(201).body(BaseResponse.success(userService.signUp(signUpRequest)));
     }
 
