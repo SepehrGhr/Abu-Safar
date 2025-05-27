@@ -1,7 +1,9 @@
 package ir.ac.kntu.abusafar.service.impl;
 
 import ir.ac.kntu.abusafar.dto.User.SignUpRequestDTO;
+import ir.ac.kntu.abusafar.dto.User.UserInfoDTO;
 import ir.ac.kntu.abusafar.exception.DuplicateContactInfoException;
+import ir.ac.kntu.abusafar.mapper.UserMapper;
 import ir.ac.kntu.abusafar.model.User;
 import ir.ac.kntu.abusafar.model.UserContact;
 import ir.ac.kntu.abusafar.repository.UserDAO;
@@ -19,14 +21,16 @@ public class UserServiceImpl implements UserService {
 
     private final UserDAO userDAO;
     private final PasswordEncoder passwordEncoder;
+    private final UserMapper userMapper;
 
-    public UserServiceImpl(UserDAO userDAO, PasswordEncoder passwordEncoder) {
+    public UserServiceImpl(UserDAO userDAO, PasswordEncoder passwordEncoder, UserMapper userMapper) {
         this.userDAO = userDAO;
         this.passwordEncoder = passwordEncoder;
+        this.userMapper = userMapper;
     }
 
     @Override
-    public User signUp(SignUpRequestDTO signUpRequest) {
+    public UserInfoDTO signUp(SignUpRequestDTO signUpRequest) {
         if (signUpRequest.getEmail() != null && !signUpRequest.getEmail().isEmpty()) {
             if (userDAO.findByEmail(signUpRequest.getEmail()).isPresent()) {
                 throw new DuplicateContactInfoException("Email address already in use: " + signUpRequest.getEmail());
@@ -55,6 +59,6 @@ public class UserServiceImpl implements UserService {
             UserContact phoneContact = new UserContact(savedUser.getId(), ContactType.PHONE_NUMBER, signUpRequest.getPhoneNumber());
             userDAO.saveContact(phoneContact);
         }
-        return savedUser;
+        return userMapper.toUserInfoDTO(savedUser);
     }
 }
