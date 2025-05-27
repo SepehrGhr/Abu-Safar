@@ -7,14 +7,19 @@ import ir.ac.kntu.abusafar.repository.UserDAO;
 import ir.ac.kntu.abusafar.service.OtpService;
 import ir.ac.kntu.abusafar.util.constants.Strings;
 import ir.ac.kntu.abusafar.util.constants.enums.ContactType;
+import jakarta.mail.MessagingException;
+import jakarta.mail.internet.MimeMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.MailException;
-import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
+import org.thymeleaf.context.Context;
+import org.thymeleaf.spring6.SpringTemplateEngine;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.exceptions.JedisException;
@@ -35,6 +40,7 @@ public class OtpServiceImpl implements OtpService {
 
     private final JedisPool jedisPool;
     private final JavaMailSender mailSender;
+    private final SpringTemplateEngine emailTemplateEngine;
     private final UserDAO userDAO;
 
     @Value("${jwt.otp.cache.duration.ms}")
@@ -50,9 +56,10 @@ public class OtpServiceImpl implements OtpService {
     private String emailTextFormat;
 
     @Autowired
-    public OtpServiceImpl(JedisPool jedisPool, JavaMailSender mailSender, UserDAO userDAO) {
+    public OtpServiceImpl(JedisPool jedisPool, JavaMailSender mailSender, @Qualifier("emailTemplateEngine") SpringTemplateEngine emailTemplateEngine, UserDAO userDAO) {
         this.jedisPool = jedisPool;
         this.mailSender = mailSender;
+        this.emailTemplateEngine = emailTemplateEngine;
         this.userDAO = userDAO;
     }
 
@@ -145,15 +152,38 @@ public class OtpServiceImpl implements OtpService {
 
     private void sendOtpViaEmail(String email, String otp) {
         try {
-            SimpleMailMessage mailMessage = new SimpleMailMessage();
-            mailMessage.setTo(email);
-            mailMessage.setSubject(emailSubject);
-            mailMessage.setText(String.format(emailTextFormat, otp));
-            mailSender.send(mailMessage);
-            LOGGER.info("OTP email sent to {}", email);
-        } catch (MailException e) {
-            LOGGER.error("Error sending OTP email to {}: {}", email, e.getMessage(), e);
-            throw new NotificationSendException("Error sending OTP email to " + email, e);
+            MimeMessage mimeMessage = mailSender.createMimeMessage();
+            // Use true for multipart message (good practice for HTML emails)
+            // "UTF-8" for character encoding
+            MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true, "UTF-8");
+
+            // Create the Thymeleaf context
+            Context context = new Context();
+            context.setVariable("subject", emailSubject); // Subject for the <title> tag in HTML
+            context.setVariable("otpCode", otp);
+            // You can add more variables here if your template needs them (e.g., user's name, app name)
+            // context.setVariable("appName", "AbuSafar"); // Example, though hardcoded in your current template header
+
+            // Process the template (provide the template name without .html)
+            String htmlContent = emailTemplateEngine.process("otp-email", context);
+
+            helper.setTo(email);
+            helper.setSubject(emailSubject); // This is the actual subject line of the email
+            helper.setText(htmlContent, true); // true indicates that the content is HTML
+
+            // Optionally, set a "From" address with a name, e.g., if your spring.mail.username is generic
+            // helper.setFrom("noreply@abusafar.com", "AbuSafar Support");
+            // Ensure spring.mail.username in application.properties is the authorized sender.
+
+            mailSender.send(mimeMessage);
+            LOGGER.info("Styled OTP HTML email sent to {}", email);
+
+        } catch (MessagingException e) {
+            LOGGER.error("Error creating or sending styled OTP HTML email to {}: {}", email, e.getMessage(), e);
+            // throw new NotificationSendException("Error sending styled OTP HTML email to " + email, e);
+        } catch (MailException e) { // Catch broader mail exceptions
+            LOGGER.error("General mail error sending styled OTP HTML email to {}: {}", email, e.getMessage(), e);
+            // throw new NotificationSendException("Error sending styled OTP HTML email to " + email, e);
         }
     }
 
