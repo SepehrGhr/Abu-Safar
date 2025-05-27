@@ -1,5 +1,10 @@
 package ir.ac.kntu.abusafar.model;
 
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+
+@NoArgsConstructor
+@Getter
 public class Location {
 
     private Long locationId;
@@ -10,26 +15,4 @@ public class Location {
 
     private String city;
 
-    public Location(Long locationId, String country, String province, String city) {
-        this.locationId = locationId;
-        this.country = country;
-        this.province = province;
-        this.city = city;
-    }
-
-    public Long getLocationId() {
-        return locationId;
-    }
-
-    public String getCountry() {
-        return country;
-    }
-
-    public String getProvince() {
-        return province;
-    }
-
-    public String getCity() {
-        return city;
-    }
 }
