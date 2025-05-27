@@ -1,16 +1,17 @@
 package ir.ac.kntu.abusafar.validation;
 
+import ir.ac.kntu.abusafar.dto.SignUpRequestDTO;
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
 
-public class AtLeastOneContactInfoValidator implements ConstraintValidator<AtLeastOneContactInfo, SignUpRequest> {
+public class AtLeastOneContactInfoValidator implements ConstraintValidator<AtLeastOneContactInfo, SignUpRequestDTO> {
 
     @Override
     public void initialize(AtLeastOneContactInfo constraintAnnotation) {
     }
 
     @Override
-    public boolean isValid(SignUpRequest signUpRequest, ConstraintValidatorContext context) {
+    public boolean isValid(SignUpRequestDTO signUpRequest, ConstraintValidatorContext context) {
         if (signUpRequest == null) {
             return false;
         }
