@@ -8,22 +8,14 @@ import org.mapstruct.Named;
 import org.mapstruct.factory.Mappers;
 import ir.ac.kntu.abusafar.util.constants.enums.UserType;
 
-@Mapper(componentModel = "spring")
+@Mapper
 public interface UserMapper {
 
     UserMapper INSTANCE = Mappers.getMapper(UserMapper.class);
 
-    @Mapping(source = "userType", target = "userType", qualifiedByName = "userTypeToString")
-    UserInfoDTO toUserInfoDTO(User user);
+    UserInfoDTO toDTO(User user);
 
-
-    @Named("userTypeToString")
-    default String userTypeToString(UserType userType) {
-        return userType == null ? null : userType.name();
-    }
-
-     @Mapping(source = "userType", target = "userType", qualifiedByName = "stringToUserType")
-     User toUser(UserInfoDTO userInfoDTO);
+    User toEntity(UserInfoDTO dto);
 
      @Named("stringToUserType")
      default UserType stringToUserType(String userType) {

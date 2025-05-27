@@ -21,12 +21,20 @@ public class UserServiceImpl implements UserService {
 
     private final UserDAO userDAO;
     private final PasswordEncoder passwordEncoder;
-    private final UserMapper userMapper;
 
-    public UserServiceImpl(UserDAO userDAO, PasswordEncoder passwordEncoder, UserMapper userMapper) {
+    public UserServiceImpl(UserDAO userDAO, PasswordEncoder passwordEncoder) {
         this.userDAO = userDAO;
         this.passwordEncoder = passwordEncoder;
-        this.userMapper = userMapper;
+    }
+
+    @Override
+    public UserInfoDTO getUserInfoDTO(User user) {
+        return UserMapper.INSTANCE.toDTO(user);
+    }
+
+    @Override
+    public User createUserFromDTO(UserInfoDTO dto) {
+        return UserMapper.INSTANCE.toEntity(dto);
     }
 
     @Override
@@ -59,6 +67,6 @@ public class UserServiceImpl implements UserService {
             UserContact phoneContact = new UserContact(savedUser.getId(), ContactType.PHONE_NUMBER, signUpRequest.getPhoneNumber());
             userDAO.saveContact(phoneContact);
         }
-        return userMapper.toUserInfoDTO(savedUser);
+        return getUserInfoDTO(savedUser);
     }
 }
