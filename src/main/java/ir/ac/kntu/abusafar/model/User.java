@@ -2,6 +2,7 @@ package ir.ac.kntu.abusafar.model;
 
 import ir.ac.kntu.abusafar.util.constants.enums.AccountStatus;
 import ir.ac.kntu.abusafar.util.constants.enums.UserType;
+import org.springframework.cglib.core.Local;
 
 import java.time.LocalDate;
 
@@ -26,6 +27,21 @@ public class User {
         this.hashedPassword = hashedPassword;
         this.signUpDate = signUpDate;
         this.profilePicture = profilePicture;
+    }
+
+    public User(String firstName, String lastName, UserType userType, AccountStatus accountStatus, String city, String hashedPassword, LocalDate signUpDate){
+        this.firstName = firstName;
+        this.lastName = lastName;
+        this.userType = userType;
+        this.accountStatus = accountStatus;
+        this.city = city;
+        this.hashedPassword = hashedPassword;
+        this.signUpDate = signUpDate;
+        this.profilePicture = "default.png";
+    }
+
+    public User() {
+
     }
 
     public Long getId() {
