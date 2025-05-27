@@ -19,12 +19,18 @@ import java.util.stream.Collectors;
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<BaseResponse<List<BindExceptionResponseDTO>>> handleMethodArgumentInvalidException(MethodArgumentNotValidException ex){
+    public ResponseEntity<BaseResponse<List<BindExceptionResponseDTO>>> handleMethodArgumentInvalidException(MethodArgumentNotValidException ex) {
         List<BindExceptionResponseDTO> errors = new ArrayList<>();
         ex.getBindingResult().getAllErrors().forEach(e -> {
-            String field = ((FieldError) e).getField();
-            String error = e.getDefaultMessage();
-            errors.add(new BindExceptionResponseDTO(field, error));
+            String fieldName;
+            String errorMessage = e.getDefaultMessage();
+
+            if (e instanceof FieldError) {
+                fieldName = ((FieldError) e).getField();
+            } else {
+                fieldName = e.getObjectName();
+            }
+            errors.add(new BindExceptionResponseDTO(fieldName, errorMessage));
         });
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(BaseResponse.fail(errors));
     }
