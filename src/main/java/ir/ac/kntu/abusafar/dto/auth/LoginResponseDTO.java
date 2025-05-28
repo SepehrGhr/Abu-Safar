@@ -1,6 +1,6 @@
 package ir.ac.kntu.abusafar.dto.auth;
 
-import ir.ac.kntu.abusafar.dto.User.UserInfoDTO;
+import ir.ac.kntu.abusafar.dto.user.UserInfoDTO;
 
 public class LoginResponseDTO {
 

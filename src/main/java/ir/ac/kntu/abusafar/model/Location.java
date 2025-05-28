@@ -1,9 +1,9 @@
 package ir.ac.kntu.abusafar.model;
 
+import lombok.AllArgsConstructor;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 
-@NoArgsConstructor
+@AllArgsConstructor
 @Getter
 public class Location {
 

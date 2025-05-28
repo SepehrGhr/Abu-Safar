@@ -1,6 +1,6 @@
 package ir.ac.kntu.abusafar.service.impl;
 
-import ir.ac.kntu.abusafar.dto.User.UserInfoDTO;
+import ir.ac.kntu.abusafar.dto.user.UserInfoDTO;
 import ir.ac.kntu.abusafar.dto.auth.LoginResponseDTO;
 import ir.ac.kntu.abusafar.dto.auth.OtpRequestDTO;
 import ir.ac.kntu.abusafar.dto.auth.OtpVerificationRequestDTO;
