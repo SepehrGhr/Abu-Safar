@@ -28,6 +28,7 @@ import java.security.SecureRandom;
 import java.util.Optional;
 import java.util.regex.Pattern;
 
+//@TODO comments
 @Service
 public class OtpServiceImpl implements OtpService {
 
@@ -52,8 +53,10 @@ public class OtpServiceImpl implements OtpService {
     @Value("${otp.email.subject}")
     private String emailSubject;
 
+    // emailTextFormat is not directly used in sendOtpViaEmail with HTML template, but kept for consistency
     @Value("${otp.email.text}")
     private String emailTextFormat;
+
 
     @Autowired
     public OtpServiceImpl(JedisPool jedisPool, JavaMailSender mailSender, @Qualifier("emailTemplateEngine") SpringTemplateEngine emailTemplateEngine, UserDAO userDAO) {
@@ -66,80 +69,92 @@ public class OtpServiceImpl implements OtpService {
     @Override
     public String generateAndSendOtp(User user, String targetContactInfo) {
         String otp = generateRandomOtp();
-        String primaryEmail = findPrimaryEmailForUser(user);
         long otpCacheDurationSeconds = otpCacheDurationMs / 1000;
 
-        if (primaryEmail == null) {
-            if (isEmail(targetContactInfo)) {
-                primaryEmail = targetContactInfo;
-            } else {
-                LOGGER.warn("User with ID {} has no primary email for OTP. OTP will be logged only for contact: {}", user.getId(), targetContactInfo);
-                LOGGER.info("Practice Project OTP for user ID {}: {} (intended for {})", user.getId(), otp, targetContactInfo);
-                String redisKey = Strings.OTP_REDIS_PREFIX + "user:" + user.getId() + ":" + targetContactInfo;
-                try (Jedis jedis = jedisPool.getResource()) {
-                    jedis.setex(redisKey, otpCacheDurationSeconds, otp);
-                } catch (JedisException e) {
-                    LOGGER.error("Failed to store OTP in Redis for {}. Error: {}", redisKey, e.getMessage(), e);
-                }
-                return otp;
-            }
-        }
+        // Use targetContactInfo directly as the primary part of the Redis key
+        String redisKey = Strings.OTP_REDIS_PREFIX + targetContactInfo;
 
-        String redisKey = Strings.OTP_REDIS_PREFIX + primaryEmail;
         try (Jedis jedis = jedisPool.getResource()) {
             jedis.setex(redisKey, otpCacheDurationSeconds, otp);
-            LOGGER.info("OTP for {} stored in Redis with TTL {}s", primaryEmail, otpCacheDurationSeconds);
+            LOGGER.info("OTP for contact {} stored in Redis with key {} and TTL {}s", targetContactInfo, redisKey, otpCacheDurationSeconds);
         } catch (JedisException e) {
-            LOGGER.error("Failed to store OTP in Redis for {}. Error: {}", primaryEmail, e.getMessage(), e);
-            // Handle the exception (e.g., throw a custom exception or return an error state)
-            // For now, rethrowing as a runtime exception or a specific application exception
-            throw new NotificationSendException("Failed to store OTP in Redis for " + primaryEmail, e);
+            LOGGER.error("Failed to store OTP in Redis for contact {}. Error: {}", targetContactInfo, e.getMessage(), e);
+            throw new NotificationSendException("Failed to store OTP in Redis for " + targetContactInfo, e);
         }
 
-
-        try {
-            if (isEmail(targetContactInfo)) {
-                sendOtpViaEmail(targetContactInfo, otp);
-            } else if (isPhoneNumber(targetContactInfo)) {
-                sendOtpViaEmail(primaryEmail, otp);
-                LOGGER.info("OTP sent to primary email {} for user identified by phone {}", primaryEmail, targetContactInfo);
+        // Determine email address for sending notification
+        String emailForNotification = null;
+        if (isEmail(targetContactInfo)) {
+            emailForNotification = targetContactInfo;
+        } else if (isPhoneNumber(targetContactInfo)) {
+            // If OTP target is a phone number, try to find user's primary email to send the notification
+            Optional<UserContact> primaryEmailContact = userDAO.findContactByUserIdAndType(user.getId(), ContactType.EMAIL);
+            if (primaryEmailContact.isPresent()) {
+                emailForNotification = primaryEmailContact.get().getContactInfo();
+                LOGGER.info("OTP requested for phone {}, notification will be sent to primary email {}", targetContactInfo, emailForNotification);
             } else {
-                sendOtpViaEmail(primaryEmail, otp);
-                LOGGER.warn("Target contact info {} was not identified as email/phone, sent OTP to primary email {}", targetContactInfo, primaryEmail);
+                LOGGER.warn("OTP requested for phone {} for user ID {}, but no primary email found for notification. OTP is in Redis.", targetContactInfo, user.getId());
             }
-        } catch (Exception e) {
-            LOGGER.error("Failed to send OTP to {}. OTP: {}. Error: {}", primaryEmail, otp, e.getMessage(), e);
-            // Note: OTP is in Redis. Consider if it should be removed on send failure.
-            // For this example, we'll keep it, matching original logic.
-            throw new NotificationSendException("Failed to send OTP to " + primaryEmail, e);
+        } else {
+            // Unidentified contact type, try to find primary email anyway for notification if possible
+            LOGGER.warn("Target contact info {} was not identified as email/phone. Attempting to find primary email for user ID {}.", targetContactInfo, user.getId());
+            Optional<UserContact> primaryEmailContact = userDAO.findContactByUserIdAndType(user.getId(), ContactType.EMAIL);
+            if (primaryEmailContact.isPresent()) {
+                emailForNotification = primaryEmailContact.get().getContactInfo();
+            } else {
+                LOGGER.warn("No primary email found for user ID {} to send notification for target contact {}.", user.getId(), targetContactInfo);
+            }
         }
+
+        if (emailForNotification != null) {
+            try {
+                sendOtpViaEmail(emailForNotification, otp); // Send actual email
+            } catch (Exception e) {
+                // Log error but don't fail the whole process if OTP is already in Redis
+                LOGGER.error("Failed to send OTP email to {}. OTP for contact {}: {}. Error: {}", emailForNotification, targetContactInfo, otp, e.getMessage(), e);
+                // Depending on policy, you might re-throw or handle.
+                // For now, we assume OTP in Redis is the critical part.
+                // throw new NotificationSendException("Failed to send OTP email to " + emailForNotification, e);
+            }
+        } else {
+            LOGGER.info("OTP for contact {} generated and stored, but no email address found for sending notification.", targetContactInfo);
+        }
+
+        // Log the OTP for practice/testing if no email was found or if it's a phone number without email.
+        // This logging was part of the original logic for non-email scenarios.
+        if (emailForNotification == null && isPhoneNumber(targetContactInfo)) {
+            LOGGER.info("Practice Project OTP for user ID {} (contact {}): {}", user.getId(), targetContactInfo, otp);
+        }
+
+
         return otp;
     }
 
 
     @Override
-    public boolean validateOtp(String userEmail, String otp) {
-        String redisKey = Strings.OTP_REDIS_PREFIX + userEmail;
+    public boolean validateOtp(String contactInfo, String otp) { // Parameter renamed from userEmail to contactInfo
+        String redisKey = Strings.OTP_REDIS_PREFIX + contactInfo;
         String storedOtp = null;
 
         try (Jedis jedis = jedisPool.getResource()) {
             storedOtp = jedis.get(redisKey);
             if (otp != null && otp.equals(storedOtp)) {
                 jedis.del(redisKey); // OTP is single-use
-                LOGGER.info("OTP validation successful for {}", userEmail);
+                LOGGER.info("OTP validation successful for contact {}", contactInfo);
                 return true;
             }
         } catch (JedisException e) {
-            LOGGER.error("Redis error during OTP validation for {}. Error: {}", userEmail, e.getMessage(), e);
-            // Decide how to handle Redis unavailability during validation.
-            // For now, treat as validation failure.
-            return false;
+            LOGGER.error("Redis error during OTP validation for contact {}. Error: {}", contactInfo, e.getMessage(), e);
+            return false; // Treat Redis error as validation failure
         }
 
-        LOGGER.warn("OTP validation failed for {}. Provided OTP: {}, Stored OTP: {}", userEmail, otp, storedOtp);
+        LOGGER.warn("OTP validation failed for contact {}. Provided OTP: {}, Stored OTP: {}", contactInfo, otp, storedOtp);
         return false;
     }
 
+    // findPrimaryEmailForUser is not directly used in the revised generateAndSendOtp logic's main flow
+    // but kept as it might be useful for other purposes or if sendOtpViaEmail needs it explicitly.
+    // However, sendOtpViaEmail directly receives the email to send to.
     private String findPrimaryEmailForUser(User user) {
         Optional<UserContact> emailContact = userDAO.findContactByUserIdAndType(user.getId(), ContactType.EMAIL);
         if (emailContact.isPresent()) {
@@ -149,41 +164,35 @@ public class OtpServiceImpl implements OtpService {
         return null;
     }
 
-
     private void sendOtpViaEmail(String email, String otp) {
+        // This method remains largely the same as it sends the email to the provided 'email' address.
+        // It uses the Thymeleaf template "otp-email.html"
         try {
             MimeMessage mimeMessage = mailSender.createMimeMessage();
-            // Use true for multipart message (good practice for HTML emails)
-            // "UTF-8" for character encoding
             MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true, "UTF-8");
 
-            // Create the Thymeleaf context
             Context context = new Context();
-            context.setVariable("subject", emailSubject); // Subject for the <title> tag in HTML
+            context.setVariable("subject", emailSubject);
             context.setVariable("otpCode", otp);
-            // You can add more variables here if your template needs them (e.g., user's name, app name)
-            // context.setVariable("appName", "AbuSafar"); // Example, though hardcoded in your current template header
+            long validityMinutes = otpCacheDurationMs / (1000 * 60);
+            context.setVariable("validityMessage", "This OTP is valid for " + validityMinutes + " minutes.");
 
-            // Process the template (provide the template name without .html)
-            String htmlContent = emailTemplateEngine.process("otp-email", context);
+
+            String htmlContent = emailTemplateEngine.process("otp-email", context); // Assuming template name is "otp-email"
 
             helper.setTo(email);
-            helper.setSubject(emailSubject); // This is the actual subject line of the email
-            helper.setText(htmlContent, true); // true indicates that the content is HTML
-
-            // Optionally, set a "From" address with a name, e.g., if your spring.mail.username is generic
-            // helper.setFrom("noreply@abusafar.com", "AbuSafar Support");
-            // Ensure spring.mail.username in application.properties is the authorized sender.
+            helper.setSubject(emailSubject);
+            helper.setText(htmlContent, true);
 
             mailSender.send(mimeMessage);
             LOGGER.info("Styled OTP HTML email sent to {}", email);
 
         } catch (MessagingException e) {
             LOGGER.error("Error creating or sending styled OTP HTML email to {}: {}", email, e.getMessage(), e);
-            // throw new NotificationSendException("Error sending styled OTP HTML email to " + email, e);
-        } catch (MailException e) { // Catch broader mail exceptions
+            throw new NotificationSendException("Error sending styled OTP HTML email to " + email, e);
+        } catch (MailException e) {
             LOGGER.error("General mail error sending styled OTP HTML email to {}: {}", email, e.getMessage(), e);
-            // throw new NotificationSendException("Error sending styled OTP HTML email to " + email, e);
+            throw new NotificationSendException("Error sending styled OTP HTML email to " + email, e);
         }
     }
 
