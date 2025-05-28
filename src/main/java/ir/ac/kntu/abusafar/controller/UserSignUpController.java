@@ -1,7 +1,7 @@
 package ir.ac.kntu.abusafar.controller;
 
-import ir.ac.kntu.abusafar.dto.User.SignUpRequestDTO;
-import ir.ac.kntu.abusafar.dto.User.UserInfoDTO;
+import ir.ac.kntu.abusafar.dto.user.SignUpRequestDTO;
+import ir.ac.kntu.abusafar.dto.user.UserInfoDTO;
 import ir.ac.kntu.abusafar.dto.response.BaseResponse;
 import ir.ac.kntu.abusafar.service.UserService;
 import ir.ac.kntu.abusafar.util.constants.Routes;

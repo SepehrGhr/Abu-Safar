@@ -1,7 +1,7 @@
 package ir.ac.kntu.abusafar.service.impl;
 
-import ir.ac.kntu.abusafar.dto.User.SignUpRequestDTO;
-import ir.ac.kntu.abusafar.dto.User.UserInfoDTO;
+import ir.ac.kntu.abusafar.dto.user.SignUpRequestDTO;
+import ir.ac.kntu.abusafar.dto.user.UserInfoDTO;
 import ir.ac.kntu.abusafar.exception.DuplicateContactInfoException;
 import ir.ac.kntu.abusafar.mapper.UserMapper;
 import ir.ac.kntu.abusafar.model.User;
