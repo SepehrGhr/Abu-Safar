@@ -23,8 +23,4 @@ public interface LocationDAO {
     List<String> findAllProvinces();
 
     List<String> findAllCities();
-
-   // List<Location> findAll();
-
-   // List<Location> findAll(int page, int size);
 }

@@ -5,9 +5,8 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class LocationDTO {
+public class LocationSearchRequestDTO {
     private String country;
     private String province;
     private String city;
-
 }
