@@ -1,14 +1,14 @@
 package ir.ac.kntu.abusafar.model;
 import ir.ac.kntu.abusafar.util.constants.enums.PaymentMeans;
 import ir.ac.kntu.abusafar.util.constants.enums.PaymentStatus;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 
-@NoArgsConstructor
+@AllArgsConstructor
 @Getter
 @Setter
 public class Payment {
