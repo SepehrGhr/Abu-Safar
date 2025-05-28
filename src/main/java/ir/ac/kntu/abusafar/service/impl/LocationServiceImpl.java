@@ -53,6 +53,14 @@ public class LocationServiceImpl implements LocationService {
     }
 
     @Override
+    public List<LocationResponseDTO> findLocationsByCityName(String cityName) {
+        List<Location> locations = locationDAO.findByCity(cityName);
+        return locations.stream()
+                .map(LocationMapper.INSTANCE::toDTO)
+                .collect(Collectors.toList());
+    }
+
+    @Override
     public List<LocationResponseDTO> getLocationsByProvince(String provinceName) {
         List<Location> locations = locationDAO.findByProvince(provinceName);
         if (locations.isEmpty()) {
