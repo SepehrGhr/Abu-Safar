@@ -15,13 +15,11 @@ import java.util.stream.Collectors;
 
 @Service
 public class LocationServiceImpl implements LocationService {
-    private final LocationResponseDTO locationResponseDTO;
 
     private final LocationDAO locationDAO;
 
     @Autowired
-    public LocationServiceImpl(LocationResponseDTO locationResponseDTO, LocationDAO locationDAO) {
-        this.locationResponseDTO = locationResponseDTO;
+    public LocationServiceImpl(LocationDAO locationDAO) {
         this.locationDAO = locationDAO;
     }
 
