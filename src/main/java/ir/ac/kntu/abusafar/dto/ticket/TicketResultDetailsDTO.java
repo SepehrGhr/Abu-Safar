@@ -9,8 +9,6 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.util.List;
 
@@ -26,7 +24,7 @@ public class TicketResultDetailsDTO {
     private String vehicleCompany;
     private BusClass busClass;
     private FlightClass flightClass;
-    private short trainStars;
+    private Short trainStars;
     private Short stopCount;
     private Short totalCapacity;
     private Short reservedCapacity;

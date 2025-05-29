@@ -17,11 +17,9 @@ public class TicketSearchRequestDTO {
     private String originCity;
     private String originProvince;
     private String originCountry;
-
     private String destinationCity;
     private String destinationProvince;
     private String destinationCountry;
-
     private LocalDate departureDate;
     private LocalTime departureTime;
     private String vehicleCompany;
@@ -29,8 +27,7 @@ public class TicketSearchRequestDTO {
     private AgeRange ageCategory;
     private BigDecimal minPrice;
     private BigDecimal maxPrice;
-
     private BusClass busClass;
     private FlightClass flightClass;
-    private short trainStars;
+    private Short trainStars;
 }
