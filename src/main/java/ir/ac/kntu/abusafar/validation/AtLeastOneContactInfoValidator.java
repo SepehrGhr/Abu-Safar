@@ -1,6 +1,6 @@
 package ir.ac.kntu.abusafar.validation;
 
-import ir.ac.kntu.abusafar.dto.User.SignUpRequestDTO;
+import ir.ac.kntu.abusafar.dto.user.SignUpRequestDTO;
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
 

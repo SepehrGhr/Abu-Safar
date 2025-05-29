@@ -12,6 +12,9 @@ public interface LocationService {
 
     List<LocationResponseDTO> getLocationsByCity(String cityName);
 
+    // Returns an empty list if no locations are found, instead of throwing an exception.
+    List<LocationResponseDTO> findLocationsByCityName(String cityName);
+
     List<LocationResponseDTO> getLocationsByProvince(String provinceName);
 
     List<LocationResponseDTO> getLocationsByCountry(String countryName);

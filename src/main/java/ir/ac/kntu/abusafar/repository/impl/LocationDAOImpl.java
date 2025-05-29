@@ -18,23 +18,23 @@ public class LocationDAOImpl implements LocationDAO {
     private final JdbcTemplate jdbcTemplate;
 
     private static final String SELECT_LOCATION_BY_ID_SQL =
-            "SELECT location_id, country, province, city FROM LocationDetails WHERE location_id = ?;";
+            "SELECT location_id, country, province, city FROM location_details WHERE location_id = ?;";
     private static final String SELECT_CITIES_BY_PROVINCE_SQL =
-            "SELECT DISTINCT city FROM LocationDetails WHERE province ILIKE ? ORDER BY city;";
+            "SELECT DISTINCT city FROM location_details WHERE province ILIKE ? ORDER BY city;";
     private static final String SELECT_PROVINCES_BY_COUNTRY_SQL =
-            "SELECT DISTINCT province FROM LocationDetails WHERE country ILIKE ? ORDER BY province;";
+            "SELECT DISTINCT province FROM location_details WHERE country ILIKE ? ORDER BY province;";
     private static final String SELECT_LOCATIONS_BY_CITY_SQL =
-            "SELECT location_id, country, province, city FROM LocationDetails WHERE city ILIKE ? ORDER BY country, province;";
+            "SELECT location_id, country, province, city FROM location_details WHERE city ILIKE ? ORDER BY country, province;";
     private static final String SELECT_LOCATIONS_BY_PROVINCE_SQL =
-            "SELECT location_id, country, province, city FROM LocationDetails WHERE province ILIKE ? ORDER BY country, city;";
+            "SELECT location_id, country, province, city FROM location_details WHERE province ILIKE ? ORDER BY country, city;";
     private static final String SELECT_LOCATIONS_BY_COUNTRY_SQL =
-            "SELECT location_id, country, province, city FROM LocationDetails WHERE country ILIKE ? ORDER BY province, city;";
+            "SELECT location_id, country, province, city FROM location_details WHERE country ILIKE ? ORDER BY province, city;";
     private static final String SELECT_ALL_COUNTRIES_SQL =
-            "SELECT DISTINCT country FROM LocationDetails ORDER BY country;";
+            "SELECT DISTINCT country FROM location_details ORDER BY country;";
     private static final String SELECT_ALL_PROVINCES_SQL =
-            "SELECT DISTINCT province FROM LocationDetails ORDER BY province;";
+            "SELECT DISTINCT province FROM location_details ORDER BY province;";
     private static final String SELECT_ALL_CITIES_SQL =
-            "SELECT DISTINCT city FROM LocationDetails ORDER BY city;";
+            "SELECT DISTINCT city FROM location_details ORDER BY city;";
 
     @Autowired
     public LocationDAOImpl(JdbcTemplate jdbcTemplate) {
@@ -43,9 +43,9 @@ public class LocationDAOImpl implements LocationDAO {
 
     private final RowMapper<Location> LOCATION_ROW_MAPPER = (rs, rowNum) -> new Location(
             rs.getLong("location_id"),
-            rs.getString("city"),
+            rs.getString("country"),
             rs.getString("province"),
-            rs.getString("country"));
+            rs.getString("city"));
 
     @Override
     public Optional<Location> findById(Long locationId) {

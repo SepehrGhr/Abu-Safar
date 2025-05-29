@@ -14,13 +14,11 @@ import java.util.stream.Collectors;
 
 @Service
 public class LocationServiceImpl implements LocationService {
-    private final LocationResponseDTO locationResponseDTO;
 
     private final LocationDAO locationDAO;
 
     @Autowired
-    public LocationServiceImpl(LocationResponseDTO locationResponseDTO, LocationDAO locationDAO) {
-        this.locationResponseDTO = locationResponseDTO;
+    public LocationServiceImpl(LocationDAO locationDAO) {
         this.locationDAO = locationDAO;
     }
 
@@ -48,6 +46,14 @@ public class LocationServiceImpl implements LocationService {
         if (locations.isEmpty()) {
             throw new LocationNotFoundException("No locations found for city: " + cityName);
         }
+        return locations.stream()
+                .map(LocationMapper.INSTANCE::toDTO)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<LocationResponseDTO> findLocationsByCityName(String cityName) {
+        List<Location> locations = locationDAO.findByCity(cityName);
         return locations.stream()
                 .map(LocationMapper.INSTANCE::toDTO)
                 .collect(Collectors.toList());
