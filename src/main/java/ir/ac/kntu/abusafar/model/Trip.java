@@ -6,7 +6,7 @@ import lombok.Setter;
 
 import java.time.OffsetDateTime;
 
-@NoArgsConstructor
+@AllArgsConstructor
 @Setter
 @Getter
 public class Trip {

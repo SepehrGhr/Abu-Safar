@@ -4,7 +4,7 @@ import ir.ac.kntu.abusafar.util.constants.enums.ServiceType;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-@NoArgsConstructor
+@AllArgsConstructor
 @Getter
 public class AdditionalService {
 
