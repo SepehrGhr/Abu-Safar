@@ -3,7 +3,6 @@ package ir.ac.kntu.abusafar.service.impl;
 import ir.ac.kntu.abusafar.dto.location.LocationResponseDTO;
 import ir.ac.kntu.abusafar.exception.LocationNotFoundException;
 import ir.ac.kntu.abusafar.mapper.LocationMapper;
-import ir.ac.kntu.abusafar.mapper.UserMapper;
 import ir.ac.kntu.abusafar.model.Location;
 import ir.ac.kntu.abusafar.repository.LocationDAO;
 import ir.ac.kntu.abusafar.service.LocationService;
