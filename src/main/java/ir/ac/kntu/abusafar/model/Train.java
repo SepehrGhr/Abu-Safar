@@ -1,8 +1,8 @@
 package ir.ac.kntu.abusafar.model;
 
 import ir.ac.kntu.abusafar.util.constants.enums.TrainRoomType;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @AllArgsConstructor
