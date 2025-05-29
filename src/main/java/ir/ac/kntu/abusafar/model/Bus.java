@@ -12,7 +12,7 @@ public class Bus {
 
     private Long tripId;
 
-    private BusClass classType; // Renamed 'class' to 'classType' to avoid keyword conflict
+    private BusClass classType;
 
     private BusChairCountType chairType;
 }
