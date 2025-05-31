@@ -14,6 +14,7 @@ import org.springframework.stereotype.Repository;
 
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.function.BiConsumer;
 
@@ -73,13 +74,15 @@ public class TicketDAOImpl implements TicketDAO {
             sb.append(condition).append(" ");
         };
 
-        if (params.getOriginLocationId() != null) {
-            addCondition.accept(sqlWhereBuilder, "tr.origin_location_id = ?");
-            queryParams.add(params.getOriginLocationId());
+        if (params.getOriginLocationIds() != null && !params.getOriginLocationIds().isEmpty()) {
+            String inClausePlaceholders = String.join(",", Collections.nCopies(params.getOriginLocationIds().size(), "?"));
+            addCondition.accept(sqlWhereBuilder, "tr.origin_location_id IN (" + inClausePlaceholders + ")");
+            queryParams.addAll(params.getOriginLocationIds());
         }
-        if (params.getDestinationLocationId() != null) {
-            addCondition.accept(sqlWhereBuilder, "tr.destination_location_id = ?");
-            queryParams.add(params.getDestinationLocationId());
+        if (params.getDestinationLocationIds() != null && !params.getDestinationLocationIds().isEmpty()) {
+            String inClausePlaceholders = String.join(",", Collections.nCopies(params.getDestinationLocationIds().size(), "?"));
+            addCondition.accept(sqlWhereBuilder, "tr.destination_location_id IN (" + inClausePlaceholders + ")");
+            queryParams.addAll(params.getDestinationLocationIds());
         }
 
         if (params.getDepartureFrom() != null && params.getDepartureTo() != null) {

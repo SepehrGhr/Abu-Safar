@@ -4,19 +4,23 @@ import ir.ac.kntu.abusafar.model.Location;
 import ir.ac.kntu.abusafar.repository.LocationDAO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.EmptyResultDataAccessException;
+import org.springframework.dao.IncorrectResultSizeDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Repository;
+import org.springframework.util.StringUtils;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.BiConsumer;
 
 
 @Repository
 public class LocationDAOImpl implements LocationDAO {
 
     private final JdbcTemplate jdbcTemplate;
-
     private static final String SELECT_LOCATION_BY_ID_SQL =
             "SELECT location_id, country, province, city FROM location_details WHERE location_id = ?;";
     private static final String SELECT_CITIES_BY_PROVINCE_SQL =
@@ -97,5 +101,38 @@ public class LocationDAOImpl implements LocationDAO {
         return jdbcTemplate.queryForList(SELECT_ALL_CITIES_SQL, String.class);
     }
 
+    public List<Long> findLocationIdByDetails(String city, String province, String country) {
+        StringBuilder sqlWhereClause = new StringBuilder();
+        List<Object> params = new ArrayList<>();
+
+        BiConsumer<StringBuilder, String> addCondition = (sb, conditionToken) -> {
+            if (sb.isEmpty()) {
+                sb.append("WHERE ");
+            } else {
+                sb.append("AND ");
+            }
+            sb.append(conditionToken).append(" ILIKE ? ");
+        };
+
+        if (StringUtils.hasText(city)) {
+            addCondition.accept(sqlWhereClause, "city");
+            params.add(city);
+        }
+        if (StringUtils.hasText(province)) {
+            addCondition.accept(sqlWhereClause, "province");
+            params.add(province);
+        }
+        if (StringUtils.hasText(country)) {
+            addCondition.accept(sqlWhereClause, "country");
+            params.add(country);
+        }
+        if (params.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        String finalSql = "SELECT location_id FROM LocationDetails " + sqlWhereClause + "ORDER BY location_id";
+
+        return jdbcTemplate.queryForList(finalSql, Long.class, params.toArray());
+    }
 
 }

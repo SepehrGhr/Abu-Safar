@@ -23,4 +23,6 @@ public interface LocationDAO {
     List<String> findAllProvinces();
 
     List<String> findAllCities();
+
+    List<Long> findLocationIdByDetails(String city, String province, String country);
 }

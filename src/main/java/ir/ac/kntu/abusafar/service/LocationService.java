@@ -1,8 +1,10 @@
 package ir.ac.kntu.abusafar.service;
 
 import ir.ac.kntu.abusafar.dto.location.LocationResponseDTO;
+import ir.ac.kntu.abusafar.model.Location;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface LocationService {
 
@@ -12,7 +14,6 @@ public interface LocationService {
 
     List<LocationResponseDTO> getLocationsByCity(String cityName);
 
-    // Returns an empty list if no locations are found, instead of throwing an exception.
     List<LocationResponseDTO> findLocationsByCityName(String cityName);
 
     List<LocationResponseDTO> getLocationsByProvince(String provinceName);
@@ -24,4 +25,8 @@ public interface LocationService {
     List<String> getAllProvinces();
 
     List<String> getAllCities();
+
+    List<Long> findLocationIdByDetails(String city, String province, String country);
+
+    Optional<LocationResponseDTO> getLocationById(Long id);
 }
