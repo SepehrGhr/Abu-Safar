@@ -29,7 +29,7 @@ public class LocationController {
     }
 
     @GetMapping("/cities")
-    @PreAuthorize("isAuthenticated()")
+   // @PreAuthorize("isAuthenticated()")
     public ResponseEntity<BaseResponse<?>> getCities(@RequestParam(required = false) String name) {
         if (name == null || name.trim().isEmpty()) {
             // all cities
