@@ -130,7 +130,7 @@ public class LocationDAOImpl implements LocationDAO {
             return Collections.emptyList();
         }
 
-        String finalSql = "SELECT location_id FROM LocationDetails " + sqlWhereClause + "ORDER BY location_id";
+        String finalSql = "SELECT location_id FROM location_details " + sqlWhereClause + "ORDER BY location_id";
 
         return jdbcTemplate.queryForList(finalSql, Long.class, params.toArray());
     }

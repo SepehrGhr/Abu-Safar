@@ -5,6 +5,7 @@ import ir.ac.kntu.abusafar.util.constants.enums.BusClass;
 import ir.ac.kntu.abusafar.util.constants.enums.FlightClass;
 import ir.ac.kntu.abusafar.util.constants.enums.TripType;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -25,12 +26,12 @@ public class TicketSearchRequestDTO {
     private String destinationProvince;
     private String destinationCountry;
 
-    @NotBlank(message = "Departure date cannot be blank.")
+    @NotNull(message = "Departure date cannot be blank.")
     private LocalDate departureDate;
     private LocalTime departureTime;
     private String vehicleCompany;
 
-    @NotBlank(message = "Trip Vehicle cannot be blank.")
+    @NotNull(message = "Trip Vehicle cannot be null.")
     private TripType tripVehicle;
     private AgeRange ageCategory;
     private BigDecimal minPrice;
