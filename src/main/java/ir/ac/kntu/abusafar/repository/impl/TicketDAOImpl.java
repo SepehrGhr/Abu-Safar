@@ -47,9 +47,9 @@ public class TicketDAOImpl implements TicketDAO {
                 rs.getShort("reserved_capacity")
         );
         Ticket ticket = new Ticket();
-        ticket.setAge(AgeRange.valueOf(rs.getString("age").toUpperCase()));
-        ticket.setPrice(rs.getBigDecimal("price"));
-        ticket.setTripVehicle(TripType.valueOf(rs.getString("trip_vehicle").toUpperCase()));
+        ticket.setAge(AgeRange.valueOf(rs.getString("tck_age").toUpperCase()));
+        ticket.setPrice(rs.getBigDecimal("tck_price"));
+        ticket.setTripVehicle(TripType.valueOf(rs.getString("tck_trip_vehicle").toUpperCase()));
         ticket.setTrip(trip);
 
         return ticket;
@@ -69,7 +69,6 @@ public class TicketDAOImpl implements TicketDAO {
         List<String> whereConditions = new ArrayList<>();
         List<Object> queryParams = new ArrayList<>();
 
-        // Helper to add conditions to the list
         BiConsumer<String, Object[]> addConditionWithParams = (condition, paramsArray) -> {
             whereConditions.add(condition);
             if (paramsArray != null) {
@@ -105,15 +104,10 @@ public class TicketDAOImpl implements TicketDAO {
         }
 
         if (params.getVehicleCompany() != null && !params.getVehicleCompany().trim().isEmpty()) {
-            // Assuming you confirmed ILIKE works with your PostgreSQL and fixed any casing for table/column names
             addSingleParamCondition.accept("tr.vehicle_company ILIKE ?", "%" + params.getVehicleCompany() + "%");
         }
 
         if (params.getTripVehicle() != null) {
-            // If tck.trip_vehicle is a PostgreSQL ENUM type, you might need:
-            // addSingleParamCondition.accept("tck.trip_vehicle = CAST(? AS your_enum_type_in_db)", params.getTripVehicle().name());
-            // Or tck.trip_vehicle = ?::your_enum_type_in_db
-            // If it's VARCHAR storing enum names, this is fine:
             addSingleParamCondition.accept("tck.trip_vehicle = CAST(? AS trip_type)", params.getTripVehicle().name());
 
             switch (params.getTripVehicle()) {
@@ -148,9 +142,8 @@ public class TicketDAOImpl implements TicketDAO {
             addSingleParamCondition.accept("tck.price <= ?", params.getMaxPrice());
         }
 
-        // Build the final SQL string robustly
         String selectClause = "SELECT " + SELECT_COLUMNS;
-        String fromClauseStr = String.join(" ", fromParts); // Joins "FROM base" and "INNER JOIN ..."
+        String fromClauseStr = String.join(" ", fromParts);
 
         String whereClauseStr = "";
         if (!whereConditions.isEmpty()) {
@@ -159,14 +152,11 @@ public class TicketDAOImpl implements TicketDAO {
 
         String orderByClause = "ORDER BY tr.departure_timestamp ASC, tck.price ASC";
 
-        // Use Stream to filter out empty parts and join with spaces
-        // This ensures single spaces between clauses and handles empty WHERE clause correctly
         String finalSql = Stream.of(selectClause, fromClauseStr, whereClauseStr, orderByClause)
-                .map(String::trim) // Trim each part in case of accidental extra spaces
-                .filter(s -> !s.isEmpty()) // Remove empty parts (e.g., if whereClauseStr is empty)
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
                 .collect(Collectors.joining(" "));
 
-        // For debugging, print the SQL and parameters before execution:
         System.out.println("Executing SQL: " + finalSql);
         System.out.println("With parameters: " + queryParams);
 
