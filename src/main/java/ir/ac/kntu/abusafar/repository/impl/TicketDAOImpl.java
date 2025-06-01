@@ -1,5 +1,6 @@
 package ir.ac.kntu.abusafar.repository.impl;
 
+import ir.ac.kntu.abusafar.model.Location;
 import ir.ac.kntu.abusafar.model.Ticket;
 import ir.ac.kntu.abusafar.model.Trip;
 import ir.ac.kntu.abusafar.repository.TicketDAO;
@@ -7,6 +8,7 @@ import ir.ac.kntu.abusafar.repository.params.TicketSearchParameters;
 import ir.ac.kntu.abusafar.util.constants.enums.AgeRange;
 import ir.ac.kntu.abusafar.util.constants.enums.TripType;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Repository;
@@ -16,6 +18,7 @@ import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -163,4 +166,25 @@ public class TicketDAOImpl implements TicketDAO {
         return jdbcTemplate.query(finalSql, TICKET_WITH_TRIP_ROW_MAPPER, queryParams.toArray());
     }
 
+    @Override
+    public Optional<Ticket> findById(Long tripId, AgeRange age) {
+        if (tripId == null || age == null) {
+            return Optional.empty();
+        }
+        String sql = "SELECT " +
+                "tck.trip_id AS ticket_trip_id, tck.age AS ticket_age, tck.price AS ticket_price, tck.trip_vehicle AS ticket_trip_vehicle, " +
+                "trp.trip_id AS trip_actual_id, trp.origin_location_id, trp.destination_location_id, " +
+                "trp.departure_timestamp, trp.arrival_timestamp, trp.vehicle_company, " +
+                "trp.stop_count, trp.total_capacity, trp.reserved_capacity " +
+                "FROM tickets tck " +
+                "JOIN trips trp ON tck.trip_id = trp.trip_id " +
+                "WHERE tck.trip_id = ? AND tck.age = ?";
+
+        try {
+            Ticket ticket = jdbcTemplate.queryForObject(sql, TICKET_WITH_TRIP_ROW_MAPPER, tripId, age.name());
+            return Optional.ofNullable(ticket);
+        } catch (EmptyResultDataAccessException e) {
+            return Optional.empty();
+        }
+    }
 }

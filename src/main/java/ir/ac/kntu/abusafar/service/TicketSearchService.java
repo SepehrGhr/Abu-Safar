@@ -8,5 +8,4 @@ import java.util.List;
 
 public interface TicketSearchService {
     List<TicketResultItemDTO> searchTickets(TicketSearchRequestDTO requestDTO);
-    TicketResultItemDTO mapTicketToResultItemDTO(Ticket ticket);
 }
