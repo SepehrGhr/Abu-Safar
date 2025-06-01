@@ -25,12 +25,22 @@ public class TicketSearchController {
     public TicketSearchController(TicketSearchService ticketSearchService) {
         this.ticketSearchService = ticketSearchService;
     }
-
     @GetMapping("/search")
-   @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<BaseResponse<?>> findTickets(@Valid @RequestBody TicketSearchRequestDTO requestDTO){
         try{
             return ResponseEntity.ok(BaseResponse.success(ticketSearchService.searchTickets(requestDTO)));
+        } catch (LocationNotFoundException e){
+            return ResponseEntity.ok(BaseResponse.success(Collections.emptyList(), "Location not found.", HttpStatus.OK.value()));
+        }
+
+    }
+
+    @GetMapping("/select")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<BaseResponse<?>> selectTicket(@Valid @RequestBody Long id, String age){
+        try{
+            return ResponseEntity.ok(BaseResponse.success(ticketSearchService.selectTicket(id, age)));
         } catch (LocationNotFoundException e){
             return ResponseEntity.ok(BaseResponse.success(Collections.emptyList(), "Location not found.", HttpStatus.OK.value()));
         }

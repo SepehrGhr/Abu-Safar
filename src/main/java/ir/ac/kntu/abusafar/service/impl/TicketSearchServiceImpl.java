@@ -1,11 +1,9 @@
 package ir.ac.kntu.abusafar.service.impl;
 
-import ir.ac.kntu.abusafar.dto.location.LocationResponseDTO;
 import ir.ac.kntu.abusafar.dto.ticket.TicketSearchRequestDTO;
 import ir.ac.kntu.abusafar.dto.ticket.TicketResultItemDTO;
 import ir.ac.kntu.abusafar.mapper.custom.TicketItemMapper;
 import ir.ac.kntu.abusafar.model.Ticket;
-import ir.ac.kntu.abusafar.model.Trip;
 import ir.ac.kntu.abusafar.repository.TicketDAO;
 import ir.ac.kntu.abusafar.repository.params.TicketSearchParameters;
 import ir.ac.kntu.abusafar.service.LocationService;
@@ -21,8 +19,6 @@ import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Service
 public class TicketSearchServiceImpl implements TicketSearchService {
