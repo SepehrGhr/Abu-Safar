@@ -9,13 +9,14 @@ import lombok.Getter;
 
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
+import java.util.List;
 
 @AllArgsConstructor
 @Getter
 public class TicketSearchParameters {
 
-    private final Long originLocationId;
-    private final Long destinationLocationId;
+    private final List<Long> originLocationIds;
+    private final List<Long> destinationLocationIds;
     private final OffsetDateTime departureFrom;
     private final OffsetDateTime departureTo;
     private final String vehicleCompany;

@@ -14,8 +14,11 @@ import org.springframework.stereotype.Repository;
 
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.function.BiConsumer;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Repository
 public class TicketDAOImpl implements TicketDAO {
@@ -28,7 +31,7 @@ public class TicketDAOImpl implements TicketDAO {
                     "tr.stop_count, tr.total_capacity, tr.reserved_capacity ";
 
     private static final String FROM_CLAUSE_BASE =
-            "FROM tickets tck " +
+            "tickets tck " +
                     "INNER JOIN trips tr ON tck.trip_id = tr.trip_id ";
 
     private final RowMapper<Ticket> TICKET_WITH_TRIP_ROW_MAPPER = (rs, rowNum) -> {
@@ -44,9 +47,9 @@ public class TicketDAOImpl implements TicketDAO {
                 rs.getShort("reserved_capacity")
         );
         Ticket ticket = new Ticket();
-        ticket.setAge(AgeRange.valueOf(rs.getString("age").toUpperCase()));
-        ticket.setPrice(rs.getBigDecimal("price"));
-        ticket.setTripVehicle(TripType.valueOf(rs.getString("trip_vehicle").toUpperCase()));
+        ticket.setAge(AgeRange.valueOf(rs.getString("tck_age").toUpperCase()));
+        ticket.setPrice(rs.getBigDecimal("tck_price"));
+        ticket.setTripVehicle(TripType.valueOf(rs.getString("tck_trip_vehicle").toUpperCase()));
         ticket.setTrip(trip);
 
         return ticket;
@@ -60,89 +63,102 @@ public class TicketDAOImpl implements TicketDAO {
 
     @Override
     public List<Ticket> findTicketsByCriteria(TicketSearchParameters params) {
-        StringBuilder sqlFromBuilder = new StringBuilder(FROM_CLAUSE_BASE);
-        List<Object> queryParams = new ArrayList<>();
-        StringBuilder sqlWhereBuilder = new StringBuilder();
+        List<String> fromParts = new ArrayList<>();
+        fromParts.add("FROM " + FROM_CLAUSE_BASE); // Add base FROM
 
-        BiConsumer<StringBuilder, String> addCondition = (sb, condition) -> {
-            if (sb.isEmpty()) {
-                sb.append("WHERE ");
-            } else {
-                sb.append("AND ");
+        List<String> whereConditions = new ArrayList<>();
+        List<Object> queryParams = new ArrayList<>();
+
+        BiConsumer<String, Object[]> addConditionWithParams = (condition, paramsArray) -> {
+            whereConditions.add(condition);
+            if (paramsArray != null) {
+                Collections.addAll(queryParams, paramsArray);
             }
-            sb.append(condition).append(" ");
         };
 
-        if (params.getOriginLocationId() != null) {
-            addCondition.accept(sqlWhereBuilder, "tr.origin_location_id = ?");
-            queryParams.add(params.getOriginLocationId());
+        BiConsumer<String, Object> addSingleParamCondition = (condition, param) -> {
+            whereConditions.add(condition);
+            queryParams.add(param);
+        };
+
+
+        if (params.getOriginLocationIds() != null && !params.getOriginLocationIds().isEmpty()) {
+            String inClausePlaceholders = String.join(",", Collections.nCopies(params.getOriginLocationIds().size(), "?"));
+            whereConditions.add("tr.origin_location_id IN (" + inClausePlaceholders + ")");
+            queryParams.addAll(params.getOriginLocationIds());
         }
-        if (params.getDestinationLocationId() != null) {
-            addCondition.accept(sqlWhereBuilder, "tr.destination_location_id = ?");
-            queryParams.add(params.getDestinationLocationId());
+        if (params.getDestinationLocationIds() != null && !params.getDestinationLocationIds().isEmpty()) {
+            String inClausePlaceholders = String.join(",", Collections.nCopies(params.getDestinationLocationIds().size(), "?"));
+            whereConditions.add("tr.destination_location_id IN (" + inClausePlaceholders + ")");
+            queryParams.addAll(params.getDestinationLocationIds());
         }
 
         if (params.getDepartureFrom() != null && params.getDepartureTo() != null) {
-            addCondition.accept(sqlWhereBuilder, "tr.departure_timestamp >= ? AND tr.departure_timestamp < ?");
+            whereConditions.add("tr.departure_timestamp >= ? AND tr.departure_timestamp < ?");
             queryParams.add(params.getDepartureFrom());
             queryParams.add(params.getDepartureTo());
         } else if (params.getDepartureFrom() != null) {
-            addCondition.accept(sqlWhereBuilder, "tr.departure_timestamp >= ?");
-            queryParams.add(params.getDepartureFrom());
+            addSingleParamCondition.accept("tr.departure_timestamp >= ?", params.getDepartureFrom());
         } else if (params.getDepartureTo() != null) {
-            addCondition.accept(sqlWhereBuilder, "tr.departure_timestamp < ?");
-            queryParams.add(params.getDepartureTo());
+            addSingleParamCondition.accept("tr.departure_timestamp < ?", params.getDepartureTo());
         }
 
-
         if (params.getVehicleCompany() != null && !params.getVehicleCompany().trim().isEmpty()) {
-            addCondition.accept(sqlWhereBuilder, "tr.vehicle_company ILIKE ?");
-            queryParams.add("%" + params.getVehicleCompany() + "%");
+            addSingleParamCondition.accept("tr.vehicle_company ILIKE ?", "%" + params.getVehicleCompany() + "%");
         }
 
         if (params.getTripVehicle() != null) {
-            addCondition.accept(sqlWhereBuilder, "tck.trip_vehicle = ?");
-            queryParams.add(params.getTripVehicle().name());
+            addSingleParamCondition.accept("tck.trip_vehicle = CAST(? AS trip_type)", params.getTripVehicle().name());
 
             switch (params.getTripVehicle()) {
                 case BUS:
                     if (params.getBusClass() != null) {
-                        sqlFromBuilder.append("INNER JOIN buses b ON tr.trip_id = b.trip_id ");
-                        addCondition.accept(sqlWhereBuilder, "b.class = ?");
-                        queryParams.add(params.getBusClass().name());
+                        fromParts.add("INNER JOIN buses b ON tr.trip_id = b.trip_id");
+                        addSingleParamCondition.accept("b.class = CAST(? AS bus_class)", params.getBusClass().name());
                     }
                     break;
                 case FLIGHT:
                     if (params.getFlightClass() != null) {
-                        sqlFromBuilder.append("INNER JOIN flights f ON tr.trip_id = f.trip_id ");
-                        addCondition.accept(sqlWhereBuilder, "f.class = ?");
-                        queryParams.add(params.getFlightClass().name());
+                        fromParts.add("INNER JOIN flights f ON tr.trip_id = f.trip_id");
+                        addSingleParamCondition.accept("f.class = CAST(? AS flight_class)", params.getFlightClass().name());
                     }
                     break;
                 case TRAIN:
                     if (params.getTrainStars() != null && params.getTrainStars() > 0) {
-                        sqlFromBuilder.append("INNER JOIN trains tn ON tr.trip_id = tn.trip_id ");
-                        addCondition.accept(sqlWhereBuilder, "tn.stars >= ?");
-                        queryParams.add(params.getTrainStars());
+                        fromParts.add("INNER JOIN trains tn ON tr.trip_id = tn.trip_id");
+                        addSingleParamCondition.accept("tn.stars >= ?", params.getTrainStars());
                     }
                     break;
             }
         }
 
         if (params.getAgeCategory() != null) {
-            addCondition.accept(sqlWhereBuilder, "tck.age = ?");
-            queryParams.add(params.getAgeCategory().name());
+            addSingleParamCondition.accept("tck.age = CAST(? AS age_range)", params.getAgeCategory().name());
         }
         if (params.getMinPrice() != null) {
-            addCondition.accept(sqlWhereBuilder, "tck.price >= ?");
-            queryParams.add(params.getMinPrice());
+            addSingleParamCondition.accept("tck.price >= ?", params.getMinPrice());
         }
         if (params.getMaxPrice() != null) {
-            addCondition.accept(sqlWhereBuilder, "tck.price <= ?");
-            queryParams.add(params.getMaxPrice());
+            addSingleParamCondition.accept("tck.price <= ?", params.getMaxPrice());
         }
 
-        String finalSql = "SELECT " + SELECT_COLUMNS + sqlFromBuilder.toString() + sqlWhereBuilder.toString() + "ORDER BY tr.departure_timestamp ASC, tck.price ASC";
+        String selectClause = "SELECT " + SELECT_COLUMNS;
+        String fromClauseStr = String.join(" ", fromParts);
+
+        String whereClauseStr = "";
+        if (!whereConditions.isEmpty()) {
+            whereClauseStr = "WHERE " + String.join(" AND ", whereConditions);
+        }
+
+        String orderByClause = "ORDER BY tr.departure_timestamp ASC, tck.price ASC";
+
+        String finalSql = Stream.of(selectClause, fromClauseStr, whereClauseStr, orderByClause)
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .collect(Collectors.joining(" "));
+
+        System.out.println("Executing SQL: " + finalSql);
+        System.out.println("With parameters: " + queryParams);
 
         return jdbcTemplate.query(finalSql, TICKET_WITH_TRIP_ROW_MAPPER, queryParams.toArray());
     }

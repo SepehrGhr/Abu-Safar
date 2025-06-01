@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -106,5 +107,27 @@ public class LocationServiceImpl implements LocationService {
             throw new LocationNotFoundException("No cities found in the system.");
         }
         return cities;
+    }
+
+    @Override
+    public List<Long> findLocationIdByDetails(String city, String province, String country) {
+        List<Long> ids = locationDAO.findLocationIdByDetails(city, province, country);
+        if (ids.isEmpty()) {
+            throw new LocationNotFoundException("No locations found in the system.");
+        }
+        return locationDAO.findLocationIdByDetails(city, province, country);
+    }
+
+    @Override
+    public Optional<LocationResponseDTO> getLocationById(Long id) {
+        Optional<Location> location = locationDAO.findById(id);
+        if (location.isEmpty()) {
+            throw new LocationNotFoundException("No locations found in the system.");
+        } else {
+            Location locationEntity = location.get();
+
+            LocationResponseDTO responseDTO = LocationMapper.INSTANCE.toDTO(locationEntity);
+            return Optional.of(responseDTO);
+        }
     }
 }
