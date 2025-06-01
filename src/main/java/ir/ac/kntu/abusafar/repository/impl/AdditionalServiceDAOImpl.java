@@ -1,5 +1,9 @@
 package ir.ac.kntu.abusafar.repository.impl;
 
-public class AdditionalServiceDAOImpl {
+import ir.ac.kntu.abusafar.repository.AdditionalServiceDAO;
+import org.springframework.stereotype.Repository;
+
+@Repository
+public class AdditionalServiceDAOImpl implements AdditionalServiceDAO {
 
 }
