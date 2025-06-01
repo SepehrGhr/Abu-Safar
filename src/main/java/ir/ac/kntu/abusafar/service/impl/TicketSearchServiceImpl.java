@@ -1,5 +1,6 @@
 package ir.ac.kntu.abusafar.service.impl;
 
+import ir.ac.kntu.abusafar.dto.ticket.TicketResultDetailsDTO;
 import ir.ac.kntu.abusafar.dto.ticket.TicketSearchRequestDTO;
 import ir.ac.kntu.abusafar.dto.ticket.TicketResultItemDTO;
 import ir.ac.kntu.abusafar.mapper.custom.TicketItemMapper;
@@ -19,6 +20,7 @@ import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class TicketSearchServiceImpl implements TicketSearchService {
@@ -81,6 +83,11 @@ public class TicketSearchServiceImpl implements TicketSearchService {
         return foundTickets.stream()
                 .map(TicketItemMapper.INSTANCE::toDTO)
                 .toList();
+    }
+
+    @Override
+    public Optional<TicketResultDetailsDTO> selectTicket(Long trip_id, String age){
+
     }
 
 
