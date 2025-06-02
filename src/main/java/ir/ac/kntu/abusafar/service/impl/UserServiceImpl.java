@@ -45,11 +45,6 @@ public class UserServiceImpl implements UserService {
         return UserMapper.INSTANCE.toEntity(dto);
     }
 
-    /**
-     * Creates a new user.
-     * @CachePut ensures the new user is immediately added to the cache.
-     * The key is derived from the 'id' of the returned UserInfoDTO.
-     */
     @Override
     @Transactional
     @CachePut(value = "users", key = "#result.id")
