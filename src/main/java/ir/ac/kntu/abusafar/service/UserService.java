@@ -1,5 +1,6 @@
 package ir.ac.kntu.abusafar.service;
 
+import ir.ac.kntu.abusafar.dto.User.UserUpdateRequestDTO;
 import ir.ac.kntu.abusafar.dto.user.SignUpRequestDTO;
 import ir.ac.kntu.abusafar.dto.user.UserInfoDTO;
 import ir.ac.kntu.abusafar.model.User;
@@ -16,7 +17,7 @@ public interface UserService {
 
     UserInfoDTO findUserById(Long userId);
 
-    UserInfoDTO updateUserInfo(Long userId, UserInfoDTO updatedInfo);
+    UserInfoDTO updateUserInfo(Long userId, UserUpdateRequestDTO updatedInfo);
 
     void deleteUser(Long userId);
 

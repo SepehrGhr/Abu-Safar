@@ -1,5 +1,6 @@
 package ir.ac.kntu.abusafar.service.impl;
 
+import ir.ac.kntu.abusafar.dto.User.UserUpdateRequestDTO;
 import ir.ac.kntu.abusafar.dto.user.SignUpRequestDTO;
 import ir.ac.kntu.abusafar.dto.user.UserInfoDTO;
 import ir.ac.kntu.abusafar.exception.DuplicateContactInfoException;
@@ -109,11 +110,10 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
-    public UserInfoDTO updateUserInfo(Long userId, UserInfoDTO updatedInfo) {
-        System.out.println("--- Updating user, preparing to evict from all caches: " + userId + " ---");
-
+    public UserInfoDTO updateUserInfo(Long userId, UserUpdateRequestDTO updatedInfo) {
         User user = userDAO.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException("User not found with ID: " + userId));
+
         List<UserContact> contacts = userDAO.findContactByUserId(userId);
         Optional<String> emailOpt = contacts.stream()
                 .filter(c -> c.getContactType() == ContactType.EMAIL)
@@ -122,10 +122,36 @@ public class UserServiceImpl implements UserService {
                 .filter(c -> c.getContactType() == ContactType.PHONE_NUMBER)
                 .map(UserContact::getContactInfo).findFirst();
 
-        user.setFirstName(updatedInfo.getFirstName());
-        user.setLastName(updatedInfo.getLastName());
-        user.setCity(updatedInfo.getCity());
+        if (updatedInfo.getFirstName() != null) {
+            user.setFirstName(updatedInfo.getFirstName());
+        }
+        if (updatedInfo.getLastName() != null) {
+            user.setLastName(updatedInfo.getLastName());
+        }
+        if (updatedInfo.getCity() != null) {
+            user.setCity(updatedInfo.getCity());
+        }
         userDAO.update(user);
+
+        if (updatedInfo.getEmail() != null) {
+            userDAO.findByEmail(updatedInfo.getEmail()).ifPresent(existingUser -> {
+                if (!existingUser.getId().equals(userId)) {
+                    throw new DuplicateContactInfoException("Email is already in use by another account.");
+                }
+            });
+            userDAO.deleteContact(userId, ContactType.EMAIL);
+            userDAO.saveContact(new UserContact(userId, ContactType.EMAIL, updatedInfo.getEmail()));
+        }
+
+        if (updatedInfo.getPhoneNumber() != null) {
+            userDAO.findByPhoneNumber(updatedInfo.getPhoneNumber()).ifPresent(existingUser -> {
+                if (!existingUser.getId().equals(userId)) {
+                    throw new DuplicateContactInfoException("Phone number is already in use by another account.");
+                }
+            });
+            userDAO.deleteContact(userId, ContactType.PHONE_NUMBER);
+            userDAO.saveContact(new UserContact(userId, ContactType.PHONE_NUMBER, updatedInfo.getPhoneNumber()));
+        }
 
         evictUserCaches(userId, emailOpt.orElse(null), phoneOpt.orElse(null));
 
