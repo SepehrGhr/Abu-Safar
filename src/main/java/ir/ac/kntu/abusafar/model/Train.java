@@ -15,4 +15,5 @@ public class Train {
     private Short stars;
 
     private TrainRoomType roomType;
+
 }
