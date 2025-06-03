@@ -9,14 +9,13 @@ import ir.ac.kntu.abusafar.mapper.UserMapper;
 import ir.ac.kntu.abusafar.model.User;
 import ir.ac.kntu.abusafar.model.UserContact;
 import ir.ac.kntu.abusafar.repository.UserDAO;
+import ir.ac.kntu.abusafar.service.UserCacheService;
 import ir.ac.kntu.abusafar.service.UserService;
 import ir.ac.kntu.abusafar.util.constants.enums.AccountStatus;
 import ir.ac.kntu.abusafar.util.constants.enums.ContactType;
 import ir.ac.kntu.abusafar.util.constants.enums.UserType;
-import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
-import org.springframework.cache.annotation.Caching;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,10 +29,12 @@ public class UserServiceImpl implements UserService {
 
     private final UserDAO userDAO;
     private final PasswordEncoder passwordEncoder;
+    private final UserCacheService userCacheService;
 
-    public UserServiceImpl(UserDAO userDAO, PasswordEncoder passwordEncoder) {
+    public UserServiceImpl(UserDAO userDAO, PasswordEncoder passwordEncoder, UserCacheService userCacheService) {
         this.userDAO = userDAO;
         this.passwordEncoder = passwordEncoder;
+        this.userCacheService = userCacheService;
     }
 
     @Override
@@ -153,7 +154,8 @@ public class UserServiceImpl implements UserService {
             userDAO.saveContact(new UserContact(userId, ContactType.PHONE_NUMBER, updatedInfo.getPhoneNumber()));
         }
 
-        evictUserCaches(userId, emailOpt.orElse(null), phoneOpt.orElse(null));
+        System.out.println("--- Evicting user " + userId + " | " + emailOpt.orElse(null) + " | " + phoneOpt.orElse(null) + " ---");
+        userCacheService.evictUserCaches(userId, emailOpt.orElse(null), phoneOpt.orElse(null));
 
         return UserMapper.INSTANCE.toDTO(user);
     }
@@ -177,15 +179,9 @@ public class UserServiceImpl implements UserService {
             return;
         }
 
-        evictUserCaches(userId, emailOpt.orElse(null), phoneOpt.orElse(null));
+        System.out.println("--- Evicting user " + userId + " | " + emailOpt.orElse(null) + " | " + phoneOpt.orElse(null) + " ---");
+        userCacheService.evictUserCaches(userId, emailOpt.orElse(null), phoneOpt.orElse(null));
     }
 
-    @Caching(evict = {
-            @CacheEvict(value = "usersById", key = "#userId", condition = "#userId != null"),
-            @CacheEvict(value = "usersByEmail", key = "#email", condition = "#email != null"),
-            @CacheEvict(value = "usersByPhoneNumber", key = "#phoneNumber", condition = "#phoneNumber != null")
-    })
-    public void evictUserCaches(Long userId, String email, String phoneNumber) {
-        System.out.println("--- Evicting user " + userId + " | " + email + " | " + phoneNumber + " ---");
-    }
+
 }
