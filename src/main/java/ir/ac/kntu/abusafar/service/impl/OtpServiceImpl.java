@@ -67,7 +67,7 @@ public class OtpServiceImpl implements OtpService {
     }
 
     @Override
-    public String generateAndSendOtp(User user, String targetContactInfo) {
+    public String generateAndSendOtp(ir.ac.kntu.abusafar.dto.user.UserInfoDTO user, String targetContactInfo) {
         String otp = generateRandomOtp();
         long otpCacheDurationSeconds = otpCacheDurationMs / 1000;
 

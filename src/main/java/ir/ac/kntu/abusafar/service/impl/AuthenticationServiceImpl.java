@@ -12,6 +12,7 @@ import ir.ac.kntu.abusafar.repository.UserDAO;
 import ir.ac.kntu.abusafar.security.jwt.JwtTokenProvider;
 import ir.ac.kntu.abusafar.service.AuthenticationService;
 import ir.ac.kntu.abusafar.service.OtpService;
+import ir.ac.kntu.abusafar.service.UserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,25 +32,28 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     private final OtpService otpService;
     private final JwtTokenProvider jwtTokenProvider;
 
+    private final UserService userService;
+
     @Autowired
     public AuthenticationServiceImpl(UserDAO userDAO,
                                      OtpService otpService,
-                                     JwtTokenProvider jwtTokenProvider) {
+                                     JwtTokenProvider jwtTokenProvider, UserService userService) {
         this.userDAO = userDAO;
         this.otpService = otpService;
         this.jwtTokenProvider = jwtTokenProvider;
+        this.userService = userService;
     }
 
     @Override
     public String requestOtpForLogin(OtpRequestDTO otpRequestDTO) {
         String contactInfo = otpRequestDTO.getContactInfo();
-        User user;
-        Optional<User> userOptional;
+        UserInfoDTO user;
+        Optional<UserInfoDTO> userOptional;
 
         if (isEmail(contactInfo)) {
-            userOptional = userDAO.findByEmail(contactInfo);
+            userOptional = userService.findByEmail(contactInfo);
         } else if (isPhoneNumber(contactInfo)) {
-            userOptional = userDAO.findByPhoneNumber(contactInfo);
+            userOptional = userService.findByPhoneNumber(contactInfo);
         } else {
             throw new IllegalArgumentException("Invalid contact information format provided: " + contactInfo);
         }
