@@ -3,6 +3,7 @@ package ir.ac.kntu.abusafar.controller;
 import ir.ac.kntu.abusafar.dto.response.BaseResponse;
 import ir.ac.kntu.abusafar.dto.ticket.TicketResultItemDTO;
 import ir.ac.kntu.abusafar.dto.ticket.TicketSearchRequestDTO;
+import ir.ac.kntu.abusafar.dto.ticket.TicketSelectRequestDTO;
 import ir.ac.kntu.abusafar.exception.LocationNotFoundException;
 import ir.ac.kntu.abusafar.service.TicketSearchService;
 import ir.ac.kntu.abusafar.util.constants.Routes;
@@ -38,9 +39,9 @@ public class TicketSearchController {
 
     @GetMapping("/select")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<BaseResponse<?>> selectTicket(@Valid @RequestBody Long id, String age){
+    public ResponseEntity<BaseResponse<?>> selectTicket(@Valid @RequestBody TicketSelectRequestDTO requestDTO){
         try{
-            return ResponseEntity.ok(BaseResponse.success(ticketSearchService.selectTicket(id, age)));
+            return ResponseEntity.ok(BaseResponse.success(ticketSearchService.selectTicket(requestDTO)));
         } catch (LocationNotFoundException e){
             return ResponseEntity.ok(BaseResponse.success(Collections.emptyList(), "Location not found.", HttpStatus.OK.value()));
         }

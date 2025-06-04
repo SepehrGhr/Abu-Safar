@@ -3,12 +3,17 @@ package ir.ac.kntu.abusafar.service.impl;
 import ir.ac.kntu.abusafar.dto.ticket.TicketResultDetailsDTO;
 import ir.ac.kntu.abusafar.dto.ticket.TicketSearchRequestDTO;
 import ir.ac.kntu.abusafar.dto.ticket.TicketResultItemDTO;
+import ir.ac.kntu.abusafar.dto.ticket.TicketSelectRequestDTO;
+import ir.ac.kntu.abusafar.mapper.custom.TicketDetailsMapper;
 import ir.ac.kntu.abusafar.mapper.custom.TicketItemMapper;
 import ir.ac.kntu.abusafar.model.Ticket;
 import ir.ac.kntu.abusafar.repository.TicketDAO;
 import ir.ac.kntu.abusafar.repository.params.TicketSearchParameters;
 import ir.ac.kntu.abusafar.service.LocationService;
 import ir.ac.kntu.abusafar.service.TicketSearchService;
+import ir.ac.kntu.abusafar.service.TripService;
+import ir.ac.kntu.abusafar.util.constants.enums.AgeRange;
+
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -27,11 +32,18 @@ public class TicketSearchServiceImpl implements TicketSearchService {
 
     private final TicketDAO ticketDAO;
     private final LocationService locationService;
+    private final TicketDetailsMapper ticketDetailsMapper;
+    private final TicketItemMapper ticketItemMapper;
 
     @Autowired
-    public TicketSearchServiceImpl(TicketDAO ticketDAO, LocationService locationService) {
+    public TicketSearchServiceImpl(
+            TicketDAO ticketDAO,
+            LocationService locationService,
+            TicketDetailsMapper ticketDetailsMapper, TicketItemMapper ticketItemMapper) {
         this.ticketDAO = ticketDAO;
         this.locationService = locationService;
+        this.ticketDetailsMapper = ticketDetailsMapper;
+        this.ticketItemMapper = ticketItemMapper;
     }
 
     @Override
@@ -81,14 +93,17 @@ public class TicketSearchServiceImpl implements TicketSearchService {
             return Collections.emptyList();
         }
         return foundTickets.stream()
-                .map(TicketItemMapper.INSTANCE::toDTO)
+                .map(ticketItemMapper::toDTO)
                 .toList();
     }
 
     @Override
-    public Optional<TicketResultDetailsDTO> selectTicket(Long trip_id, String age){
+    public Optional<TicketResultDetailsDTO> selectTicket(TicketSelectRequestDTO requestDTO){
+        Long trip_id = requestDTO.getTrip_id();
+        AgeRange age = requestDTO.getAgeCategory();
 
+        Optional<Ticket> ticketOpt = ticketDAO.findById(trip_id, age);
+
+        return ticketOpt.map(ticketDetailsMapper::toDTO);
     }
-
-
 }

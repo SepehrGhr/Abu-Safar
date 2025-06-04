@@ -172,13 +172,16 @@ public class TicketDAOImpl implements TicketDAO {
             return Optional.empty();
         }
         String sql = "SELECT " +
-                "tck.trip_id AS ticket_trip_id, tck.age AS ticket_age, tck.price AS ticket_price, tck.trip_vehicle AS ticket_trip_vehicle, " +
-                "trp.trip_id AS trip_actual_id, trp.origin_location_id, trp.destination_location_id, " +
+                "tck.trip_id, " +
+                "tck.age AS tck_age, " +
+                "tck.price AS tck_price, " +
+                "tck.trip_vehicle AS tck_trip_vehicle, " +
+                "trp.origin_location_id, trp.destination_location_id, " +
                 "trp.departure_timestamp, trp.arrival_timestamp, trp.vehicle_company, " +
                 "trp.stop_count, trp.total_capacity, trp.reserved_capacity " +
                 "FROM tickets tck " +
                 "JOIN trips trp ON tck.trip_id = trp.trip_id " +
-                "WHERE tck.trip_id = ? AND tck.age = ?";
+                "WHERE tck.trip_id = ? AND tck.age = CAST(? AS age_range)";
 
         try {
             Ticket ticket = jdbcTemplate.queryForObject(sql, TICKET_WITH_TRIP_ROW_MAPPER, tripId, age.name());

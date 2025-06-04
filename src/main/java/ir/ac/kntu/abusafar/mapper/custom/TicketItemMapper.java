@@ -5,24 +5,28 @@ import ir.ac.kntu.abusafar.dto.ticket.TicketResultItemDTO;
 import ir.ac.kntu.abusafar.model.Ticket;
 import ir.ac.kntu.abusafar.model.Trip;
 import ir.ac.kntu.abusafar.service.LocationService;
-import org.mapstruct.factory.Mappers;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component; // Import @Component
 
 import java.util.Optional;
 
+@Component
 public class TicketItemMapper {
-    public static final TicketItemMapper INSTANCE = Mappers.getMapper(TicketItemMapper.class);
+
     private final LocationService locationService;
 
-    private TicketItemMapper(LocationService locationService) {
+    @Autowired
+    public TicketItemMapper(LocationService locationService) {
         this.locationService = locationService;
     }
-
 
     public TicketResultItemDTO toDTO(Ticket ticket) {
         if (ticket == null || ticket.getTrip() == null) {
             return null;
         }
         Trip trip = ticket.getTrip();
+
+        TicketResultItemDTO dto = new TicketResultItemDTO();
 
         String originCityName = "Unknown";
         if (trip.getOriginLocationId() != null) {
@@ -33,6 +37,7 @@ public class TicketItemMapper {
                 System.err.println("Warning: Could not find location details for origin ID: " + trip.getOriginLocationId());
             }
         }
+        dto.setOriginCity(originCityName);
 
         String destinationCityName = "Unknown";
         if (trip.getDestinationLocationId() != null) {
@@ -43,12 +48,10 @@ public class TicketItemMapper {
                 System.err.println("Warning: Could not find location details for destination ID: " + trip.getDestinationLocationId());
             }
         }
+        dto.setDestinationCity(destinationCityName);
 
-        TicketResultItemDTO dto = new TicketResultItemDTO();
         dto.setTripId(trip.getTripId());
         dto.setAge(ticket.getAge());
-        dto.setOriginCity(originCityName);
-        dto.setDestinationCity(destinationCityName);
         dto.setDepartureTimestamp(trip.getDepartureTimestamp());
         dto.setArrivalTimestamp(trip.getArrivalTimestamp());
         dto.setTripVehicle(ticket.getTripVehicle());

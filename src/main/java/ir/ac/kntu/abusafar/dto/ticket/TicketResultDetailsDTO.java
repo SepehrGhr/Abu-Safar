@@ -1,10 +1,7 @@
 package ir.ac.kntu.abusafar.dto.ticket;
 
 import ir.ac.kntu.abusafar.model.AdditionalService;
-import ir.ac.kntu.abusafar.util.constants.enums.AgeRange;
-import ir.ac.kntu.abusafar.util.constants.enums.BusClass;
-import ir.ac.kntu.abusafar.util.constants.enums.FlightClass;
-import ir.ac.kntu.abusafar.util.constants.enums.TripType;
+import ir.ac.kntu.abusafar.util.constants.enums.*;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -22,12 +19,18 @@ public class TicketResultDetailsDTO {
     private TripType tripVehicle;
     private BigDecimal price;
     private String vehicleCompany;
+
     private BusClass busClass;
+    private BusChairCountType chairType;
     private FlightClass flightClass;
+    private String departureAirport;
+    private String arrivalAirport;
     private Short trainStars;
+    private TrainRoomType roomType;
+
     private Short stopCount;
     private Short totalCapacity;
     private Short reservedCapacity;
     private AgeRange age;
-    private List<AdditionalService> service;
+    private List<ServiceType> service;
 }
