@@ -1,6 +1,5 @@
 package ir.ac.kntu.abusafar.repository.impl;
 
-import ir.ac.kntu.abusafar.model.Location;
 import ir.ac.kntu.abusafar.model.Ticket;
 import ir.ac.kntu.abusafar.model.Trip;
 import ir.ac.kntu.abusafar.repository.TicketDAO;
