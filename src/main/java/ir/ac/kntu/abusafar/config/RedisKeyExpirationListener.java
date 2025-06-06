@@ -43,7 +43,6 @@ public class RedisKeyExpirationListener implements MessageListener {
             Long reservationId = Long.parseLong(expiredKey.substring(EXPIRE_PREFIX.length()));
             LOGGER.info("Handling 10-minute expiry for reservation ID: {}", reservationId);
             bookingService.cancelExpiredReservation(reservationId);
-
         } catch (NumberFormatException e) {
             LOGGER.error("Could not parse reservation ID from expired key: {}", expiredKey, e);
         } catch (Exception e) {
@@ -55,9 +54,7 @@ public class RedisKeyExpirationListener implements MessageListener {
         try {
             Long reservationId = Long.parseLong(expiredKey.substring(REMIND_PREFIX.length()));
             LOGGER.info("Handling 5-minute reminder for reservation ID: {}", reservationId);
-
             notificationService.sendPaymentReminderEmail(reservationId);
-
         } catch (NumberFormatException e) {
             LOGGER.error("Could not parse reservation ID from reminder key: {}", expiredKey, e);
         } catch (Exception e) {

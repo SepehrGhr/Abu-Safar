@@ -1,6 +1,7 @@
 package ir.ac.kntu.abusafar.controller;
 
 import ir.ac.kntu.abusafar.dto.response.BaseResponse;
+import ir.ac.kntu.abusafar.dto.ticket.TicketResultDetailsDTO;
 import ir.ac.kntu.abusafar.dto.ticket.TicketResultItemDTO;
 import ir.ac.kntu.abusafar.dto.ticket.TicketSearchRequestDTO;
 import ir.ac.kntu.abusafar.dto.ticket.TicketSelectRequestDTO;
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequestMapping(Routes.API_KEY + "/tickets")
@@ -26,7 +28,7 @@ public class TicketSearchController {
     public TicketSearchController(TicketSearchService ticketSearchService) {
         this.ticketSearchService = ticketSearchService;
     }
-    @GetMapping("/search")
+    @PostMapping("/search")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<BaseResponse<?>> findTickets(@Valid @RequestBody TicketSearchRequestDTO requestDTO){
         try{
@@ -37,15 +39,22 @@ public class TicketSearchController {
 
     }
 
-    @GetMapping("/select")
+    @PostMapping("/select")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<BaseResponse<?>> selectTicket(@Valid @RequestBody TicketSelectRequestDTO requestDTO){
         try{
-            return ResponseEntity.ok(BaseResponse.success(ticketSearchService.selectTicket(requestDTO)));
+            Optional<TicketResultDetailsDTO> ticketDetailsOpt = ticketSearchService.selectTicket(requestDTO);
+            if (ticketDetailsOpt.isPresent()) {
+                return ResponseEntity.ok(BaseResponse.success(ticketDetailsOpt.get()));
+            } else {
+                return ResponseEntity
+                        .status(HttpStatus.NOT_FOUND)
+                        .body(BaseResponse.fail(null, "Ticket not found for the given criteria.", HttpStatus.NOT_FOUND.value()));
+            }
         } catch (LocationNotFoundException e){
-            return ResponseEntity.ok(BaseResponse.success(Collections.emptyList(), "Location not found.", HttpStatus.OK.value()));
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(BaseResponse.fail(null, e.getMessage(), HttpStatus.BAD_REQUEST.value()));
         }
-
     }
 
 }
