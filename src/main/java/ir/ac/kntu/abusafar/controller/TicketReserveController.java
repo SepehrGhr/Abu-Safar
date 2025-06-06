@@ -1,6 +1,7 @@
 package ir.ac.kntu.abusafar.controller;
 
-import ir.ac.kntu.abusafar.dto.reservation.InitialBookResultDTO;
+import ir.ac.kntu.abusafar.dto.reservation.InitialReserveResultDTO;
+import ir.ac.kntu.abusafar.dto.reservation.ReserveConfirmationDTO;
 import ir.ac.kntu.abusafar.dto.response.BaseResponse;
 import ir.ac.kntu.abusafar.dto.ticket.TicketSelectRequestDTO;
 import ir.ac.kntu.abusafar.service.BookingService;
@@ -25,10 +26,21 @@ public class TicketReserveController {
         this.bookingService = bookingService;
     }
 
-    @PostMapping("/reserve")
-    public ResponseEntity<BaseResponse<InitialBookResultDTO>> initiateReservation(Authentication authentication, @Valid @RequestBody TicketSelectRequestDTO requestDTO) {
-        return ResponseEntity.ok(BaseResponse.success(bookingService.createReservation(requestDTO)));
+    @PostMapping("/reserve/one_way")
+    public ResponseEntity<BaseResponse<ReserveConfirmationDTO>> initiateOneWayReservation(Authentication authentication,
+                                                                                          @Valid @RequestBody TicketSelectRequestDTO requestDTO) {
+        Long userId = Long.parseLong(authentication.getName());
+        return ResponseEntity.ok(BaseResponse.success(bookingService.createOneWayReservation(userId, requestDTO)));
     }
+
+    @PostMapping("/reserve/two_way")
+    public ResponseEntity<BaseResponse<ReserveConfirmationDTO>> initiateTwoWayReservation(Authentication authentication,
+                                                                                          @Valid @RequestBody TicketSelectRequestDTO[] requestDTO) {
+        Long userId = Long.parseLong(authentication.getName());
+        return ResponseEntity.ok(BaseResponse.success(bookingService.createTwoWayReservation(userId, requestDTO)));
+    }
+
+
 
 //    @PostMapping("/pay")
 //    public ResponseEntity<BaseResponse<String>> initiateReservation(Authentication authentication, @Valid @RequestBody PaymentRequestDTO requestDTO) {
