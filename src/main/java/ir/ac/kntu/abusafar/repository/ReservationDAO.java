@@ -1,9 +1,7 @@
 package ir.ac.kntu.abusafar.repository;
 
-import ir.ac.kntu.abusafar.dto.payment.PaymentDTO;
 import ir.ac.kntu.abusafar.dto.reservation.InitialReserveResultDTO;
 import ir.ac.kntu.abusafar.dto.reservation.ReservationInputDTO;
-import ir.ac.kntu.abusafar.dto.reservation.ReserveCancellationDTO;
 import ir.ac.kntu.abusafar.dto.reservation.TicketReserveDetailsDTO;
 import ir.ac.kntu.abusafar.model.Reservation;
 import ir.ac.kntu.abusafar.util.constants.enums.ReserveStatus;
@@ -15,6 +13,5 @@ public interface ReservationDAO {
     Optional<Reservation> findById(Long reservationId);
     List<Short> getReservedSeatNumbersForTrip(Long tripId);
     Boolean updateStatus(Long reservationId, ReserveStatus status, Long cancelledBy);
-    List<ReserveCancellationDTO> getReserveCancellationInfo(Long reservationId);
-    InitialReserveResultDTO saveInitialReservation(ReservationInputDTO reservationInput, List<TicketReserveDetailsDTO> ticketDetailsList, PaymentDTO paymentInput);
+    InitialReserveResultDTO saveInitialReservation(ReservationInputDTO reservationInput, List<TicketReserveDetailsDTO> ticketDetailsList);
 }

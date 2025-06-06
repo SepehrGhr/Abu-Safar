@@ -1,6 +1,5 @@
 package ir.ac.kntu.abusafar.controller;
 
-import ir.ac.kntu.abusafar.dto.reservation.InitialReserveResultDTO;
 import ir.ac.kntu.abusafar.dto.reservation.ReserveConfirmationDTO;
 import ir.ac.kntu.abusafar.dto.response.BaseResponse;
 import ir.ac.kntu.abusafar.dto.ticket.TicketSelectRequestDTO;
@@ -17,12 +16,12 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping(Routes.API_KEY + "/booking")
-public class TicketReserveController {
+public class ReserveTicketController {
     private final BookingService bookingService;
 //    private final PaymentService paymentService;
 
     @Autowired
-    public TicketReserveController(BookingService bookingService) {
+    public ReserveTicketController(BookingService bookingService) {
         this.bookingService = bookingService;
     }
 

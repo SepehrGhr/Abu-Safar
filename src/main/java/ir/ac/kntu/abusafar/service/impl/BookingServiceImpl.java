@@ -2,10 +2,8 @@ package ir.ac.kntu.abusafar.service.impl;
 
 import ir.ac.kntu.abusafar.dto.reservation.InitialReserveResultDTO;
 import ir.ac.kntu.abusafar.dto.reservation.ReserveConfirmationDTO;
-import ir.ac.kntu.abusafar.dto.payment.PaymentDTO;
 import ir.ac.kntu.abusafar.dto.reservation.ReservationInputDTO;
 import ir.ac.kntu.abusafar.dto.reservation.TicketReserveDetailsDTO;
-import ir.ac.kntu.abusafar.dto.reservation.ReserveCancellationDTO;
 import ir.ac.kntu.abusafar.dto.ticket.TicketSelectRequestDTO;
 import ir.ac.kntu.abusafar.exception.InvalidRoundTripException;
 import ir.ac.kntu.abusafar.exception.ReservationFailedException;
@@ -17,7 +15,6 @@ import ir.ac.kntu.abusafar.model.Ticket;
 import ir.ac.kntu.abusafar.model.Trip;
 import ir.ac.kntu.abusafar.repository.ReservationDAO;
 import ir.ac.kntu.abusafar.repository.TicketDAO;
-import ir.ac.kntu.abusafar.repository.TripDAO; // Import TripDAO
 import ir.ac.kntu.abusafar.service.BookingService;
 import ir.ac.kntu.abusafar.service.RedisReserveService;
 import ir.ac.kntu.abusafar.util.constants.enums.AgeRange;
@@ -43,7 +40,6 @@ public class BookingServiceImpl implements BookingService {
 
     private final TicketDAO ticketDAO;
     private final ReservationDAO reservationDAO;
-    private final TripDAO tripDAO;
     private final RedisReserveService redisService;
 
     private static final String REDIS_RESERVATION_EXPIRE_PREFIX = "reservation:expire:";
@@ -55,10 +51,9 @@ public class BookingServiceImpl implements BookingService {
     private record ProcessedTicketInfo(Ticket ticket, BigDecimal price, Short seatNumber) {}
 
     @Autowired
-    public BookingServiceImpl(TicketDAO ticketDAO, ReservationDAO reservationDAO, TripDAO tripDAO, RedisReserveService redisService) {
+    public BookingServiceImpl(TicketDAO ticketDAO, ReservationDAO reservationDAO, RedisReserveService redisService) {
         this.ticketDAO = ticketDAO;
         this.reservationDAO = reservationDAO;
-        this.tripDAO = tripDAO;
         this.redisService = redisService;
     }
 
@@ -133,23 +128,16 @@ public class BookingServiceImpl implements BookingService {
             return;
         }
 
-        List<ReserveCancellationDTO> ticketsToCancel = reservationDAO.getReserveCancellationInfo(reservationId);
-
         boolean updated = reservationDAO.updateStatus(reservationId, ReserveStatus.CANCELLED, null);
 
         if (updated) {
             LOGGER.info("Successfully set reservation ID: {} to CANCELLED.", reservationId);
-            for (ReserveCancellationDTO ticketInfo : ticketsToCancel) {
-                tripDAO.decrementReservedCapacity(ticketInfo.tripId(), ticketInfo.seatNumber());
-                LOGGER.info("Decremented reserved capacity for trip ID: {} by {}.", ticketInfo.tripId(), ticketInfo.seatNumber());
-            }
         } else {
             LOGGER.warn("Failed to update status for reservation ID: {}. It might have been updated by another process.", reservationId);
         }
     }
 
     private ProcessedTicketInfo processSingleTicketLeg(Long tripId, AgeRange ageCategory) {
-        // Corrected DAO method call based on your file
         Ticket selectedTicket = ticketDAO.findById(tripId, ageCategory)
                 .orElseThrow(() -> new TicketNotFoundException("Ticket not found for trip ID: " + tripId + " and age: " + ageCategory));
 
@@ -172,11 +160,10 @@ public class BookingServiceImpl implements BookingService {
 
     private ReserveConfirmationDTO completeReservationProcess(Long userId, List<TicketReserveDetailsDTO> ticketDetailsList, BigDecimal totalPrice, boolean isRoundTrip, Short displaySeatNumber) {
         ReservationInputDTO reservationInput = new ReservationInputDTO(userId, isRoundTrip);
-        PaymentDTO paymentInput = new PaymentDTO(userId, totalPrice);
 
         InitialReserveResultDTO daoResult;
         try {
-            daoResult = reservationDAO.saveInitialReservation(reservationInput, ticketDetailsList, paymentInput);
+            daoResult = reservationDAO.saveInitialReservation(reservationInput, ticketDetailsList);
         } catch (TripCapacityExceededException e) {
             throw e;
         } catch (Exception e) {
@@ -193,8 +180,8 @@ public class BookingServiceImpl implements BookingService {
         String reminderKey = REDIS_RESERVATION_REMIND_PREFIX + daoResult.reservationId();
         redisService.setKeyWithTTL(reminderKey, REDIS_KEY_VALUE, FIVE_MINUTES_IN_SECONDS);
 
-        return new ReserveConfirmationDTO(userId, daoResult.reservationId(), daoResult.reservationDatetime(),
-                daoResult.expirationDatetime(), isRoundTrip, displaySeatNumber);
+        return new ReserveConfirmationDTO(daoResult.reservationId(), daoResult.reservationDatetime(),
+                daoResult.expirationDatetime(), isRoundTrip, displaySeatNumber, totalPrice);
     }
 
     private void validateRoundTripLegs(Ticket outgoingTicket, Ticket returnTicket) {
