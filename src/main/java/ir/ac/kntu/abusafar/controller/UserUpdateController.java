@@ -1,7 +1,7 @@
 package ir.ac.kntu.abusafar.controller;
 
 import ir.ac.kntu.abusafar.dto.response.BaseResponse;
-import ir.ac.kntu.abusafar.dto.User.UserUpdateRequestDTO;
+import ir.ac.kntu.abusafar.dto.user.UserUpdateRequestDTO;
 import ir.ac.kntu.abusafar.dto.user.UserInfoDTO;
 import ir.ac.kntu.abusafar.service.UserService;
 import jakarta.validation.Valid;

@@ -1,6 +1,6 @@
 package ir.ac.kntu.abusafar.service;
 
-import ir.ac.kntu.abusafar.dto.User.UserUpdateRequestDTO;
+import ir.ac.kntu.abusafar.dto.user.UserUpdateRequestDTO;
 import ir.ac.kntu.abusafar.dto.user.SignUpRequestDTO;
 import ir.ac.kntu.abusafar.dto.user.UserInfoDTO;
 import ir.ac.kntu.abusafar.model.User;

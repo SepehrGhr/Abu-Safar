@@ -1,4 +1,4 @@
-package ir.ac.kntu.abusafar.dto.User;
+package ir.ac.kntu.abusafar.dto.user;
 
 import ir.ac.kntu.abusafar.validation.AtLeastOneContactInfo;
 import jakarta.validation.constraints.Email;

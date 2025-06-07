@@ -13,8 +13,10 @@ import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
 
+import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.Statement;
+import java.sql.Types;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -24,18 +26,19 @@ public class UserDAOImpl implements UserDAO {
 
     private final JdbcTemplate jdbcTemplate;
 
-    private static final String INSERT_USER_SQL = "INSERT INTO users (first_name, last_name, user_role, account_status, city, hashed_password, profile_picture) VALUES (?, ?, CAST(? AS user_type), CAST(? AS account_status), ?, ?, ?)";
+    private static final String INSERT_USER_SQL = "INSERT INTO users (first_name, last_name, user_role, account_status, city, hashed_password, profile_picture, wallet_balance, birthday_date) VALUES (?, ?, CAST(? AS user_type), CAST(? AS account_status), ?, ?, ?, ?, ?)";
     private static final String SELECT_USER_BY_ID_SQL = "SELECT * FROM users WHERE user_id = ?";
     private static final String SELECT_USER_BY_CONTACT_INFO_SQL = "SELECT u.* " +
             "FROM users u JOIN user_contact uc ON u.user_id = uc.user_id " +
             "WHERE uc.contact_info = ? AND uc.contact_type = CAST(? AS contact_type)";
     private static final String SELECT_ALL_USERS_SQL = "SELECT * FROM users";
-    private static final String UPDATE_USER_SQL = "UPDATE users SET first_name = ?, last_name = ?, user_role = CAST(? AS user_type), account_status = CAST(? AS account_status), city = ?, hashed_password = ?, profile_picture = ? WHERE user_id = ?";
+    private static final String UPDATE_USER_SQL = "UPDATE users SET first_name = ?, last_name = ?, user_role = CAST(? AS user_type), account_status = CAST(? AS account_status), city = ?, hashed_password = ?, profile_picture = ?, wallet_balance = ?, birthday_date = ? WHERE user_id = ?";
     private static final String DELETE_USER_BY_ID_SQL = "DELETE FROM users WHERE user_id = ?";
     private static final String INSERT_USER_CONTACT_SQL = "INSERT INTO user_contact (user_id, contact_type, contact_info) VALUES (?, CAST(? AS contact_type), ?)";
     private static final String SELECT_CONTACTS_BY_USER_ID_SQL = "SELECT user_id, contact_type, contact_info FROM user_contact WHERE user_id = ?";
     private static final String SELECT_CONTACT_BY_USER_ID_AND_TYPE_SQL = "SELECT user_id, contact_type, contact_info FROM user_contact WHERE user_id = ? AND contact_type = CAST(? AS contact_type)";
     private static final String DELETE_CONTACT_SQL = "DELETE FROM user_contact WHERE user_id = ? AND contact_type = CAST(? AS contact_type)";
+
 
     public UserDAOImpl(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
@@ -50,7 +53,9 @@ public class UserDAOImpl implements UserDAO {
             rs.getString("city"),
             rs.getString("hashed_password"),
             rs.getObject("sign_up_date", OffsetDateTime.class).toLocalDate(),
-            rs.getString("profile_picture")
+            rs.getString("profile_picture"),
+            rs.getBigDecimal("wallet_balance"),
+            Optional.ofNullable(rs.getDate("birthday_date")).map(Date::toLocalDate).orElse(null)
     );
 
     private RowMapper<UserContact> userContactRowMapper = (rs, rowNum) -> new UserContact(
@@ -71,18 +76,38 @@ public class UserDAOImpl implements UserDAO {
             ps.setString(5, user.getCity());
             ps.setString(6, user.getHashedPassword());
             ps.setString(7, user.getProfilePicture());
+            // --- SET NEW FIELDS ---
+            ps.setBigDecimal(8, user.getWalletBalance());
+            if (user.getBirthdayDate() != null) {
+                ps.setDate(9, Date.valueOf(user.getBirthdayDate()));
+            } else {
+                ps.setNull(9, Types.DATE);
+            }
             return ps;
         }, keyHolder);
 
-        keyHolder.getKeys();
-        if (keyHolder.getKeys().containsKey("user_id")) {
-            user.setId((Long) keyHolder.getKeys().get("user_id"));
-        } else {
-            keyHolder.getKey();
+        if (keyHolder.getKeys() != null && keyHolder.getKeys().containsKey("user_id")) {
+            user.setId(((Number) keyHolder.getKeys().get("user_id")).longValue());
+        } else if (keyHolder.getKey() != null) {
             user.setId(keyHolder.getKey().longValue());
         }
 
         return user;
+    }
+
+    @Override
+    public int update(User user) {
+        return jdbcTemplate.update(UPDATE_USER_SQL,
+                user.getFirstName(),
+                user.getLastName(),
+                user.getUserType().name(),
+                user.getAccountStatus().name(),
+                user.getCity(),
+                user.getHashedPassword(),
+                user.getProfilePicture(),
+                user.getWalletBalance(),
+                user.getBirthdayDate(),
+                user.getId());
     }
 
     @Override
@@ -118,19 +143,6 @@ public class UserDAOImpl implements UserDAO {
     @Override
     public List<User> findAll() {
         return jdbcTemplate.query(SELECT_ALL_USERS_SQL, userRowMapper);
-    }
-
-    @Override
-    public int update(User user) {
-        return jdbcTemplate.update(UPDATE_USER_SQL,
-                user.getFirstName(),
-                user.getLastName(),
-                user.getUserType().name(),
-                user.getAccountStatus().name(),
-                user.getCity(),
-                user.getHashedPassword(),
-                user.getProfilePicture(),
-                user.getId());
     }
 
     @Override

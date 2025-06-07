@@ -1,4 +1,4 @@
-package ir.ac.kntu.abusafar.dto.User;
+package ir.ac.kntu.abusafar.dto.user;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;

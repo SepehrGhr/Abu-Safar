@@ -1,6 +1,6 @@
 package ir.ac.kntu.abusafar.service.impl;
 
-import ir.ac.kntu.abusafar.dto.User.UserUpdateRequestDTO;
+import ir.ac.kntu.abusafar.dto.user.UserUpdateRequestDTO;
 import ir.ac.kntu.abusafar.dto.user.SignUpRequestDTO;
 import ir.ac.kntu.abusafar.dto.user.UserInfoDTO;
 import ir.ac.kntu.abusafar.exception.DuplicateContactInfoException;
@@ -132,6 +132,9 @@ public class UserServiceImpl implements UserService {
         if (updatedInfo.getCity() != null) {
             user.setCity(updatedInfo.getCity());
         }
+        if (updatedInfo.getBirthdayDate() != null) {
+            user.setBirthdayDate(updatedInfo.getBirthdayDate());
+        }
         userDAO.update(user);
 
         if (updatedInfo.getEmail() != null) {
@@ -157,7 +160,8 @@ public class UserServiceImpl implements UserService {
         System.out.println("--- Evicting user " + userId + " | " + emailOpt.orElse(null) + " | " + phoneOpt.orElse(null) + " ---");
         userCacheService.evictUserCaches(userId, emailOpt.orElse(null), phoneOpt.orElse(null));
 
-        return UserMapper.INSTANCE.toDTO(user);
+        User updatedUserEntity = userDAO.findById(userId).get();
+        return UserMapper.INSTANCE.toDTO(updatedUserEntity);
     }
 
 
