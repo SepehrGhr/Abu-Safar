@@ -4,6 +4,7 @@ import ir.ac.kntu.abusafar.dto.user.UserUpdateRequestDTO;
 import ir.ac.kntu.abusafar.dto.user.SignUpRequestDTO;
 import ir.ac.kntu.abusafar.dto.user.UserInfoDTO;
 import ir.ac.kntu.abusafar.exception.DuplicateContactInfoException;
+import ir.ac.kntu.abusafar.exception.InsufficientBalanceException;
 import ir.ac.kntu.abusafar.exception.UserNotFoundException;
 import ir.ac.kntu.abusafar.mapper.UserMapper;
 import ir.ac.kntu.abusafar.model.User;
@@ -20,6 +21,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
@@ -184,6 +186,25 @@ public class UserServiceImpl implements UserService {
         }
 
         System.out.println("--- Evicting user " + userId + " | " + emailOpt.orElse(null) + " | " + phoneOpt.orElse(null) + " ---");
+        userCacheService.evictUserCaches(userId, emailOpt.orElse(null), phoneOpt.orElse(null));
+    }
+
+    @Override
+    @Transactional
+    public void debitFromWallet(Long userId, BigDecimal amountToDebit) {
+        User user = userDAO.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException("User not found with ID: " + userId));
+
+        if (user.getWalletBalance().compareTo(amountToDebit) < 0) {
+            throw new InsufficientBalanceException("Insufficient wallet balance. Required: " + amountToDebit + ", Available: " + user.getWalletBalance());
+        }
+
+        BigDecimal newBalance = user.getWalletBalance().subtract(amountToDebit);
+        userDAO.updateWalletBalance(userId, newBalance);
+
+        List<UserContact> contacts = userDAO.findContactByUserId(userId);
+        Optional<String> emailOpt = contacts.stream().filter(c -> c.getContactType() == ContactType.EMAIL).map(UserContact::getContactInfo).findFirst();
+        Optional<String> phoneOpt = contacts.stream().filter(c -> c.getContactType() == ContactType.PHONE_NUMBER).map(UserContact::getContactInfo).findFirst();
         userCacheService.evictUserCaches(userId, emailOpt.orElse(null), phoneOpt.orElse(null));
     }
 

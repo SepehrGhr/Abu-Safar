@@ -4,6 +4,7 @@ import ir.ac.kntu.abusafar.model.User;
 import ir.ac.kntu.abusafar.model.UserContact;
 import ir.ac.kntu.abusafar.util.constants.enums.ContactType;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
@@ -30,4 +31,7 @@ public interface UserDAO {
     Optional<UserContact> findContactByUserIdAndType(Long userId, ContactType contactType);
 
     int deleteContact(Long userId, ContactType contactType);
+
+    int updateWalletBalance(Long userId, BigDecimal newBalance);
+
 }

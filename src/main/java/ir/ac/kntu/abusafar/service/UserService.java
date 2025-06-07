@@ -5,6 +5,7 @@ import ir.ac.kntu.abusafar.dto.user.SignUpRequestDTO;
 import ir.ac.kntu.abusafar.dto.user.UserInfoDTO;
 import ir.ac.kntu.abusafar.model.User;
 
+import java.math.BigDecimal;
 import java.util.Optional;
 
 public interface UserService {
@@ -24,4 +25,6 @@ public interface UserService {
     Optional<UserInfoDTO> findByEmail(String email);
 
     Optional<UserInfoDTO> findByPhoneNumber(String phoneNumber);
+
+    void debitFromWallet(Long userId, BigDecimal amount);
 }

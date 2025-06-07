@@ -13,6 +13,7 @@ import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
 
+import java.math.BigDecimal;
 import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.Statement;
@@ -38,6 +39,7 @@ public class UserDAOImpl implements UserDAO {
     private static final String SELECT_CONTACTS_BY_USER_ID_SQL = "SELECT user_id, contact_type, contact_info FROM user_contact WHERE user_id = ?";
     private static final String SELECT_CONTACT_BY_USER_ID_AND_TYPE_SQL = "SELECT user_id, contact_type, contact_info FROM user_contact WHERE user_id = ? AND contact_type = CAST(? AS contact_type)";
     private static final String DELETE_CONTACT_SQL = "DELETE FROM user_contact WHERE user_id = ? AND contact_type = CAST(? AS contact_type)";
+    private static final String UPDATE_WALLET_BALANCE_SQL = "UPDATE users SET wallet_balance = ? WHERE user_id = ?";
 
 
     public UserDAOImpl(JdbcTemplate jdbcTemplate) {
@@ -176,5 +178,10 @@ public class UserDAOImpl implements UserDAO {
     @Override
     public int deleteContact(Long userId, ContactType contactType) {
         return jdbcTemplate.update(DELETE_CONTACT_SQL, userId, contactType.name());
+    }
+
+    @Override
+    public int updateWalletBalance(Long userId, BigDecimal newBalance) {
+        return jdbcTemplate.update(UPDATE_WALLET_BALANCE_SQL, newBalance, userId);
     }
 }
