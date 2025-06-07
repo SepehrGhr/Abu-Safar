@@ -2,8 +2,8 @@ package ir.ac.kntu.abusafar.model;
 
 import ir.ac.kntu.abusafar.util.constants.enums.AccountStatus;
 import ir.ac.kntu.abusafar.util.constants.enums.UserType;
-import org.springframework.cglib.core.Local;
 
+import java.math.BigDecimal; // Import BigDecimal for wallet balance
 import java.time.LocalDate;
 
 public class User {
@@ -16,8 +16,10 @@ public class User {
     private String hashedPassword;
     private LocalDate signUpDate;
     private String profilePicture;
+    private BigDecimal walletBalance;
+    private LocalDate birthdayDate;
 
-    public User(Long id, String firstName, String lastName, UserType userType, AccountStatus accountStatus, String city, String hashedPassword, LocalDate signUpDate, String profilePicture) {
+    public User(Long id, String firstName, String lastName, UserType userType, AccountStatus accountStatus, String city, String hashedPassword, LocalDate signUpDate, String profilePicture, BigDecimal walletBalance, LocalDate birthdayDate) {
         this.id = id;
         this.firstName = firstName;
         this.lastName = lastName;
@@ -27,9 +29,11 @@ public class User {
         this.hashedPassword = hashedPassword;
         this.signUpDate = signUpDate;
         this.profilePicture = profilePicture;
+        this.walletBalance = walletBalance;
+        this.birthdayDate = birthdayDate;
     }
 
-    public User(String firstName, String lastName, UserType userType, AccountStatus accountStatus, String city, String hashedPassword, LocalDate signUpDate){
+    public User(String firstName, String lastName, UserType userType, AccountStatus accountStatus, String city, String hashedPassword, LocalDate signUpDate) {
         this.firstName = firstName;
         this.lastName = lastName;
         this.userType = userType;
@@ -38,10 +42,12 @@ public class User {
         this.hashedPassword = hashedPassword;
         this.signUpDate = signUpDate;
         this.profilePicture = "default.png";
+        this.walletBalance = BigDecimal.ZERO;
+        this.birthdayDate = null;
     }
 
     public User() {
-
+        this.walletBalance = BigDecimal.ZERO;
     }
 
     public Long getId() {
@@ -114,5 +120,22 @@ public class User {
 
     public void setProfilePicture(String profilePicture) {
         this.profilePicture = profilePicture;
+    }
+
+    // Getters and Setters for new fields
+    public BigDecimal getWalletBalance() {
+        return walletBalance;
+    }
+
+    public void setWalletBalance(BigDecimal walletBalance) {
+        this.walletBalance = walletBalance;
+    }
+
+    public LocalDate getBirthdayDate() {
+        return birthdayDate;
+    }
+
+    public void setBirthdayDate(LocalDate birthdayDate) {
+        this.birthdayDate = birthdayDate;
     }
 }
