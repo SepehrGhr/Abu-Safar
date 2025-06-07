@@ -1,5 +1,6 @@
-package ir.ac.kntu.abusafar.dto.user;
+package ir.ac.kntu.abusafar.dto.User;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 
 public class UserInfoDTO {
@@ -9,6 +10,8 @@ public class UserInfoDTO {
     private String city;
     private String userType;
     private LocalDate signUpDate;
+    private BigDecimal walletBalance;
+    private LocalDate birthdayDate;
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -22,4 +25,9 @@ public class UserInfoDTO {
     public void setUserType(String userType) { this.userType = userType; }
     public LocalDate getSignUpDate() { return signUpDate; }
     public void setSignUpDate(LocalDate signUpDate) { this.signUpDate = signUpDate; }
+
+    public BigDecimal getWalletBalance() { return walletBalance; }
+    public void setWalletBalance(BigDecimal walletBalance) { this.walletBalance = walletBalance; }
+    public LocalDate getBirthdayDate() { return birthdayDate; }
+    public void setBirthdayDate(LocalDate birthdayDate) { this.birthdayDate = birthdayDate; }
 }

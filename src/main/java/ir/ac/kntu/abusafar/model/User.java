@@ -122,7 +122,6 @@ public class User {
         this.profilePicture = profilePicture;
     }
 
-    // Getters and Setters for new fields
     public BigDecimal getWalletBalance() {
         return walletBalance;
     }
