@@ -1,5 +1,7 @@
 package ir.ac.kntu.abusafar.repository.impl;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import ir.ac.kntu.abusafar.dto.reservation.InitialReserveResultDTO;
 import ir.ac.kntu.abusafar.dto.reservation.ReservationInputDTO;
 import ir.ac.kntu.abusafar.dto.reservation.TicketReserveDetailsDTO;
@@ -34,6 +36,8 @@ import java.util.Optional;
 public class ReservationDAOImpl implements ReservationDAO {
 
     private final JdbcTemplate jdbcTemplate;
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(ReservationDAOImpl.class);
 
     private static final String SAVE_RESERVATION_SQL = "INSERT INTO reservations (user_id, is_round_trip) VALUES (?, ?) RETURNING reservation_id, reservation_datetime, expiration_datetime, reserve_status";
     private static final String SAVE_TICKET_RESERVATION_SQL = "INSERT INTO ticket_reservation (trip_id, age, reservation_id, seat_number) VALUES (?, CAST(? AS age_range), ?, ?)";
@@ -88,20 +92,22 @@ public class ReservationDAOImpl implements ReservationDAO {
         }, reservationKeyHolder);
 
         Map<String, Object> reservationKeys = reservationKeyHolder.getKeys();
+
         if (reservationKeys == null || reservationKeys.get("reservation_id") == null) {
             throw new ReservationPersistenceException("Failed to create reservation, could not retrieve generated ID.");
         }
         Long reservationId = ((Number) reservationKeys.get("reservation_id")).longValue();
         OffsetDateTime reservationTimestamp = ((Timestamp) reservationKeys.get("reservation_datetime")).toInstant().atOffset(ZoneOffset.UTC);
         OffsetDateTime expirationTimestamp = ((Timestamp) reservationKeys.get("expiration_datetime")).toInstant().atOffset(ZoneOffset.UTC);
-        ReserveStatus status = ReserveStatus.valueOf(((String) reservationKeys.get("reserve_status")).toUpperCase());
-        boolean isRoundTrip = (boolean) reservationKeys.get("is_round_trip");
+        boolean isRoundTrip = reservationInput.isRoundTrip();
 
         for (TicketReserveDetailsDTO detail : ticketDetailsList) {
             try {
                 jdbcTemplate.update(SAVE_TICKET_RESERVATION_SQL,
                         detail.tripId(), detail.age().name(), reservationId, detail.seatNumber());
             } catch (DataAccessException e) {
+                LOGGER.error("Database error while saving ticket_reservation for trip {}. Full exception: ", detail.tripId(), e);
+
                 if (e.getMessage() != null && e.getMessage().toLowerCase().contains("fully booked")) {
                     throw new TripCapacityExceededException("Failed to reserve ticket for trip " + detail.tripId() + ": capacity full.");
                 }
