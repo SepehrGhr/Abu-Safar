@@ -2,7 +2,9 @@ package ir.ac.kntu.abusafar.config;
 
 import ir.ac.kntu.abusafar.dto.exception.BindExceptionResponseDTO;
 import ir.ac.kntu.abusafar.dto.response.BaseResponse;
+import ir.ac.kntu.abusafar.exception.CompanyNotFoundException;
 import ir.ac.kntu.abusafar.exception.DuplicateContactInfoException;
+import ir.ac.kntu.abusafar.exception.ReservationNotFoundException;
 import jakarta.validation.ConstraintViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -62,6 +64,18 @@ public class GlobalExceptionHandler {
     public ResponseEntity<BaseResponse<String>> handleIllegalArgumentException(IllegalArgumentException ex) {
         return ResponseEntity.badRequest()
                 .body(BaseResponse.fail(ex.getMessage()));
+    }
+
+    @ExceptionHandler(ReservationNotFoundException.class)
+    public ResponseEntity<BaseResponse<String>> handleReservationNotFound(ReservationNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(BaseResponse.fail(null, ex.getMessage(), HttpStatus.NOT_FOUND.value()));
+    }
+
+    @ExceptionHandler(CompanyNotFoundException.class)
+    public ResponseEntity<BaseResponse<String>> handleCompanyNotFound(CompanyNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(BaseResponse.fail(null, ex.getMessage(), HttpStatus.NOT_FOUND.value()));
     }
 
     /**

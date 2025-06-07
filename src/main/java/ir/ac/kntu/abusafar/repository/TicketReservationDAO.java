@@ -1,0 +1,8 @@
+package ir.ac.kntu.abusafar.repository;
+
+import ir.ac.kntu.abusafar.model.TicketReservation;
+import java.util.Optional;
+
+public interface TicketReservationDAO {
+    Optional<TicketReservation> findByReservationAndTrip(Long reservationId, Long tripId);
+}
