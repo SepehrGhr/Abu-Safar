@@ -12,8 +12,12 @@ CREATE TABLE users
     hashed_password VARCHAR(255)   NOT NULL,
     sign_up_date    TIMESTAMPTZ             DEFAULT NOW() NOT NULL,
     profile_picture VARCHAR(255)            DEFAULT 'default.png',
+    wallet_balance  NUMERIC(15, 2) NOT NULL DEFAULT 0.00,
+    birthday_date   DATE           NULL,
+
     CONSTRAINT valid_first_name CHECK (first_name ~* '^[A-Za-z ''-]{1,100}$'),
-    CONSTRAINT valid_last_name CHECK (last_name ~* '^[A-Za-z ''-]{1,100}$')
+    CONSTRAINT valid_last_name CHECK (last_name ~* '^[A-Za-z ''-]{1,100}$'),
+    CONSTRAINT positive_wallet_balance CHECK (wallet_balance >= 0.00)
 );
 
 
