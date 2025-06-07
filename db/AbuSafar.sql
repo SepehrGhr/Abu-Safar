@@ -65,7 +65,7 @@ CREATE TABLE trips
     destination_location_id BIGINT REFERENCES location_details (location_id) NOT NULL,
     departure_timestamp     TIMESTAMPTZ                                      NOT NULL,
     arrival_timestamp       TIMESTAMPTZ                                      NOT NULL,
-    vehicle_company         VARCHAR(100),
+    company_id              BIGINT REFERENCES companies(company_id) ON DELETE SET NULL NOT NULL,
     stop_count              SMALLINT DEFAULT 0 CHECK (stop_count >= 0),
     total_capacity          SMALLINT                                         NOT NULL CHECK (total_capacity > 0),
     reserved_capacity       SMALLINT DEFAULT 0 CHECK (reserved_capacity >= 0),
@@ -73,8 +73,22 @@ CREATE TABLE trips
     CONSTRAINT valid_timing CHECK (arrival_timestamp > departure_timestamp)
 );
 
+
 CREATE TYPE trip_type AS ENUM ('TRAIN', 'BUS', 'FLIGHT');
 CREATE TYPE age_range AS ENUM ('ADULT', 'CHILD', 'BABY');
+
+CREATE TABLE companies
+(
+    company_id                BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    name                      VARCHAR(100)     NOT NULL UNIQUE,
+    vehicle_type              trip_type        NOT NULL,
+    cancellation_penalty_rate NUMERIC(5, 2)    NOT NULL DEFAULT 10.00,
+    logo_picture_url          VARCHAR(255)     DEFAULT 'default_company.png',
+    description               TEXT             NULL,
+    is_active                 BOOLEAN          NOT NULL DEFAULT TRUE,
+
+    CONSTRAINT check_penalty_rate CHECK (cancellation_penalty_rate >= 0.00 AND cancellation_penalty_rate <= 100.00)
+);
 
 CREATE TABLE tickets
 (
@@ -85,6 +99,7 @@ CREATE TABLE tickets
     trip_vehicle trip_type                         NOT NULL,
     PRIMARY KEY (trip_id, age)
 );
+
 
 CREATE TYPE reserve_status AS ENUM ('RESERVED', 'CANCELLED', 'PAID');
 CREATE TABLE reservations
@@ -177,11 +192,10 @@ CREATE INDEX idx_departure_timestamp ON trips (departure_timestamp);
 
 CREATE INDEX idx_trips_origin_destination_location ON trips (origin_location_id, destination_location_id);
 CREATE INDEX idx_trips_origin ON trips (trip_id, origin_location_id);
+CREATE INDEX idx_trips_company_id ON trips(company_id);
 
-CREATE VIEW ordered_trips AS
-SELECT *
-FROM trips
-ORDER BY departure_timestamp ASC;
+CREATE INDEX idx_companies_name ON companies (name);
+
 
 CREATE INDEX idx_tickets_trip_vehicle ON tickets (trip_vehicle);
 CREATE INDEX idx_tickets_trip_age ON tickets(trip_id, age, trip_vehicle);

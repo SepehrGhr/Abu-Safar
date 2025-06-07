@@ -1,10 +1,8 @@
 package ir.ac.kntu.abusafar.service.impl;
 
 import ir.ac.kntu.abusafar.dto.vehicle.*;
-import ir.ac.kntu.abusafar.repository.AdditionalServiceDAO;
-import ir.ac.kntu.abusafar.repository.BusDAO;
-import ir.ac.kntu.abusafar.repository.FlightDAO;
-import ir.ac.kntu.abusafar.repository.TrainDAO;
+import ir.ac.kntu.abusafar.model.Company;
+import ir.ac.kntu.abusafar.repository.*;
 import ir.ac.kntu.abusafar.service.TripService;
 import ir.ac.kntu.abusafar.util.constants.enums.ServiceType;
 
@@ -22,17 +20,19 @@ public class TripServiceImpl implements TripService {
     private final TrainDAO trainDAO;
     private final BusDAO busDAO;
     private final FlightDAO flightDAO;
+    private final CompanyDAO companyDAO;
 
     @Autowired
     public TripServiceImpl(
             AdditionalServiceDAO additionalServiceDAO,
             TrainDAO trainDAO,
             BusDAO busDAO,
-            FlightDAO flightDAO) {
+            FlightDAO flightDAO, CompanyDAO companyDAO) {
         this.additionalServiceDAO = additionalServiceDAO;
         this.trainDAO = trainDAO;
         this.busDAO = busDAO;
         this.flightDAO = flightDAO;
+        this.companyDAO = companyDAO;
     }
 
     @Override
@@ -41,6 +41,14 @@ public class TripServiceImpl implements TripService {
             return Collections.emptyList();
         }
         return additionalServiceDAO.findServiceTypesByTripId(tripId);
+    }
+
+    @Override
+    public Optional<Company> getCompanyById(Long companyId) {
+        if (companyId == null) {
+            return Optional.empty();
+        }
+        return companyDAO.findById(companyId);
     }
 
     @Override
