@@ -15,14 +15,9 @@ public class RedisConfig {
     @Value("${spring.redis.port}")
     private int redisPort;
 
-    // Add other properties as needed (e.g., password, timeout)
-    // @Value("${spring.redis.password}")
-    // private String redisPassword;
-
     @Bean
     public JedisPool jedisPool() {
         JedisPoolConfig poolConfig = new JedisPoolConfig();
-        // Configure pool properties if needed (e.g., maxTotal, maxIdle)
         // poolConfig.setMaxTotal(128);
         // poolConfig.setMaxIdle(128);
         // poolConfig.setMinIdle(16);
