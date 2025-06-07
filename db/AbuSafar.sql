@@ -119,7 +119,7 @@ CREATE TABLE ticket_reservation
     trip_id        BIGINT REFERENCES trips (trip_id) ON DELETE CASCADE,
     age            age_range NOT NULL DEFAULT 'ADULT',
     reservation_id BIGINT REFERENCES reservations (reservation_id) ON DELETE CASCADE,
-    seat_number    SMALLINT  NOT NULL CHECK (seat_number > 0),
+    seat_number    SMALLINT  NOT NULL CHECK (seat_number >= 0),
     PRIMARY KEY (trip_id, age, reservation_id)
 );
 
@@ -283,19 +283,21 @@ $$
 DECLARE
     v_trip_id BIGINT;
 BEGIN
-    IF NEW.reserve_status = 'CANCELLED' AND OLD.reserve_status != 'CANCELLED' THEN
+    IF NEW.reserve_status = 'CANCELLED' AND OLD.reserve_status != 'CANCELLED' AND NEW.cancelled_by IS NULL THEN
 
         FOR v_trip_id IN
             SELECT trip_id
             FROM ticket_reservation
             WHERE reservation_id = OLD.reservation_id
-            LOOP
-                UPDATE trips
-                SET reserved_capacity = reserved_capacity - 1
-                WHERE trips.trip_id = v_trip_id;
-            END LOOP;
+        LOOP
+            UPDATE trips
+            SET reserved_capacity = reserved_capacity - 1
+            WHERE trips.trip_id = v_trip_id;
+        END LOOP;
 
-        DELETE FROM ticket_reservation WHERE reservation_id = OLD.reservation_id;
+        UPDATE ticket_reservation
+        SET seat_number = 0
+        WHERE reservation_id = OLD.reservation_id;
 
     END IF;
 
