@@ -1,6 +1,6 @@
 package ir.ac.kntu.abusafar.dto.ticket;
 
-import ir.ac.kntu.abusafar.model.AdditionalService;
+import ir.ac.kntu.abusafar.dto.vehicle.VehicleDetailsDTO;
 import ir.ac.kntu.abusafar.util.constants.enums.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -20,13 +20,7 @@ public class TicketResultDetailsDTO {
     private BigDecimal price;
     private String vehicleCompany;
 
-    private BusClass busClass;
-    private BusChairCountType chairType;
-    private FlightClass flightClass;
-    private String departureAirport;
-    private String arrivalAirport;
-    private Short trainStars;
-    private TrainRoomType roomType;
+    private VehicleDetailsDTO vehicleDetails;
 
     private Short stopCount;
     private Short totalCapacity;

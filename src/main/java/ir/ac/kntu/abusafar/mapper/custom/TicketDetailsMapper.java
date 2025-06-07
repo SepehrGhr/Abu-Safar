@@ -77,33 +77,12 @@ public class TicketDetailsMapper {
             detailsDTO.setService(Collections.emptyList());
         }
 
-
-        switch (ticket.getTripVehicle()) {
-            case BUS:
-                Optional<BusDetailsDTO> busDetailsOpt = tripService.getBusDetails(trip.getTripId());
-                busDetailsOpt.ifPresent(busDetails -> {
-                    detailsDTO.setBusClass(busDetails.getClassType());
-                    detailsDTO.setChairType(busDetails.getChairType());
-                });
-                break;
-            case FLIGHT:
-                Optional<FlightDetailsDTO> flightDetailsOpt = tripService.getFlightDetails(trip.getTripId());
-                flightDetailsOpt.ifPresent(flightDetails -> {
-                    detailsDTO.setFlightClass(flightDetails.getClassType());
-                    detailsDTO.setDepartureAirport(flightDetails.getDepartureAirport());
-                    detailsDTO.setArrivalAirport(flightDetails.getArrivalAirport());
-                });
-                break;
-            case TRAIN:
-                Optional<TrainDetailsDTO> trainDetailsOpt = tripService.getTrainDetails(trip.getTripId());
-                trainDetailsOpt.ifPresent(trainDetails -> {
-                    detailsDTO.setTrainStars(trainDetails.getStars());
-                    detailsDTO.setRoomType(trainDetails.getRoomType());
-                });
-                break;
-            default:
-                break;
-        }
+        VehicleDetailsDTO vehicleSpecificDetails = switch (ticket.getTripVehicle()) {
+            case BUS -> tripService.getBusDetails(trip.getTripId()).orElse(null);
+            case FLIGHT -> tripService.getFlightDetails(trip.getTripId()).orElse(null);
+            case TRAIN -> tripService.getTrainDetails(trip.getTripId()).orElse(null);
+        };
+        detailsDTO.setVehicleDetails(vehicleSpecificDetails);
 
         return detailsDTO;
     }
