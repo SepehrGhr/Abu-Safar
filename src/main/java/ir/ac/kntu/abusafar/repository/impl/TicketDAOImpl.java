@@ -186,16 +186,8 @@ public class TicketDAOImpl implements TicketDAO {
         if (tripId == null || age == null) {
             return Optional.empty();
         }
-        String sql = "SELECT " +
-                "tck.trip_id, " +
-                "tck.age AS tck_age, " +
-                "tck.price AS tck_price, " +
-                "tck.trip_vehicle AS tck_trip_vehicle, " +
-                "trp.origin_location_id, trp.destination_location_id, " +
-                "trp.departure_timestamp, trp.arrival_timestamp, trp.vehicle_company, " +
-                "trp.stop_count, trp.total_capacity, trp.reserved_capacity " +
-                "FROM tickets tck " +
-                "JOIN trips trp ON tck.trip_id = trp.trip_id " +
+        String sql = "SELECT " + SELECT_COLUMNS +
+                "FROM " + FROM_CLAUSE_BASE +
                 "WHERE tck.trip_id = ? AND tck.age = CAST(? AS age_range)";
 
         try {
