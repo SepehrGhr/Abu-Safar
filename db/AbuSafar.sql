@@ -194,6 +194,7 @@ CREATE INDEX idx_payments_reservation_id ON payments (reservation_id);
 CREATE INDEX idx_payments_user_id ON payments (user_id);
 CREATE INDEX idx_payments_user_status_time ON payments(payment_status, user_id, payment_timestamp);
 CREATE INDEX idx_payments_user_status ON payments(user_id, payment_status);
+CREATE INDEX idx_payments_reservation_status ON payments (reservation_id, payment_status);
 
 CREATE INDEX idx_ticket_reservation_res_id ON ticket_reservation(reservation_id, trip_id);
 CREATE INDEX idx_ticket_reservation_reservation_id ON ticket_reservation(reservation_id);
@@ -256,3 +257,74 @@ CREATE TRIGGER trg_payment_update_successful
     FOR EACH ROW
     WHEN (NEW.payment_status = 'SUCCESSFUL' AND OLD.payment_status IS DISTINCT FROM 'SUCCESSFUL')
 EXECUTE FUNCTION update_reservation_status_to_paid();
+
+------
+CREATE OR REPLACE FUNCTION handle_reservation_cancellation()
+    RETURNS TRIGGER AS
+$$
+DECLARE
+    v_trip_id BIGINT;
+BEGIN
+    IF NEW.reserve_status = 'CANCELLED' AND OLD.reserve_status != 'CANCELLED' THEN
+
+        FOR v_trip_id IN
+            SELECT trip_id
+            FROM ticket_reservation
+            WHERE reservation_id = OLD.reservation_id
+            LOOP
+                UPDATE trips
+                SET reserved_capacity = reserved_capacity - 1
+                WHERE trips.trip_id = v_trip_id;
+            END LOOP;
+
+        DELETE FROM ticket_reservation WHERE reservation_id = OLD.reservation_id;
+
+    END IF;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trg_reservation_cancelled
+    AFTER UPDATE OF reserve_status ON reservations
+    FOR EACH ROW
+EXECUTE FUNCTION handle_reservation_cancellation();
+
+---------
+CREATE OR REPLACE FUNCTION create_or_update_pending_payment()
+    RETURNS TRIGGER AS
+$$
+DECLARE
+    v_total_price NUMERIC;
+    v_payment_id BIGINT;
+BEGIN
+    --after a row is inserted into 'ticket_reservation'
+    SELECT SUM(t.price) INTO v_total_price
+    FROM tickets t
+             JOIN ticket_reservation tr ON t.trip_id = tr.trip_id AND t.age = tr.age
+    WHERE tr.reservation_id = NEW.reservation_id;
+
+    SELECT payment_id INTO v_payment_id
+    FROM payments
+    WHERE reservation_id = NEW.reservation_id AND payment_status = 'PENDING';
+
+    IF v_payment_id IS NULL THEN
+        INSERT INTO payments (reservation_id, user_id, payment_status, price)
+        SELECT NEW.reservation_id, r.user_id, 'PENDING'::payment_status, v_total_price
+        FROM reservations r
+        WHERE r.reservation_id = NEW.reservation_id;
+    ELSE
+        --for round trips
+        UPDATE payments
+        SET price = v_total_price
+        WHERE payment_id = v_payment_id;
+    END IF;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trg_create_pending_payment
+    AFTER INSERT ON ticket_reservation
+    FOR EACH ROW
+EXECUTE FUNCTION create_or_update_pending_payment();
