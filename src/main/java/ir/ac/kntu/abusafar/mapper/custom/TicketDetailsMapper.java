@@ -3,6 +3,7 @@ package ir.ac.kntu.abusafar.mapper.custom;
 import ir.ac.kntu.abusafar.dto.vehicle.*;
 import ir.ac.kntu.abusafar.dto.location.LocationResponseDTO;
 import ir.ac.kntu.abusafar.dto.ticket.TicketResultDetailsDTO;
+import ir.ac.kntu.abusafar.model.Company;
 import ir.ac.kntu.abusafar.model.Ticket;
 import ir.ac.kntu.abusafar.model.Trip;
 import ir.ac.kntu.abusafar.service.LocationService;
@@ -43,7 +44,10 @@ public class TicketDetailsMapper {
 
         detailsDTO.setDepartureTimestamp(trip.getDepartureTimestamp());
         detailsDTO.setArrivalTimestamp(trip.getArrivalTimestamp());
-        detailsDTO.setVehicleCompany(trip.getVehicleCompany());
+        tripService.getCompanyById(trip.getCompanyId())
+                .map(Company::getName)
+                .ifPresentOrElse(detailsDTO::setVehicleCompany,
+                        () -> detailsDTO.setVehicleCompany("Unknown"));
         detailsDTO.setStopCount(trip.getStopCount());
         detailsDTO.setTotalCapacity(trip.getTotalCapacity());
         detailsDTO.setReservedCapacity(trip.getReservedCapacity());

@@ -77,16 +77,6 @@ CREATE TABLE trips
 CREATE TYPE trip_type AS ENUM ('TRAIN', 'BUS', 'FLIGHT');
 CREATE TYPE age_range AS ENUM ('ADULT', 'CHILD', 'BABY');
 
-CREATE TABLE tickets
-(
-    trip_id      BIGINT REFERENCES trips (trip_id) NOT NULL,
-    age          age_range                         NOT NULL DEFAULT 'ADULT',
-    price        NUMERIC                           NOT NULL,
-    CONSTRAINT positive_price CHECK (price >= 0),
-    trip_vehicle trip_type                         NOT NULL,
-    PRIMARY KEY (trip_id, age)
-);
-
 CREATE TABLE companies
 (
     company_id                BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
@@ -99,6 +89,17 @@ CREATE TABLE companies
 
     CONSTRAINT check_penalty_rate CHECK (cancellation_penalty_rate >= 0.00 AND cancellation_penalty_rate <= 100.00)
 );
+
+CREATE TABLE tickets
+(
+    trip_id      BIGINT REFERENCES trips (trip_id) NOT NULL,
+    age          age_range                         NOT NULL DEFAULT 'ADULT',
+    price        NUMERIC                           NOT NULL,
+    CONSTRAINT positive_price CHECK (price >= 0),
+    trip_vehicle trip_type                         NOT NULL,
+    PRIMARY KEY (trip_id, age)
+);
+
 
 CREATE TYPE reserve_status AS ENUM ('RESERVED', 'CANCELLED', 'PAID');
 CREATE TABLE reservations
