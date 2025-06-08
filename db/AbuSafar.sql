@@ -133,7 +133,7 @@ CREATE TABLE payments
     user_id           BIGINT         REFERENCES users (user_id) ON DELETE SET NULL,
     payment_status    payment_status NOT NULL DEFAULT 'PENDING',
     payment_type      payment_means  NOT NULL DEFAULT 'CARD',
-    payment_timestamp TIMESTAMPTZ    NOT NULL DEFAULT NOW(),
+    payment_timestamp TIMESTAMPTZ    NULL,
     price             NUMERIC        NOT NULL,
     CONSTRAINT positive_price CHECK (price >= 0)
 );
@@ -365,3 +365,22 @@ CREATE TRIGGER trg_decrement_reserved_capacity
     ON ticket_reservation
     FOR EACH ROW
 EXECUTE FUNCTION decrement_reserved_capacity();
+
+-------
+CREATE OR REPLACE FUNCTION set_payment_timestamp_on_success()
+    RETURNS TRIGGER AS
+$$
+BEGIN
+    IF NEW.payment_status = 'SUCCESSFUL' AND OLD.payment_status != 'SUCCESSFUL' AND NEW.payment_timestamp IS NULL THEN
+        NEW.payment_timestamp := NOW();
+    END IF;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trg_set_payment_timestamp
+    BEFORE UPDATE OF payment_status
+    ON payments
+    FOR EACH ROW
+EXECUTE FUNCTION set_payment_timestamp_on_success();
