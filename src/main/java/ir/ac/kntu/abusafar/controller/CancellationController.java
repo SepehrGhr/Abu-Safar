@@ -2,6 +2,7 @@ package ir.ac.kntu.abusafar.controller;
 
 import ir.ac.kntu.abusafar.dto.cancellation.CancellationPenaltyRequestDTO;
 import ir.ac.kntu.abusafar.dto.cancellation.CancellationPenaltyResponseDTO;
+import ir.ac.kntu.abusafar.dto.cancellation.CancellationResponseDTO;
 import ir.ac.kntu.abusafar.dto.response.BaseResponse;
 import ir.ac.kntu.abusafar.service.CancellationService;
 import ir.ac.kntu.abusafar.util.constants.Routes;
@@ -29,11 +30,18 @@ public class CancellationController {
     @PostMapping("/cancel/calculate")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<BaseResponse<CancellationPenaltyResponseDTO>> calculateCancellationPenalty(
-            Authentication authentication,
-            @Valid @RequestBody CancellationPenaltyRequestDTO requestDTO) {
-
+            Authentication authentication, @Valid @RequestBody CancellationPenaltyRequestDTO requestDTO) {
         Long userId = Long.parseLong(authentication.getName());
-        CancellationPenaltyResponseDTO response = cancellationService.calculatePenalty(userId, requestDTO.getReservationId(), requestDTO.getTripId());
+        CancellationPenaltyResponseDTO response = cancellationService.calculatePenalty(userId, requestDTO.getReservationId());
+        return ResponseEntity.ok(BaseResponse.success(response));
+    }
+
+    @PostMapping("/cancel/confirm")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<BaseResponse<CancellationResponseDTO>> confirmCancellation(Authentication authentication,
+            @Valid @RequestBody CancellationPenaltyRequestDTO requestDTO) {
+        Long userId = Long.parseLong(authentication.getName());
+        CancellationResponseDTO response = cancellationService.confirmCancellation(userId, requestDTO.getReservationId());
         return ResponseEntity.ok(BaseResponse.success(response));
     }
 }

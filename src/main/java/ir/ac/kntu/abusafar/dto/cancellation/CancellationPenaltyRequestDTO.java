@@ -11,6 +11,4 @@ public class CancellationPenaltyRequestDTO {
     @NotNull(message = "Reservation ID cannot be null.")
     private Long reservationId;
 
-    @NotNull(message = "Trip ID cannot be null.")
-    private Long tripId;
 }

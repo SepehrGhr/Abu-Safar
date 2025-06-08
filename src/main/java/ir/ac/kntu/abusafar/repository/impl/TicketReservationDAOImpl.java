@@ -9,6 +9,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -17,6 +18,8 @@ public class TicketReservationDAOImpl implements TicketReservationDAO {
     private final JdbcTemplate jdbcTemplate;
 
     private static final String FIND_BY_RESERVATION_AND_TRIP_SQL = "SELECT * FROM ticket_reservation WHERE reservation_id = ? AND trip_id = ?";
+
+    private static final String FIND_ALL_BY_RESERVATION_ID_SQL = "SELECT * FROM ticket_reservation WHERE reservation_id = ?";
 
     private final RowMapper<TicketReservation> rowMapper = (rs, rowNum) -> new TicketReservation(
             rs.getLong("trip_id"),
@@ -38,5 +41,10 @@ public class TicketReservationDAOImpl implements TicketReservationDAO {
         } catch (EmptyResultDataAccessException e) {
             return Optional.empty();
         }
+    }
+
+    @Override
+    public List<TicketReservation> findAllByReservationId(Long reservationId) {
+        return jdbcTemplate.query(FIND_ALL_BY_RESERVATION_ID_SQL, rowMapper, reservationId);
     }
 }
