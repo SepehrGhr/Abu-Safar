@@ -114,26 +114,25 @@ public class BookingServiceImpl implements BookingService {
     @Override
     @Transactional
     public void cancelExpiredReservation(Long reservationId) {
-        LOGGER.info("Attempting to cancel expired reservation ID: {}", reservationId);
+        LOGGER.info("Attempting to DELETE expired reservation ID: {}", reservationId);
         Optional<Reservation> reservationOpt = reservationDAO.findById(reservationId);
 
         if (reservationOpt.isEmpty()) {
-            LOGGER.warn("Cannot cancel reservation ID: {}. It does not exist.", reservationId);
+            LOGGER.warn("Cannot delete reservation ID: {}. It does not exist.", reservationId);
             return;
         }
 
         Reservation reservation = reservationOpt.get();
         if (reservation.getReserveStatus() != ReserveStatus.RESERVED) {
-            LOGGER.info("Not cancelling reservation ID: {}. Its status is now '{}', not 'RESERVED'.", reservationId, reservation.getReserveStatus());
+            LOGGER.info("Not deleting reservation ID: {}. Its status is now '{}', not 'RESERVED'.", reservationId, reservation.getReserveStatus());
             return;
         }
+        int deletedRows = reservationDAO.deleteById(reservationId);
 
-        boolean updated = reservationDAO.updateStatus(reservationId, ReserveStatus.CANCELLED, null);
-
-        if (updated) {
-            LOGGER.info("Successfully set reservation ID: {} to CANCELLED.", reservationId);
+        if (deletedRows > 0) {
+            LOGGER.info("Successfully DELETED expired reservation ID: {}.", reservationId);
         } else {
-            LOGGER.warn("Failed to update status for reservation ID: {}. It might have been updated by another process.", reservationId);
+            LOGGER.warn("Failed to DELETE reservation ID: {}. It might have been deleted by another process.", reservationId);
         }
     }
 

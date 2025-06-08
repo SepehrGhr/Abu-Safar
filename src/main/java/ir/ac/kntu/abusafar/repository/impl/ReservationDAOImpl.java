@@ -44,6 +44,7 @@ public class ReservationDAOImpl implements ReservationDAO {
     private static final String FIND_RESERVATION_BY_ID_SQL = "SELECT reservation_id, user_id, reservation_datetime, expiration_datetime, reserve_status, is_round_trip, cancelled_by FROM reservations WHERE reservation_id = ?";
     private static final String UPDATE_RESERVATION_STATUS_SQL = "UPDATE reservations SET reserve_status = CAST(? AS reserve_status), cancelled_by = ? WHERE reservation_id = ?";
     private static final String GET_RESERVED_SEATS_SQL = "SELECT tr.seat_number FROM ticket_reservation tr JOIN reservations r ON tr.reservation_id = r.reservation_id WHERE tr.trip_id = ? AND r.reserve_status IN ('RESERVED', 'PAID')";
+    private static final String DELETE_RESERVATION_BY_ID_SQL = "DELETE FROM reservations WHERE reservation_id = ?";
 
     @Autowired
     public ReservationDAOImpl(JdbcTemplate jdbcTemplate) {
@@ -131,6 +132,11 @@ public class ReservationDAOImpl implements ReservationDAO {
     public Boolean updateStatus(Long reservationId, ReserveStatus newStatus, Long cancelledBy) {
         int rowsAffected = jdbcTemplate.update(UPDATE_RESERVATION_STATUS_SQL, newStatus.name(), cancelledBy, reservationId);
         return rowsAffected > 0;
+    }
+
+    @Override
+    public int deleteById(Long reservationId) {
+        return jdbcTemplate.update(DELETE_RESERVATION_BY_ID_SQL, reservationId);
     }
 
     @Override

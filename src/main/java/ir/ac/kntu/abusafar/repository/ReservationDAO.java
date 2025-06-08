@@ -13,5 +13,6 @@ public interface ReservationDAO {
     Optional<Reservation> findById(Long reservationId);
     List<Short> getReservedSeatNumbersForTrip(Long tripId);
     Boolean updateStatus(Long reservationId, ReserveStatus status, Long cancelledBy);
+    int deleteById(Long reservationId);
     InitialReserveResultDTO saveInitialReservation(ReservationInputDTO reservationInput, List<TicketReserveDetailsDTO> ticketDetailsList);
 }
