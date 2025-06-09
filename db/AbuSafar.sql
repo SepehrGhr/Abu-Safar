@@ -133,7 +133,7 @@ CREATE TABLE payments
     user_id           BIGINT         REFERENCES users (user_id) ON DELETE SET NULL,
     payment_status    payment_status NOT NULL DEFAULT 'PENDING',
     payment_type      payment_means  NOT NULL DEFAULT 'CARD',
-    payment_timestamp TIMESTAMPTZ    NOT NULL DEFAULT NOW(),
+    payment_timestamp TIMESTAMPTZ    NULL,
     price             NUMERIC        NOT NULL,
     CONSTRAINT positive_price CHECK (price >= 0)
 );
@@ -283,8 +283,7 @@ $$
 DECLARE
     v_trip_id BIGINT;
 BEGIN
-    IF NEW.reserve_status = 'CANCELLED' AND OLD.reserve_status != 'CANCELLED' AND NEW.cancelled_by IS NULL THEN
-
+    IF NEW.reserve_status = 'CANCELLED' AND OLD.reserve_status != 'CANCELLED' AND NEW.cancelled_by IS NOT NULL THEN
         FOR v_trip_id IN
             SELECT trip_id
             FROM ticket_reservation
@@ -300,7 +299,6 @@ BEGIN
         WHERE reservation_id = OLD.reservation_id;
 
     END IF;
-
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
@@ -348,3 +346,41 @@ CREATE TRIGGER trg_create_pending_payment
     AFTER INSERT ON ticket_reservation
     FOR EACH ROW
 EXECUTE FUNCTION create_or_update_pending_payment();
+
+
+-----
+CREATE OR REPLACE FUNCTION decrement_reserved_capacity()
+    RETURNS TRIGGER AS
+$$
+BEGIN
+    UPDATE trips
+    SET reserved_capacity = reserved_capacity - 1
+    WHERE trip_id = OLD.trip_id;
+    RETURN OLD;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trg_decrement_reserved_capacity
+    AFTER DELETE
+    ON ticket_reservation
+    FOR EACH ROW
+EXECUTE FUNCTION decrement_reserved_capacity();
+
+-------
+CREATE OR REPLACE FUNCTION set_payment_timestamp_on_success()
+    RETURNS TRIGGER AS
+$$
+BEGIN
+    IF NEW.payment_status = 'SUCCESSFUL' AND OLD.payment_status != 'SUCCESSFUL' AND NEW.payment_timestamp IS NULL THEN
+        NEW.payment_timestamp := NOW();
+    END IF;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trg_set_payment_timestamp
+    BEFORE UPDATE OF payment_status
+    ON payments
+    FOR EACH ROW
+EXECUTE FUNCTION set_payment_timestamp_on_success();

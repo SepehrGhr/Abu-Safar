@@ -18,7 +18,6 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping(Routes.API_KEY + "/booking")
 public class ReserveTicketController {
     private final BookingService bookingService;
-//    private final PaymentService paymentService;
 
     @Autowired
     public ReserveTicketController(BookingService bookingService) {
@@ -38,13 +37,5 @@ public class ReserveTicketController {
         Long userId = Long.parseLong(authentication.getName());
         return ResponseEntity.ok(BaseResponse.success(bookingService.createTwoWayReservation(userId, requestDTO)));
     }
-
-
-
-//    @PostMapping("/pay")
-//    public ResponseEntity<BaseResponse<String>> initiateReservation(Authentication authentication, @Valid @RequestBody PaymentRequestDTO requestDTO) {
-//        String responseMessage = bookingService.createReservation(requestDTO);
-//        return ResponseEntity.ok(BaseResponse.success(responseMessage, "Created reservation", HttpStatus.OK.value()));
-//    }
 
 }
