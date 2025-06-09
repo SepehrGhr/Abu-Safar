@@ -1,5 +1,6 @@
 package ir.ac.kntu.abusafar.service.impl;
 
+import ir.ac.kntu.abusafar.dto.user.UserInfoDTO;
 import ir.ac.kntu.abusafar.exception.NotificationSendException;
 import ir.ac.kntu.abusafar.model.User;
 import ir.ac.kntu.abusafar.model.UserContact;
@@ -9,6 +10,7 @@ import ir.ac.kntu.abusafar.util.constants.Strings;
 import ir.ac.kntu.abusafar.util.constants.enums.ContactType;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
+import okhttp3.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,6 +26,7 @@ import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.exceptions.JedisException;
 
+import java.io.IOException;
 import java.security.SecureRandom;
 import java.util.Optional;
 import java.util.regex.Pattern;
@@ -42,6 +45,8 @@ public class OtpServiceImpl implements OtpService {
     private final JedisPool jedisPool;
     private final JavaMailSender mailSender;
     private final SpringTemplateEngine emailTemplateEngine;
+
+    private final OkHttpClient httpClient;
     private final UserDAO userDAO;
 
     @Value("${jwt.otp.cache.duration.ms}")
@@ -53,25 +58,32 @@ public class OtpServiceImpl implements OtpService {
     @Value("${otp.email.subject}")
     private String emailSubject;
 
-    // emailTextFormat is not directly used in sendOtpViaEmail with HTML template, but kept for consistency
     @Value("${otp.email.text}")
     private String emailTextFormat;
 
+    @Value("${sms.api.url}")
+    private String smsApiUrl;
+
+    @Value("${sms.api.key}")
+    private String smsApiKey;
+
+    @Value("${sms.api.templateId}")
+    private String smsApiTemplateId;
+
 
     @Autowired
-    public OtpServiceImpl(JedisPool jedisPool, JavaMailSender mailSender, @Qualifier("emailTemplateEngine") SpringTemplateEngine emailTemplateEngine, UserDAO userDAO) {
+    public OtpServiceImpl(JedisPool jedisPool, JavaMailSender mailSender, @Qualifier("emailTemplateEngine") SpringTemplateEngine emailTemplateEngine, OkHttpClient httpClient, UserDAO userDAO) {
         this.jedisPool = jedisPool;
         this.mailSender = mailSender;
         this.emailTemplateEngine = emailTemplateEngine;
+        this.httpClient = httpClient;
         this.userDAO = userDAO;
     }
 
     @Override
-    public String generateAndSendOtp(ir.ac.kntu.abusafar.dto.user.UserInfoDTO user, String targetContactInfo) {
+    public String generateAndSendOtp(UserInfoDTO user, String targetContactInfo) {
         String otp = generateRandomOtp();
         long otpCacheDurationSeconds = otpCacheDurationMs / 1000;
-
-        // Use targetContactInfo directly as the primary part of the Redis key
         String redisKey = Strings.OTP_REDIS_PREFIX + targetContactInfo;
 
         try (Jedis jedis = jedisPool.getResource()) {
@@ -82,79 +94,39 @@ public class OtpServiceImpl implements OtpService {
             throw new NotificationSendException("Failed to store OTP in Redis for " + targetContactInfo, e);
         }
 
-        // Determine email address for sending notification
-        String emailForNotification = null;
         if (isEmail(targetContactInfo)) {
-            emailForNotification = targetContactInfo;
+            sendOtpViaEmail(targetContactInfo, otp);
         } else if (isPhoneNumber(targetContactInfo)) {
-            // If OTP target is a phone number, try to find user's primary email to send the notification
-            Optional<UserContact> primaryEmailContact = userDAO.findContactByUserIdAndType(user.getId(), ContactType.EMAIL);
-            if (primaryEmailContact.isPresent()) {
-                emailForNotification = primaryEmailContact.get().getContactInfo();
-                LOGGER.info("OTP requested for phone {}, notification will be sent to primary email {}", targetContactInfo, emailForNotification);
-            } else {
-                LOGGER.warn("OTP requested for phone {} for user ID {}, but no primary email found for notification. OTP is in Redis.", targetContactInfo, user.getId());
-            }
+            sendOtpViaSms(targetContactInfo, otp);
         } else {
-            // Unidentified contact type, try to find primary email anyway for notification if possible
-            LOGGER.warn("Target contact info {} was not identified as email/phone. Attempting to find primary email for user ID {}.", targetContactInfo, user.getId());
-            Optional<UserContact> primaryEmailContact = userDAO.findContactByUserIdAndType(user.getId(), ContactType.EMAIL);
-            if (primaryEmailContact.isPresent()) {
-                emailForNotification = primaryEmailContact.get().getContactInfo();
-            } else {
-                LOGGER.warn("No primary email found for user ID {} to send notification for target contact {}.", user.getId(), targetContactInfo);
-            }
+            LOGGER.warn("Unidentified contact type: {}. Cannot send OTP.", targetContactInfo);
         }
-
-        if (emailForNotification != null) {
-            try {
-                sendOtpViaEmail(emailForNotification, otp); // Send actual email
-            } catch (Exception e) {
-                // Log error but don't fail the whole process if OTP is already in Redis
-                LOGGER.error("Failed to send OTP email to {}. OTP for contact {}: {}. Error: {}", emailForNotification, targetContactInfo, otp, e.getMessage(), e);
-                // Depending on policy, you might re-throw or handle.
-                // For now, we assume OTP in Redis is the critical part.
-                // throw new NotificationSendException("Failed to send OTP email to " + emailForNotification, e);
-            }
-        } else {
-            LOGGER.info("OTP for contact {} generated and stored, but no email address found for sending notification.", targetContactInfo);
-        }
-
-        // Log the OTP for practice/testing if no email was found or if it's a phone number without email.
-        // This logging was part of the original logic for non-email scenarios.
-        if (emailForNotification == null && isPhoneNumber(targetContactInfo)) {
-            LOGGER.info("Practice Project OTP for user ID {} (contact {}): {}", user.getId(), targetContactInfo, otp);
-        }
-
 
         return otp;
     }
 
 
     @Override
-    public boolean validateOtp(String contactInfo, String otp) { // Parameter renamed from userEmail to contactInfo
+    public boolean validateOtp(String contactInfo, String otp) {
         String redisKey = Strings.OTP_REDIS_PREFIX + contactInfo;
-        String storedOtp = null;
+        String storedOtp;
 
         try (Jedis jedis = jedisPool.getResource()) {
             storedOtp = jedis.get(redisKey);
             if (otp != null && otp.equals(storedOtp)) {
-                jedis.del(redisKey); // OTP is single-use
+                jedis.del(redisKey);
                 LOGGER.info("OTP validation successful for contact {}", contactInfo);
                 return true;
             }
         } catch (JedisException e) {
             LOGGER.error("Redis error during OTP validation for contact {}. Error: {}", contactInfo, e.getMessage(), e);
-            return false; // Treat Redis error as validation failure
+            return false;
         }
 
         LOGGER.warn("OTP validation failed for contact {}. Provided OTP: {}, Stored OTP: {}", contactInfo, otp, storedOtp);
         return false;
     }
 
-    // findPrimaryEmailForUser is not directly used in the revised generateAndSendOtp logic's main flow
-    // but kept as it might be useful for other purposes or if sendOtpViaEmail needs it explicitly.
-    // However, sendOtpViaEmail directly receives the email to send to.
     private String findPrimaryEmailForUser(User user) {
         Optional<UserContact> emailContact = userDAO.findContactByUserIdAndType(user.getId(), ContactType.EMAIL);
         if (emailContact.isPresent()) {
@@ -164,9 +136,41 @@ public class OtpServiceImpl implements OtpService {
         return null;
     }
 
+    private void sendOtpViaSms(String phoneNumber, String otp) {
+        MediaType mediaType = MediaType.parse("application/json");
+
+        String jsonBody = String.format(
+                "{\"mobile\": \"%s\", \"templateId\": %s, \"parameters\": [{\"name\": \"Code\", \"value\": \"%s\"}]}",
+                phoneNumber, smsApiTemplateId, otp
+        );
+
+        RequestBody body = RequestBody.create(jsonBody, mediaType);
+        Request request = new Request.Builder()
+                .url(smsApiUrl)
+                .method("POST", body)
+                .addHeader("Content-Type", "application/json")
+                .addHeader("Accept", "text/plain")
+                .addHeader("x-api-key", smsApiKey)
+                .build();
+
+        try {
+            Response response = httpClient.newCall(request).execute();
+            if (response.isSuccessful()) {
+                LOGGER.info("Successfully sent OTP : {} SMS to phone number: {} {} {}", otp, phoneNumber, response.code(), response.body().string());
+            } else {
+                LOGGER.error("Failed to send OTP SMS to {}. Status: {}, Body: {}", phoneNumber, response.code(), response.body() != null ? response.body().string() : "null");
+                throw new NotificationSendException("Failed to send OTP via SMS.");
+            }
+            if (response.body() != null) {
+                response.body().close();
+            }
+        } catch (IOException e) {
+            LOGGER.error("IOException while sending OTP SMS to {}: {}", phoneNumber, e.getMessage());
+            throw new NotificationSendException("Error sending OTP SMS.", e);
+        }
+    }
+
     private void sendOtpViaEmail(String email, String otp) {
-        // This method remains largely the same as it sends the email to the provided 'email' address.
-        // It uses the Thymeleaf template "otp-email.html"
         try {
             MimeMessage mimeMessage = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true, "UTF-8");
@@ -178,7 +182,7 @@ public class OtpServiceImpl implements OtpService {
             context.setVariable("validityMessage", "This OTP is valid for " + validityMinutes + " minutes.");
 
 
-            String htmlContent = emailTemplateEngine.process("otp-email", context); // Assuming template name is "otp-email"
+            String htmlContent = emailTemplateEngine.process("otp-email", context);
 
             helper.setTo(email);
             helper.setSubject(emailSubject);
