@@ -1,8 +1,10 @@
 # AbuSafar Transportation Booking System 🚀
 
+[![API Documentation](https://img.shields.io/badge/API-Documentation-blue)](openapi.json)
+
 A comprehensive transportation booking platform that allows users to book various types of transportation including trains 🚂, buses 🚌, and flights ✈️.
 
-[![API Documentation](https://img.shields.io/badge/API-Documentation-blue)](openapi.json)
+**Note:** If GitHub is not rendering the API documentation correctly, you can view the `openapi.json` file with a tool like the online [Swagger Editor](https://editor.swagger.io/).
 
 ## Table of Contents
 - [Overview](#overview)
