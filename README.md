@@ -2,6 +2,8 @@
 
 A comprehensive transportation booking platform that allows users to book various types of transportation including trains 🚂, buses 🚌, and flights ✈️.
 
+[![API Documentation](https://img.shields.io/badge/API-Documentation-blue)](openapi.json)
+
 ## Table of Contents
 - [Overview](#overview)
 - [Features](#features)
