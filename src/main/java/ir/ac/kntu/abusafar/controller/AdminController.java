@@ -74,7 +74,7 @@ public class AdminController {
         return ResponseEntity.ok(BaseResponse.success(response));
     }
 
-    @PutMapping("/reservations/change-seat")
+    @PutMapping("/reservations/edit")
     public ResponseEntity<BaseResponse<String>> changeSeatNumber(@Valid @RequestBody EditReservationRequestDTO request) {
         adminService.changeSeatNumber(request);
         return ResponseEntity.ok(BaseResponse.success("Seat number updated successfully.", "Success", HttpStatus.OK.value()));
