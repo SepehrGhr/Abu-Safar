@@ -1,67 +1,59 @@
-# AbuSafar Transportation Booking System 🚀
+<div align="center">
+  <img src="https://raw.githubusercontent.com/sepehrghr/abu-safar/main/assets/logo.png" alt="AbuSafar Logo" width="150"/>
+  <h1>AbuSafar Transportation Booking System</h1>
+  <p><i>A robust, enterprise-grade booking platform for flights ✈️, buses 🚌, and trains 🚂</i></p>
 
-[![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
-[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.3.0-brightgreen.svg)](https://spring.io/projects/spring-boot)
-[![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg)](https://github.com/sepehrghr/abu-safar)
-[![API Docs](https://img.shields.io/badge/API%20Docs-OpenAPI%203-orange.svg)](openapi.yml)
+  <p>
+    <img src="https://img.shields.io/badge/Java-23-ED8B00?style=for-the-badge&logo=openjdk&logoColor=white" alt="Java 23"/>
+    <img src="https://img.shields.io/badge/Spring%20Boot-3.3.0-6DB33F?style=for-the-badge&logo=spring&logoColor=white" alt="Spring Boot 3.3.0"/>
+    <img src="https://img.shields.io/badge/PostgreSQL-14.5-4169E1?style=for-the-badge&logo=postgresql&logoColor=white" alt="PostgreSQL"/>
+    <img src="https://img.shields.io/badge/Redis-7.2-DC382D?style=for-the-badge&logo=redis&logoColor=white" alt="Redis"/>
+    <img src="https://img.shields.io/badge/License-Apache%202.0-blue?style=for-the-badge" alt="License"/>
+  </p>
+</div>
 
-**AbuSafar** is a robust and feature-rich transportation booking platform designed to handle complex reservation scenarios for flights ✈️, buses 🚌, and trains 🚂. It provides a seamless experience for users to search, book, and manage their travel, while offering powerful administrative tools for system management.
+---
 
-The system is built with a modern, scalable architecture, emphasizing data integrity, performance, and security.
+**AbuSafar** is a sophisticated transportation booking system designed to provide a seamless experience for users to search, book, and manage their travel. Built with a modern, scalable architecture, it emphasizes data integrity, performance, and security, making it a production-ready solution.
 
-## ✨ Features
+## ✨ Core Features
 
 * **👤 User & Authentication System**:
-    * Secure user registration and passwordless, OTP-based login via Email & SMS.
-    * Role-based access control (RBAC) distinguishing between `USER` and `ADMIN` roles.
-    * Stateless authentication using **JSON Web Tokens (JWT)**.
+    * Secure user registration and passwordless, **OTP-based login** via Email & SMS.
+    * **Role-Based Access Control (RBAC)** distinguishing between `USER` and `ADMIN` roles.
+    * Stateless authentication powered by **JSON Web Tokens (JWT)**.
 * **🎫 Advanced Booking Engine**:
-    * Supports one-way and round-trip reservations.
-    * Comprehensive search functionality with filters for transportation type, price, class, and more.
-    * Real-time seat availability and capacity management.
-    * **10-minute reservation hold window**, powered by Redis, to allow users time for payment.
+    * Supports both **one-way** and **round-trip** reservations.
+    * Comprehensive search with filters for transportation type, price, class, and more.
+    * Real-time seat availability and capacity management enforced by database triggers.
+    * **10-minute reservation hold window**, powered by Redis, allowing users ample time for payment.
 * **💳 Secure Payment Gateway**:
     * Integration with multiple payment methods including **Wallet**, **Card**, and **Crypto**.
-    * Transactional processing to ensure booking confirmation only upon successful payment.
+    * Transactional processing ensures booking confirmation only upon successful payment.
 * **⚙️ Admin Management Panel**:
-    * Endpoints for administrators to manage the entire system.
-    * View and manage all user reservations, including changing seat numbers or cancelling bookings.
+    * Dedicated endpoints for administrators to manage the entire system.
+    * View and manage user reservations, including changing seat numbers or cancelling bookings.
     * Review and track user-submitted reports and feedback.
 * **✉️ Notification Service**:
-    * Automated email notifications using **Thymeleaf** templates for payment reminders and OTPs.
+    * Automated, professional HTML email notifications using **Thymeleaf** templates for payment reminders and OTPs.
+
+---
 
 ## 🛠️ Technology Stack & Architecture
 
 This project is built with a modern, enterprise-grade technology stack, demonstrating a wide range of skills in backend development.
 
-### Backend
-
-* **Framework**: **Spring Boot 3.3.0**
-* **Language**: **Java 23**
-* **Security**: **Spring Security 6** for robust authentication and authorization (RBAC).
-* **Authentication**: **JWT** for stateless, token-based authentication.
-* **Database**: **Spring Data JDBC** for data access, using raw SQL and `JdbcTemplate` for performance-critical queries.
-* **API**: RESTful API built with Spring Web (MVC).
-
-### Database
-
-* **Primary Database**: **PostgreSQL**
-* **Design**: Schema is normalized to **Third Normal Form (3NF)** to ensure data integrity and eliminate redundancy.
-* **Advanced Features**: Utilizes database **triggers**, **functions**, and **custom ENUM types** to enforce business logic at the data layer.
-* **Performance**: **Strategic indexing** is applied to foreign keys and frequently queried columns to optimize query performance.
-
-### Caching & Messaging
-
-* **Caching**: **Redis** is used for application-level caching (`@Cacheable`) to reduce database load.
-* **Timed Events**: **Redis Keyspace Notifications** are used to manage the 10-minute TTL for pending reservations and to trigger payment reminders.
-
-### Tools & Others
-
-* **API Documentation**: **OpenAPI 3.0 (Swagger)** is used for generating interactive API documentation.
-* **Build Tool**: **Apache Maven**.
-* **Code Quality**: **MapStruct** for high-performance DTO-entity mapping and **Lombok** to reduce boilerplate code.
-* **Emailing**: **Spring Mail** with **Thymeleaf** for creating and sending dynamic HTML emails.
-* **Data Seeding**: A utility written in **Go** is provided to populate the database with realistic test data.
+| Domain                 | Technology / Concept                                                                                                        |
+| :--------------------- | :-------------------------------------------------------------------------------------------------------------------------- |
+| **Backend Framework** | **Spring Boot 3.3.0** (`Java 23`)                                                                                           |
+| **Security** | **Spring Security 6** (RBAC), **JWT** for stateless authentication                                                            |
+| **Database** | **PostgreSQL** with **Spring Data JDBC** & `JdbcTemplate` for performance                                                   |
+| **Database Design** | Normalized to **3NF**; uses **Triggers**, **Functions**, and custom **ENUM** types                                          |
+| **Caching & Timers** | **Redis** for both `@Cacheable` application caching and **Keyspace Notifications** for managing reservation TTLs            |
+| **API Documentation** | **OpenAPI 3.0 (Swagger)** for interactive and comprehensive API docs                                                          |
+| **Build & Dependencies**| **Apache Maven**, **MapStruct** for DTO mapping, **Lombok** |
+| **Notifications** | **Spring Mail** with **Thymeleaf** for dynamic HTML emails                                                                    |
+| **Data Generation** | A utility written in **Go** is provided to populate the database with realistic test data                                   |
 
 <br/>
 <p align="center">
@@ -73,6 +65,8 @@ This project is built with a modern, enterprise-grade technology stack, demonstr
   <img src="https://img.shields.io/badge/Apache%20Maven-C71A36?style=for-the-badge&logo=apachemaven&logoColor=white" alt="Maven"/>
 </p>
 <br/>
+
+---
 
 ## 🚀 Getting Started
 
@@ -135,6 +129,8 @@ mvnw.cmd spring-boot:run
 
 The application will start on `http://localhost:8080`.
 
+---
+
 ## 🔬 Testing the API
 
 You can test the API using two primary methods:
@@ -143,7 +139,7 @@ You can test the API using two primary methods:
 
 The easiest way to explore and test the API is via the integrated Swagger UI. Once the application is running, navigate to:
 
-**[http://localhost:8080/swagger-ui.html](http://localhost:8080/swagger-ui.html)**
+> **[http://localhost:8080/swagger-ui.html](http://localhost:8080/swagger-ui.html)**
 
 The UI provides a full list of endpoints, their required parameters, and allows you to execute requests directly from your browser.
 
@@ -168,6 +164,8 @@ TOKEN=$(curl -s -X POST http://localhost:8080/api/auth/login/otp/verify \
 curl -X GET http://localhost:8080/api/bookings/history \
 -H "Authorization: Bearer $TOKEN"
 ```
+
+---
 
 ## 📖 API Endpoint Overview
 
