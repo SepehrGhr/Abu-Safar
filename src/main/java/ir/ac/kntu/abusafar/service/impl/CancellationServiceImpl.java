@@ -115,4 +115,32 @@ public class CancellationServiceImpl implements CancellationService {
                 newWalletBalance
         );
     }
+
+    @Override
+    @Transactional
+    public CancellationResponseDTO adminConfirmCancellation(Long reservationId, Long adminId) {
+        Reservation reservation = reservationDAO.findById(reservationId)
+                .orElseThrow(() -> new ReservationNotFoundException("Reservation with ID " + reservationId + " not found."));
+
+        CancellationPenaltyResponseDTO penaltyDetails = calculatePenalty(reservation.getUserId(), reservationId);
+
+        if (penaltyDetails.getRefundAmount() == null) {
+            throw new IllegalStateException("Could not calculate penalty: " + penaltyDetails.getMessage());
+        }
+
+        User user = userDAO.findById(reservation.getUserId())
+                .orElseThrow(() -> new UserNotFoundException("User not found for reservation."));
+
+        BigDecimal totalRefund = penaltyDetails.getRefundAmount();
+        BigDecimal newWalletBalance = user.getWalletBalance().add(totalRefund);
+        userDAO.updateWalletBalance(user.getId(), newWalletBalance);
+
+        reservationDAO.updateStatus(reservationId, ReserveStatus.CANCELLED, adminId);
+
+        return new CancellationResponseDTO(
+                "Reservation " + reservationId + " cancelled successfully by admin.",
+                totalRefund,
+                newWalletBalance
+        );
+    }
 }

@@ -19,15 +19,14 @@ public class PaidReservationDAOImpl implements PaidReservationDAO {
 
     private final JdbcTemplate jdbcTemplate;
 
-    private static final String FETCH_HISTORY_SQL = """
+    private static final String FETCH_HISTORY_BY_USER_SQL = """
         SELECT
-            -- Calculate the status directly in the SQL query for performance
             CASE
                 WHEN r.reserve_status = 'CANCELLED' THEN 'CANCELLED'
                 WHEN r.reserve_status = 'RESERVED' THEN 'PENDING_PAYMENT'
                 WHEN r.reserve_status = 'PAID' AND t.departure_timestamp > NOW() THEN 'UPCOMING_TRIP'
                 WHEN r.reserve_status = 'PAID' AND t.departure_timestamp <= NOW() THEN 'PAST_TRIP'
-                ELSE 'UNKNOWN' -- Fallback status
+                ELSE 'UNKNOWN'
             END AS calculated_status,
             r.reservation_id,
             r.is_round_trip,
@@ -57,6 +56,37 @@ public class PaidReservationDAOImpl implements PaidReservationDAO {
             payments p ON r.reservation_id = p.reservation_id
         WHERE
             r.user_id = ?
+        ORDER BY
+            r.reservation_datetime DESC
+    """;
+
+    private static final String FETCH_HISTORY_BY_STATUS_SQL = """
+        SELECT
+            CASE
+                WHEN r.reserve_status = 'CANCELLED' THEN 'CANCELLED'
+                WHEN r.reserve_status = 'RESERVED' THEN 'PENDING_PAYMENT'
+                WHEN r.reserve_status = 'PAID' AND t.departure_timestamp > NOW() THEN 'UPCOMING_TRIP'
+                WHEN r.reserve_status = 'PAID' AND t.departure_timestamp <= NOW() THEN 'PAST_TRIP'
+                ELSE 'UNKNOWN'
+            END AS calculated_status,
+            r.reservation_id, r.is_round_trip, p.payment_id, p.payment_timestamp,
+            tr.seat_number, t.trip_id, t.origin_location_id, t.destination_location_id,
+            t.departure_timestamp, t.arrival_timestamp, c.name AS vehicle_company,
+            tk.age AS tck_age, tk.price AS tck_price, tk.trip_vehicle AS tck_trip_vehicle
+        FROM
+            reservations r
+        JOIN ticket_reservation tr ON r.reservation_id = tr.reservation_id
+        JOIN trips t ON tr.trip_id = t.trip_id
+        JOIN tickets tk ON t.trip_id = tk.trip_id AND tr.age = tk.age
+        JOIN companies c ON t.company_id = c.company_id
+        LEFT JOIN payments p ON r.reservation_id = p.reservation_id
+        WHERE
+            CASE
+                WHEN r.reserve_status = 'CANCELLED' THEN 'CANCELLED'
+                WHEN r.reserve_status = 'RESERVED' THEN 'PENDING_PAYMENT'
+                WHEN r.reserve_status = 'PAID' AND t.departure_timestamp > NOW() THEN 'UPCOMING_TRIP'
+                ELSE 'PAST_TRIP'
+            END = ?
         ORDER BY
             r.reservation_datetime DESC
     """;
@@ -95,6 +125,17 @@ public class PaidReservationDAOImpl implements PaidReservationDAO {
 
     @Override
     public List<RawHistoryRecordDTO> findReservationHistoryByUserId(Long userId) {
-        return jdbcTemplate.query(FETCH_HISTORY_SQL, rowMapper, userId);
+        return jdbcTemplate.query(FETCH_HISTORY_BY_USER_SQL, rowMapper, userId);
+    }
+
+    @Override
+    public List<RawHistoryRecordDTO> findReservationHistoryByStatus(TicketStatus statusFilter) {
+        return jdbcTemplate.query(FETCH_HISTORY_BY_STATUS_SQL, rowMapper, statusFilter.name());
+    }
+
+    @Override
+    public List<RawHistoryRecordDTO> findDetailedReservationById(Long reservationId) {
+        String sql = FETCH_HISTORY_BY_USER_SQL.replace("WHERE r.user_id = ?", "WHERE r.reservation_id = ?");
+        return jdbcTemplate.query(sql, rowMapper, reservationId);
     }
 }

@@ -1,5 +1,6 @@
 package ir.ac.kntu.abusafar.config;
 
+import okhttp3.OkHttpClient;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -28,5 +29,10 @@ public class RedisConfig {
         // poolConfig.setBlockWhenExhausted(true);
         poolConfig.setJmxEnabled(false);
         return new JedisPool(poolConfig, redisHost, redisPort);
+    }
+
+    @Bean
+    public OkHttpClient okHttpClient() {
+        return new OkHttpClient();
     }
 }

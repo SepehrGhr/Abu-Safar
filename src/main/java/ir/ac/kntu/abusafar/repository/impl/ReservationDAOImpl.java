@@ -45,6 +45,7 @@ public class ReservationDAOImpl implements ReservationDAO {
     private static final String UPDATE_RESERVATION_STATUS_SQL = "UPDATE reservations SET reserve_status = CAST(? AS reserve_status), cancelled_by = ? WHERE reservation_id = ?";
     private static final String GET_RESERVED_SEATS_SQL = "SELECT tr.seat_number FROM ticket_reservation tr JOIN reservations r ON tr.reservation_id = r.reservation_id WHERE tr.trip_id = ? AND r.reserve_status IN ('RESERVED', 'PAID')";
     private static final String DELETE_RESERVATION_BY_ID_SQL = "DELETE FROM reservations WHERE reservation_id = ?";
+    private static final String FIND_RESERVATIONS_BY_STATUS_SQL = "SELECT * FROM reservations WHERE reserve_status = CAST(? AS reserve_status) ORDER BY reservation_datetime DESC";
 
     @Autowired
     public ReservationDAOImpl(JdbcTemplate jdbcTemplate) {

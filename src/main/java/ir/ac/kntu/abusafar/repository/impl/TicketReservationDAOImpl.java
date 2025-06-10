@@ -20,6 +20,7 @@ public class TicketReservationDAOImpl implements TicketReservationDAO {
     private static final String FIND_BY_RESERVATION_AND_TRIP_SQL = "SELECT * FROM ticket_reservation WHERE reservation_id = ? AND trip_id = ?";
 
     private static final String FIND_ALL_BY_RESERVATION_ID_SQL = "SELECT * FROM ticket_reservation WHERE reservation_id = ?";
+    private static final String UPDATE_SEAT_NUMBER_SQL = "UPDATE ticket_reservation SET seat_number = ? WHERE reservation_id = ? AND trip_id = ?";
 
     private final RowMapper<TicketReservation> rowMapper = (rs, rowNum) -> new TicketReservation(
             rs.getLong("trip_id"),
@@ -46,5 +47,10 @@ public class TicketReservationDAOImpl implements TicketReservationDAO {
     @Override
     public List<TicketReservation> findAllByReservationId(Long reservationId) {
         return jdbcTemplate.query(FIND_ALL_BY_RESERVATION_ID_SQL, rowMapper, reservationId);
+    }
+
+    @Override
+    public int updateSeatNumber(Long reservationId, Long tripId, short newSeatNumber) {
+        return jdbcTemplate.update(UPDATE_SEAT_NUMBER_SQL, newSeatNumber, reservationId, tripId);
     }
 }
