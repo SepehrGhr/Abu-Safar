@@ -12,8 +12,12 @@ CREATE TABLE users
     hashed_password VARCHAR(255)   NOT NULL,
     sign_up_date    TIMESTAMPTZ             DEFAULT NOW() NOT NULL,
     profile_picture VARCHAR(255)            DEFAULT 'default.png',
+    wallet_balance  NUMERIC(15, 2) NOT NULL DEFAULT 0.00,
+    birthday_date   DATE           NULL,
+
     CONSTRAINT valid_first_name CHECK (first_name ~* '^[A-Za-z ''-]{1,100}$'),
-    CONSTRAINT valid_last_name CHECK (last_name ~* '^[A-Za-z ''-]{1,100}$')
+    CONSTRAINT valid_last_name CHECK (last_name ~* '^[A-Za-z ''-]{1,100}$'),
+    CONSTRAINT positive_wallet_balance CHECK (wallet_balance >= 0.00)
 );
 
 
@@ -61,7 +65,7 @@ CREATE TABLE trips
     destination_location_id BIGINT REFERENCES location_details (location_id) NOT NULL,
     departure_timestamp     TIMESTAMPTZ                                      NOT NULL,
     arrival_timestamp       TIMESTAMPTZ                                      NOT NULL,
-    vehicle_company         VARCHAR(100),
+    company_id              BIGINT REFERENCES companies(company_id) ON DELETE SET NULL NOT NULL,
     stop_count              SMALLINT DEFAULT 0 CHECK (stop_count >= 0),
     total_capacity          SMALLINT                                         NOT NULL CHECK (total_capacity > 0),
     reserved_capacity       SMALLINT DEFAULT 0 CHECK (reserved_capacity >= 0),
@@ -69,8 +73,22 @@ CREATE TABLE trips
     CONSTRAINT valid_timing CHECK (arrival_timestamp > departure_timestamp)
 );
 
+
 CREATE TYPE trip_type AS ENUM ('TRAIN', 'BUS', 'FLIGHT');
 CREATE TYPE age_range AS ENUM ('ADULT', 'CHILD', 'BABY');
+
+CREATE TABLE companies
+(
+    company_id                BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    name                      VARCHAR(100)     NOT NULL UNIQUE,
+    vehicle_type              trip_type        NOT NULL,
+    cancellation_penalty_rate NUMERIC(5, 2)    NOT NULL DEFAULT 10.00,
+    logo_picture_url          VARCHAR(255)     DEFAULT 'default_company.png',
+    description               TEXT             NULL,
+    is_active                 BOOLEAN          NOT NULL DEFAULT TRUE,
+
+    CONSTRAINT check_penalty_rate CHECK (cancellation_penalty_rate >= 0.00 AND cancellation_penalty_rate <= 100.00)
+);
 
 CREATE TABLE tickets
 (
@@ -81,6 +99,7 @@ CREATE TABLE tickets
     trip_vehicle trip_type                         NOT NULL,
     PRIMARY KEY (trip_id, age)
 );
+
 
 CREATE TYPE reserve_status AS ENUM ('RESERVED', 'CANCELLED', 'PAID');
 CREATE TABLE reservations
@@ -100,7 +119,7 @@ CREATE TABLE ticket_reservation
     trip_id        BIGINT REFERENCES trips (trip_id) ON DELETE CASCADE,
     age            age_range NOT NULL DEFAULT 'ADULT',
     reservation_id BIGINT REFERENCES reservations (reservation_id) ON DELETE CASCADE,
-    seat_number    SMALLINT  NOT NULL CHECK (seat_number > 0),
+    seat_number    SMALLINT  NOT NULL CHECK (seat_number >= 0),
     PRIMARY KEY (trip_id, age, reservation_id)
 );
 
@@ -114,7 +133,7 @@ CREATE TABLE payments
     user_id           BIGINT         REFERENCES users (user_id) ON DELETE SET NULL,
     payment_status    payment_status NOT NULL DEFAULT 'PENDING',
     payment_type      payment_means  NOT NULL DEFAULT 'CARD',
-    payment_timestamp TIMESTAMPTZ    NOT NULL DEFAULT NOW(),
+    payment_timestamp TIMESTAMPTZ    NULL,
     price             NUMERIC        NOT NULL,
     CONSTRAINT positive_price CHECK (price >= 0)
 );
@@ -173,11 +192,10 @@ CREATE INDEX idx_departure_timestamp ON trips (departure_timestamp);
 
 CREATE INDEX idx_trips_origin_destination_location ON trips (origin_location_id, destination_location_id);
 CREATE INDEX idx_trips_origin ON trips (trip_id, origin_location_id);
+CREATE INDEX idx_trips_company_id ON trips(company_id);
 
-CREATE VIEW ordered_trips AS
-SELECT *
-FROM trips
-ORDER BY departure_timestamp ASC;
+CREATE INDEX idx_companies_name ON companies (name);
+
 
 CREATE INDEX idx_tickets_trip_vehicle ON tickets (trip_vehicle);
 CREATE INDEX idx_tickets_trip_age ON tickets(trip_id, age, trip_vehicle);
@@ -194,6 +212,7 @@ CREATE INDEX idx_payments_reservation_id ON payments (reservation_id);
 CREATE INDEX idx_payments_user_id ON payments (user_id);
 CREATE INDEX idx_payments_user_status_time ON payments(payment_status, user_id, payment_timestamp);
 CREATE INDEX idx_payments_user_status ON payments(user_id, payment_status);
+CREATE INDEX idx_payments_reservation_status ON payments (reservation_id, payment_status);
 
 CREATE INDEX idx_ticket_reservation_res_id ON ticket_reservation(reservation_id, trip_id);
 CREATE INDEX idx_ticket_reservation_reservation_id ON ticket_reservation(reservation_id);
@@ -256,3 +275,112 @@ CREATE TRIGGER trg_payment_update_successful
     FOR EACH ROW
     WHEN (NEW.payment_status = 'SUCCESSFUL' AND OLD.payment_status IS DISTINCT FROM 'SUCCESSFUL')
 EXECUTE FUNCTION update_reservation_status_to_paid();
+
+------
+CREATE OR REPLACE FUNCTION handle_reservation_cancellation()
+    RETURNS TRIGGER AS
+$$
+DECLARE
+    v_trip_id BIGINT;
+BEGIN
+    IF NEW.reserve_status = 'CANCELLED' AND OLD.reserve_status != 'CANCELLED' AND NEW.cancelled_by IS NOT NULL THEN
+        FOR v_trip_id IN
+            SELECT trip_id
+            FROM ticket_reservation
+            WHERE reservation_id = OLD.reservation_id
+        LOOP
+            UPDATE trips
+            SET reserved_capacity = reserved_capacity - 1
+            WHERE trips.trip_id = v_trip_id;
+        END LOOP;
+
+        UPDATE ticket_reservation
+        SET seat_number = 0
+        WHERE reservation_id = OLD.reservation_id;
+
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trg_reservation_cancelled
+    AFTER UPDATE OF reserve_status ON reservations
+    FOR EACH ROW
+EXECUTE FUNCTION handle_reservation_cancellation();
+
+---------
+CREATE OR REPLACE FUNCTION create_or_update_pending_payment()
+    RETURNS TRIGGER AS
+$$
+DECLARE
+    v_total_price NUMERIC;
+    v_payment_id BIGINT;
+BEGIN
+    --after a row is inserted into 'ticket_reservation'
+    SELECT SUM(t.price) INTO v_total_price
+    FROM tickets t
+             JOIN ticket_reservation tr ON t.trip_id = tr.trip_id AND t.age = tr.age
+    WHERE tr.reservation_id = NEW.reservation_id;
+
+    SELECT payment_id INTO v_payment_id
+    FROM payments
+    WHERE reservation_id = NEW.reservation_id AND payment_status = 'PENDING';
+
+    IF v_payment_id IS NULL THEN
+        INSERT INTO payments (reservation_id, user_id, payment_status, price)
+        SELECT NEW.reservation_id, r.user_id, 'PENDING'::payment_status, v_total_price
+        FROM reservations r
+        WHERE r.reservation_id = NEW.reservation_id;
+    ELSE
+        --for round trips
+        UPDATE payments
+        SET price = v_total_price
+        WHERE payment_id = v_payment_id;
+    END IF;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trg_create_pending_payment
+    AFTER INSERT ON ticket_reservation
+    FOR EACH ROW
+EXECUTE FUNCTION create_or_update_pending_payment();
+
+
+-----
+CREATE OR REPLACE FUNCTION decrement_reserved_capacity()
+    RETURNS TRIGGER AS
+$$
+BEGIN
+    UPDATE trips
+    SET reserved_capacity = reserved_capacity - 1
+    WHERE trip_id = OLD.trip_id;
+    RETURN OLD;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trg_decrement_reserved_capacity
+    AFTER DELETE
+    ON ticket_reservation
+    FOR EACH ROW
+EXECUTE FUNCTION decrement_reserved_capacity();
+
+-------
+CREATE OR REPLACE FUNCTION set_payment_timestamp_on_success()
+    RETURNS TRIGGER AS
+$$
+BEGIN
+    IF NEW.payment_status = 'SUCCESSFUL' AND OLD.payment_status != 'SUCCESSFUL' AND NEW.payment_timestamp IS NULL THEN
+        NEW.payment_timestamp := NOW();
+    END IF;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trg_set_payment_timestamp
+    BEFORE UPDATE OF payment_status
+    ON payments
+    FOR EACH ROW
+EXECUTE FUNCTION set_payment_timestamp_on_success();
