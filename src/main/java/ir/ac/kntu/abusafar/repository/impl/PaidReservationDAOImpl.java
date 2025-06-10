@@ -132,4 +132,10 @@ public class PaidReservationDAOImpl implements PaidReservationDAO {
     public List<RawHistoryRecordDTO> findReservationHistoryByStatus(TicketStatus statusFilter) {
         return jdbcTemplate.query(FETCH_HISTORY_BY_STATUS_SQL, rowMapper, statusFilter.name());
     }
+
+    @Override
+    public List<RawHistoryRecordDTO> findDetailedReservationById(Long reservationId) {
+        String sql = FETCH_HISTORY_BY_USER_SQL.replace("WHERE r.user_id = ?", "WHERE r.reservation_id = ?");
+        return jdbcTemplate.query(sql, rowMapper, reservationId);
+    }
 }

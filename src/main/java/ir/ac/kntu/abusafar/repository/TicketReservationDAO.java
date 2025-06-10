@@ -9,4 +9,5 @@ public interface TicketReservationDAO {
     Optional<TicketReservation> findByReservationAndTrip(Long reservationId, Long tripId);
 
     List<TicketReservation> findAllByReservationId(Long reservationId);
+    int updateSeatNumber(Long reservationId, Long tripId, short newSeatNumber);
 }

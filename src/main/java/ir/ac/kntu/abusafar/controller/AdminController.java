@@ -1,13 +1,17 @@
 package ir.ac.kntu.abusafar.controller;
 
+import ir.ac.kntu.abusafar.dto.cancellation.CancellationResponseDTO;
 import ir.ac.kntu.abusafar.dto.payment.PaymentRecordDTO;
 import ir.ac.kntu.abusafar.dto.report.ReportResponseDTO;
+import ir.ac.kntu.abusafar.dto.reservation.EditReservationRequestDTO;
 import ir.ac.kntu.abusafar.dto.reserve_record.ReserveRecordItemDTO;
 import ir.ac.kntu.abusafar.dto.response.BaseResponse;
 import ir.ac.kntu.abusafar.service.AdminService;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -55,5 +59,24 @@ public class AdminController {
     public ResponseEntity<BaseResponse<List<ReportResponseDTO>>> getReportsByUser(@PathVariable Long userId) {
         List<ReportResponseDTO> reports = adminService.getReportsByUserId(userId);
         return ResponseEntity.ok(BaseResponse.success(reports));
+    }
+
+    @GetMapping("/reservations/{reservationId}")
+    public ResponseEntity<BaseResponse<List<ReserveRecordItemDTO>>> getReservationById(@PathVariable Long reservationId) {
+        List<ReserveRecordItemDTO> reservationDetails = adminService.getReservationDetailsById(reservationId);
+        return ResponseEntity.ok(BaseResponse.success(reservationDetails));
+    }
+
+    @PostMapping("/reservations/{reservationId}/cancel")
+    public ResponseEntity<BaseResponse<CancellationResponseDTO>> cancelReservation(Authentication authentication, @PathVariable Long reservationId) {
+        Long adminId = Long.parseLong(authentication.getName());
+        CancellationResponseDTO response = adminService.adminCancelReservation(reservationId, adminId);
+        return ResponseEntity.ok(BaseResponse.success(response));
+    }
+
+    @PutMapping("/reservations/change-seat")
+    public ResponseEntity<BaseResponse<String>> changeSeatNumber(@Valid @RequestBody EditReservationRequestDTO request) {
+        adminService.changeSeatNumber(request);
+        return ResponseEntity.ok(BaseResponse.success("Seat number updated successfully.", "Success", HttpStatus.OK.value()));
     }
 }
