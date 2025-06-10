@@ -1,144 +1,173 @@
-# AbuSafar Transportation Booking System 🚀
+# AbuSafar 🚀
 
-[![API Documentation](https://img.shields.io/badge/API-Documentation-blue)](openapi.json)
-
-A comprehensive transportation booking platform that allows users to book various types of transportation including trains 🚂, buses 🚌, and flights ✈️.
-
-**Note:** If GitHub is not rendering the API documentation correctly, you can view the `openapi.json` file with a tool like the online [Swagger Editor](https://editor.swagger.io/).
-
-## Table of Contents
-- [Overview](#overview)
-- [Features](#features)
-- [Database Schema](#database-schema)
-- [Technologies Used](#technologies-used)
-- [Entity Tables](#entity-tables)
-- [Getting Started](#getting-started)
-
-## Overview 🌟
-
-AbuSafar is a sophisticated transportation booking system that enables users to:
-- Book one-way and round-trip tickets
-- Choose from multiple transportation types
-- Make secure payments
-- Access additional services
-- Submit reports and feedback
-- Manage their bookings and profile
-
-## Features 🎯
-
-### User Management 👤
-- User registration and authentication
-- Profile management with contact information
-- Role-based access (User/Admin)
-- Profile picture support
-
-### Booking System 🎫
-- One-way and round-trip reservations
-- Multiple transportation options:
-  - Trains (with star ratings)
-  - Buses (VIP/Standard/Sleeper classes)
-  - Flights (Economy/Business/First class)
-- Age-based pricing (Adult/Child/Baby)
-- Seat selection
-- Booking expiration system
-
-### Additional Features 💫
-- Location management with country/province/city
-- Payment processing with multiple payment methods
-- Additional services (Internet/Food/Bed)
-- Report submission system
-- Capacity management
-- Booking status tracking
-
-## Database Schema 📊
-
-The database is designed using PostgreSQL and consists of multiple interconnected tables. The ER diagram was created using draw.io for clear visualization of relationships.
-
-### Core Tables Overview
-
-| Category | Tables |
-|----------|---------|
-| User Management | `users`, `user_contact` |
-| Transportation | `trips`, `trains`, `buses`, `flights` |
-| Booking | `reservations`, `one_way_reservation`, `two_way_reservation` |
-| Payments | `payments` |
-| Location | `location_details` |
-| Additional | `reports`, `additional_services`, `tickets` |
-
-## Technologies Used 🛠️
-
-- **Database**: PostgreSQL
-- **ER Diagram**: draw.io
-- **Data Types**: Custom ENUM types for better data integrity
-- **Indexing**: Optimized queries with strategic indexes
-
-## Entity Tables 📝
-
-### Transportation Options
-
-| Type | Features |
-|------|-----------|
-| 🚂 Train | Star rating (1-5) |
-| 🚌 Bus | VIP, Standard, Sleeper options |
-| ✈️ Flight | Economy, Business, First class |
-
-### Booking Types
-
-| Type | Description |
-|------|-------------|
-| One-way | Single trip booking |
-| Round-trip | Two-way journey booking |
-
-### Payment Methods 💳
-
-- Card
-- Wallet
-- Crypto
-
-## Getting Started 🚀
-
-1. Install PostgreSQL on your system
-2. Clone this repository
-3. Run the SQL scripts to set up the database schema
-4. Configure your application to connect to the database
-
-## Security Features 🔒
-
-- Password hashing
-- Input validation
-- Data integrity constraints
-- Role-based access control
-
-## Performance Optimizations ⚡
-
-- Database is normalized to Third Normal Form (3NF) to:
-  - Eliminate data redundancy
-  - Ensure data integrity
-  - Reduce data anomalies
-  - Optimize storage efficiency
-
-### Strategic Indexing 📈
-- User-focused indexes:
-  - `idx_users_user_role`: Fast role-based queries
-  - `idx_users_name`: Efficient name searches
-- Booking-related indexes:
-  - `idx_reservations_user_id`: Quick user booking lookups
-  - `idx_reservations_reservation_datetime`: Time-based queries
-  - `idx_one_way_reservation_trip_age`: Optimized one-way booking searches
-  - `idx_two_way_reservation_ticket_one/two`: Efficient round-trip queries
-- Trip management indexes:
-  - `idx_departure_timestamp`: Fast departure time searches
-  - `idx_trips_origin_destination_location`: Location-based queries
-- Payment tracking:
-  - `idx_payments_reservation_id`: Quick payment lookups
-  - `idx_payments_user_id`: User payment history
-- Additional indexes:
-  - `idx_location_details_city`: City-based searches
-  - `idx_tickets_trip_vehicle`: Vehicle type filtering
-  - `idx_reports_status`: Report status tracking
-
-These indexes significantly improve query performance for common operations while maintaining optimal database structure through normalization.
+A modern, full-featured transportation booking platform for trains, buses, and flights. Built for scalability, security, and performance, AbuSafar is designed to handle real-world booking, payment, and user management scenarios with a robust backend and a clean API.
 
 ---
 
-*Note: This project uses PostgreSQL for database management and draw.io for ER diagram creation. The schema is designed with scalability and performance in mind.* 
+## 📝 Table of Contents
+- [About the Project](#about-the-project)
+- [Tech Stack & Architecture](#tech-stack--architecture)
+- [Features](#features)
+- [Database & Caching](#database--caching)
+- [API Overview](#api-overview)
+- [How to Deploy & Run](#how-to-deploy--run)
+- [API Usage & Testing](#api-usage--testing)
+- [ER Diagram](#er-diagram)
+- [License](#license)
+
+---
+
+## About the Project
+
+AbuSafar is a robust, full-featured transportation booking system supporting trains, buses, and flights. It provides a seamless experience for users to search, reserve, and pay for tickets, with advanced features for admins and a secure, scalable backend.
+
+---
+
+## Tech Stack & Architecture
+
+| Layer         | Technology                                                                 |
+|---------------|----------------------------------------------------------------------------|
+| **Backend**   | Java 17, Spring Boot, Spring Data JPA, Spring Security, Spring Cache       |
+| **Database**  | PostgreSQL (3NF, indexed, Flyway-ready)                                    |
+| **Caching**   | Redis (Spring Cache integration)                                           |
+| **API Docs**  | OpenAPI 3.0 (Swagger), YAML                                               |
+| **Testing**   | JUnit 5, Spring Boot Test                                                  |
+| **DevOps**    | Maven, HikariCP, Dotenv, Docker-ready (optional)                          |
+| **Other**     | draw.io (ERD), Gmail SMTP (email), SMS API (OTP)                          |
+
+---
+
+## Features
+
+- **User Authentication**: OTP-based login, JWT tokens, role-based access (User/Admin)
+- **Profile Management**: Update info, manage contacts, profile picture
+- **Ticket Search & Booking**: One-way & round-trip, seat selection, age-based pricing
+- **Payment Processing**: Wallet, card, crypto (extensible)
+- **Booking Management**: View, cancel, and manage reservations
+- **Admin Tools**: Manage users, reservations, reports, and payments
+- **Reports & Feedback**: User-submitted reports, admin review
+- **Location Management**: Country, province, city hierarchy
+- **Performance**: Redis caching, indexed queries, connection pooling
+- **Security**: Password hashing, JWT, input validation, role-based access
+
+---
+
+## Database & Caching
+
+- **PostgreSQL**: All data is stored in a normalized, 3NF schema with strategic indexing for performance.
+- **Redis**: Used for caching frequently accessed data and OTP/session management.
+- **Migration**: SQL scripts in `/db` (see `AbuSafar.sql`). Flyway-ready for CI/CD.
+- **Seed Data**: Optional Go-based seeder in `/seed_data`.
+
+---
+
+## API Overview
+
+All endpoints are documented in [openapi.yml](openapi.yml).
+Here's a summary of the main API groups:
+
+| Group                | Description                                      | Example Endpoints                |
+|----------------------|--------------------------------------------------|----------------------------------|
+| **Auth**             | User sign-up, OTP login, JWT                     | `/api/auth/signup`, `/api/auth/login/otp/verify` |
+| **Profile**          | Update/view user profile                         | `/api/profile/update`            |
+| **Ticket Search**    | Search/select tickets                            | `/api/tickets/search`, `/api/tickets/select` |
+| **Booking**          | Reserve, view, cancel bookings                   | `/api/booking/reserve/one_way`, `/api/bookings/history` |
+| **Payment**          | Pay for reservations                             | `/api/payment/pay`               |
+| **Reports**          | Submit/view user reports                         | `/api/reports/submit`, `/api/admin/reports` |
+| **Admin**            | Manage users, reservations, reports, payments    | `/api/admin/reservations/{id}`   |
+| **Location**         | Get cities, provinces, countries                 | `/api/locations/cities`          |
+
+**Authentication:**
+- Most endpoints require a Bearer JWT token (see OpenAPI docs for details).
+- OTP-based login for secure, passwordless authentication.
+
+---
+
+## How to Deploy & Run
+
+### 1. Prerequisites
+- Java 17+
+- Maven 3.8+
+- PostgreSQL 13+
+- Redis 6+
+- (Optional) Docker
+
+### 2. Database Setup
+```bash
+# Create the database and user in PostgreSQL
+psql -U postgres
+CREATE DATABASE abusafar;
+CREATE USER abusafar_user WITH ENCRYPTED PASSWORD 'yourpassword';
+GRANT ALL PRIVILEGES ON DATABASE abusafar TO abusafar_user;
+
+# Run schema and seed scripts
+psql -U abusafar_user -d abusafar -f db/AbuSafar.sql
+psql -U abusafar_user -d abusafar -f db/TestData.sql
+```
+
+### 3. Redis Setup
+```bash
+# Start Redis (default port 6379)
+redis-server
+```
+
+### 4. Configure Environment
+- Copy `.env.example` to `.env` and fill in your secrets (DB, JWT, email, SMS, etc.)
+- Or set environment variables directly.
+
+### 5. Build & Run
+```bash
+# Build
+./mvnw clean package
+
+# Run
+./mvnw spring-boot:run
+```
+- The app will be available at [http://localhost:8080](http://localhost:8080)
+
+---
+
+## API Usage & Testing
+
+### API Documentation
+- Full OpenAPI/Swagger docs: [openapi.yml](openapi.yml)
+- Use Swagger UI or [Postman](https://www.postman.com/) to import the OpenAPI spec.
+
+### Example: User Signup & OTP Login
+1. **Sign Up**
+   - `POST /api/auth/signup`
+   - Body: `{ "email": "...", "phoneNumber": "...", ... }`
+2. **Request OTP**
+   - `POST /api/auth/login/otp/request`
+   - Body: `{ "email": "..." }`
+3. **Verify OTP**
+   - `POST /api/auth/login/otp/verify`
+   - Body: `{ "email": "...", "otp": "123456" }`
+   - Response: JWT token
+4. **Authenticated Requests**
+   - Add `Authorization: Bearer <token>` header
+
+### Testing APIs
+- **Automated Tests:**
+  Run all tests with:
+  ```bash
+  ./mvnw test
+  ```
+  Uses JUnit 5 and Spring Boot Test.
+- **Manual Testing:**
+  Use Postman or Swagger UI with the OpenAPI spec.
+
+---
+
+## ER Diagram
+- See [`db_design/ERD.png`](db_design/ERD.png) or [`db_design/AbuErd.drawio.svg`](db_design/AbuErd.drawio.svg)
+- Designed in draw.io, normalized to 3NF, with all relationships and constraints.
+
+---
+
+## License
+This project is licensed under the Apache 2.0 License.
+
+---
+
+**Made with ❤️ by the AbuSafar Team**
