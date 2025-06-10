@@ -32,14 +32,12 @@ public class LocationController {
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<BaseResponse<?>> getCities(@RequestParam(required = false) String name) {
         if (name == null || name.trim().isEmpty()) {
-            // all cities
             try {
                 return ResponseEntity.ok(BaseResponse.success(locationService.getAllCities()));
             } catch (LocationNotFoundException e) {
                 return ResponseEntity.ok(BaseResponse.success(Collections.emptyList(), "No cities found in the system.", HttpStatus.OK.value()));
             }
         } else {
-            // specific city
             List<LocationResponseDTO> foundCities = locationService.findLocationsByCityName(name);
             if (foundCities.isEmpty()) {
                 return ResponseEntity.ok(BaseResponse.success(Collections.emptyList(), "City '" + name + "' not found.", HttpStatus.OK.value()));
