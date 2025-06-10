@@ -37,7 +37,7 @@ public class LocationController {
             description = "Retrieves a list of all available cities. If a 'name' query parameter is provided, it searches for locations matching that specific city name."
     )
     @GetMapping("/cities")
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("permitAll()")
     public ResponseEntity<BaseResponse<?>> getCities(
             @Parameter(description = "Optional. The name of the city to search for.") @RequestParam(required = false) String name) {
         if (name == null || name.trim().isEmpty()) {
