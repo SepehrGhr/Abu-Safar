@@ -1,5 +1,8 @@
 package ir.ac.kntu.abusafar.controller;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import ir.ac.kntu.abusafar.dto.location.LocationResponseDTO;
 import ir.ac.kntu.abusafar.dto.response.BaseResponse;
 import ir.ac.kntu.abusafar.exception.LocationNotFoundException;
@@ -19,6 +22,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping(Routes.API_KEY + "/locations")
+@Tag(name = "Location Information", description = "APIs for retrieving location data like countries, provinces, and cities")
 public class LocationController {
 
     private final LocationService locationService;
@@ -28,9 +32,14 @@ public class LocationController {
         this.locationService = locationService;
     }
 
+    @Operation(
+            summary = "Get Cities",
+            description = "Retrieves a list of all available cities. If a 'name' query parameter is provided, it searches for locations matching that specific city name."
+    )
     @GetMapping("/cities")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<BaseResponse<?>> getCities(@RequestParam(required = false) String name) {
+    public ResponseEntity<BaseResponse<?>> getCities(
+            @Parameter(description = "Optional. The name of the city to search for.") @RequestParam(required = false) String name) {
         if (name == null || name.trim().isEmpty()) {
             // all cities
             try {
