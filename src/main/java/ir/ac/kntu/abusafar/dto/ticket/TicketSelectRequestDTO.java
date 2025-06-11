@@ -8,8 +8,8 @@ import lombok.Setter;
 @Setter
 @Getter
 public class TicketSelectRequestDTO {
-    @NotNull(message = "Trip_id cannot be null.")
-    private Long trip_id;
+    @NotNull(message = "TripId cannot be null.")
+    private Long tripId;
     @NotNull(message = "Age cannot be null.")
     private AgeRange ageCategory;
 }

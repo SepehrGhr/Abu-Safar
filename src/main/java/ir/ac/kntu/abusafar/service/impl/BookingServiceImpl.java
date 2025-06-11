@@ -63,11 +63,11 @@ public class BookingServiceImpl implements BookingService {
         if (userId == null || ticketRequest == null) {
             throw new IllegalArgumentException("User ID and TicketSelectRequestDTO cannot be null for one-way reservation.");
         }
-        if (ticketRequest.getTrip_id() == null || ticketRequest.getAgeCategory() == null) {
+        if (ticketRequest.getTripId() == null || ticketRequest.getAgeCategory() == null) {
             throw new IllegalArgumentException("Trip ID and Age Category in TicketSelectRequestDTO cannot be null.");
         }
 
-        ProcessedTicketInfo processedTicket = processSingleTicketLeg(ticketRequest.getTrip_id(), ticketRequest.getAgeCategory());
+        ProcessedTicketInfo processedTicket = processSingleTicketLeg(ticketRequest.getTripId(), ticketRequest.getAgeCategory());
 
         List<TicketReserveDetailsDTO> ticketDetailsList = Collections.singletonList(
                 new TicketReserveDetailsDTO(
@@ -88,13 +88,13 @@ public class BookingServiceImpl implements BookingService {
         if (userId == null || ticketRequests == null || ticketRequests.length != 2) {
             throw new IllegalArgumentException("User ID cannot be null and exactly two TicketSelectRequestDTOs are required for a two-way reservation.");
         }
-        if (ticketRequests[0] == null || ticketRequests[0].getTrip_id() == null || ticketRequests[0].getAgeCategory() == null ||
-                ticketRequests[1] == null || ticketRequests[1].getTrip_id() == null || ticketRequests[1].getAgeCategory() == null) {
+        if (ticketRequests[0] == null || ticketRequests[0].getTripId() == null || ticketRequests[0].getAgeCategory() == null ||
+                ticketRequests[1] == null || ticketRequests[1].getTripId() == null || ticketRequests[1].getAgeCategory() == null) {
             throw new IllegalArgumentException("Trip ID and Age Category in both TicketSelectRequestDTOs cannot be null.");
         }
 
-        ProcessedTicketInfo outgoingProcessedTicket = processSingleTicketLeg(ticketRequests[0].getTrip_id(), ticketRequests[0].getAgeCategory());
-        ProcessedTicketInfo returnProcessedTicket = processSingleTicketLeg(ticketRequests[1].getTrip_id(), ticketRequests[1].getAgeCategory());
+        ProcessedTicketInfo outgoingProcessedTicket = processSingleTicketLeg(ticketRequests[0].getTripId(), ticketRequests[0].getAgeCategory());
+        ProcessedTicketInfo returnProcessedTicket = processSingleTicketLeg(ticketRequests[1].getTripId(), ticketRequests[1].getAgeCategory());
 
         validateRoundTripLegs(outgoingProcessedTicket.ticket(), returnProcessedTicket.ticket());
 

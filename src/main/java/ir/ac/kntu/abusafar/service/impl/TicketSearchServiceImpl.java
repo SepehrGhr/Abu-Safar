@@ -99,7 +99,7 @@ public class TicketSearchServiceImpl implements TicketSearchService {
 
     @Override
     public Optional<TicketResultDetailsDTO> selectTicket(TicketSelectRequestDTO requestDTO){
-        Long trip_id = requestDTO.getTrip_id();
+        Long trip_id = requestDTO.getTripId();
         AgeRange age = requestDTO.getAgeCategory();
 
         Optional<Ticket> ticketOpt = ticketDAO.findById(trip_id, age);
