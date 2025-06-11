@@ -134,8 +134,8 @@ public class UserServiceImpl implements UserService {
         if (updatedInfo.getCity() != null) {
             user.setCity(updatedInfo.getCity());
         }
-        if (updatedInfo.getBirthdayDate() != null) {
-            user.setBirthdayDate(updatedInfo.getBirthdayDate());
+        if (updatedInfo.getBirthDate() != null) {
+            user.setBirthdayDate(updatedInfo.getBirthDate());
         }
         userDAO.update(user);
 
