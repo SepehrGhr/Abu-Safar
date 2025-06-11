@@ -1,10 +1,12 @@
 package ir.ac.kntu.abusafar.service.impl;
 
+import ir.ac.kntu.abusafar.dto.reserve_record.ReserveRecordItemDTO;
 import ir.ac.kntu.abusafar.exception.NotificationSendException;
 import ir.ac.kntu.abusafar.model.Reservation;
 import ir.ac.kntu.abusafar.model.UserContact;
 import ir.ac.kntu.abusafar.repository.ReservationDAO;
 import ir.ac.kntu.abusafar.repository.UserDAO;
+import ir.ac.kntu.abusafar.service.BookingHistoryService;
 import ir.ac.kntu.abusafar.service.NotificationService;
 import ir.ac.kntu.abusafar.util.constants.enums.ContactType;
 import ir.ac.kntu.abusafar.util.constants.enums.ReserveStatus;
@@ -21,7 +23,9 @@ import org.springframework.stereotype.Service;
 import org.thymeleaf.context.Context;
 import org.thymeleaf.spring6.SpringTemplateEngine;
 
+import java.math.BigDecimal;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -34,16 +38,18 @@ public class NotificationServiceImpl implements NotificationService {
     private final SpringTemplateEngine emailTemplateEngine;
     private final ReservationDAO reservationDAO;
     private final UserDAO userDAO;
+    private final BookingHistoryService bookingHistoryService;
 
     @Autowired
     public NotificationServiceImpl(JavaMailSender mailSender,
                                    @Qualifier("emailTemplateEngine") SpringTemplateEngine emailTemplateEngine,
                                    ReservationDAO reservationDAO,
-                                   UserDAO userDAO) {
+                                   UserDAO userDAO, BookingHistoryService bookingHistoryService) {
         this.mailSender = mailSender;
         this.emailTemplateEngine = emailTemplateEngine;
         this.reservationDAO = reservationDAO;
         this.userDAO = userDAO;
+        this.bookingHistoryService = bookingHistoryService;
     }
 
     @Override
@@ -102,5 +108,81 @@ public class NotificationServiceImpl implements NotificationService {
             LOGGER.error("Error sending payment reminder email for reservation ID {}: {}", reservationId, e.getMessage(), e);
             throw new NotificationSendException("Error sending payment reminder email to " + userEmail, e);
         }
+
+    }
+
+    @Override
+    public void sendBookingConfirmationEmail(Long reservationId) {
+        List<ReserveRecordItemDTO> history = bookingHistoryService.getReservationHistoryForUser(reservationId, Optional.empty());
+        if (history.isEmpty()) {
+            LOGGER.warn("Cannot send booking confirmation for reservation ID: {}. No history found.", reservationId);
+            return;
+        }
+
+        ReserveRecordItemDTO reservationDetails = history.get(0);
+        Long userId = getUserIdFromReservation(reservationId); // You'll need to implement this helper or fetch the user
+        if(userId == null) return;
+
+        Optional<UserContact> userContactOpt = userDAO.findContactByUserIdAndType(userId, ContactType.EMAIL);
+
+        if (userContactOpt.isEmpty()) {
+            LOGGER.warn("Cannot send booking confirmation for reservation ID: {}. No email found for user ID: {}.", reservationId, userId);
+            return;
+        }
+
+        String userEmail = userContactOpt.get().getContactInfo();
+        Context context = new Context();
+        context.setVariable("reservationId", reservationId);
+        context.setVariable("tickets", reservationDetails.ticketsInformation());
+        context.setVariable("seatNumbers", reservationDetails.seatNumbers());
+
+        sendEmail(userEmail, "Your AbuSafar Booking is Confirmed!", "booking-confirmation-email", context);
+    }
+
+    @Override
+    public void sendCancellationConfirmationEmail(Long reservationId, BigDecimal refundedAmount, BigDecimal newWalletBalance) {
+        Long userId = getUserIdFromReservation(reservationId);
+        if(userId == null) return;
+
+        Optional<UserContact> userContactOpt = userDAO.findContactByUserIdAndType(userId, ContactType.EMAIL);
+
+        if (userContactOpt.isEmpty()) {
+            LOGGER.warn("Cannot send cancellation confirmation for reservation ID: {}. No email found for user ID: {}.", reservationId, userId);
+            return;
+        }
+
+        String userEmail = userContactOpt.get().getContactInfo();
+        Context context = new Context();
+        context.setVariable("reservationId", reservationId);
+        context.setVariable("refundedAmount", refundedAmount);
+        context.setVariable("newWalletBalance", newWalletBalance);
+
+        sendEmail(userEmail, "Your AbuSafar Reservation has been Cancelled", "cancellation-confirmation-email", context);
+    }
+
+
+    private void sendEmail(String to, String subject, String templateName, Context context) {
+        try {
+            MimeMessage mimeMessage = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true, "UTF-8");
+            String htmlContent = emailTemplateEngine.process(templateName, context);
+            helper.setTo(to);
+            helper.setSubject(subject);
+            helper.setText(htmlContent, true);
+            mailSender.send(mimeMessage);
+            LOGGER.info("Email '{}' sent to {}", subject, to);
+        } catch (MessagingException | MailException e) {
+            LOGGER.error("Error sending email '{}' to {}: {}", subject, to, e.getMessage(), e);
+            throw new NotificationSendException("Error sending email to " + to, e);
+        }
+    }
+
+    private Long getUserIdFromReservation(Long reservationId) {
+        return reservationDAO.findById(reservationId)
+                .map(Reservation::getUserId)
+                .orElseGet(() -> {
+                    LOGGER.warn("Could not determine user ID for reservation {}", reservationId);
+                    return null;
+                });
     }
 }
