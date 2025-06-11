@@ -131,6 +131,22 @@ The application will start on `http://localhost:8080`.
 
 ---
 
+## 📄 API Documentation
+
+This project's API is fully documented using the OpenAPI 3.0 standard. You can explore and interact with all the endpoints in two ways:
+
+### 1. Live Interactive Documentation (Recommended)
+
+A standalone, interactive documentation page is generated from our `openapi.yml` and is hosted on GitHub Pages. This is the easiest way for anyone to view the API, with no local setup required.
+
+> [**View Live API Documentation**](https://SepehrGhr.github.io/Abu-Safar/api-doc.html)
+
+### 2. Local Swagger UI
+
+Once the application is running on your local machine, you can access the built-in Swagger UI to test the endpoints directly:
+
+> [**http://localhost:8080/swagger-ui.html**](http://localhost:8080/swagger-ui.html)
+
 ## 🔬 Testing the API
 
 You can test the API using two primary methods:
