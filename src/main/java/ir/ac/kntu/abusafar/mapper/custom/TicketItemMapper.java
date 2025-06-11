@@ -29,35 +29,29 @@ public class TicketItemMapper {
             return null;
         }
         Trip trip = ticket.getTrip();
-        TicketResultItemDTO dto = new TicketResultItemDTO();
 
-        String originCityName = "Unknown";
-        if (trip.getOriginLocationId() != null) {
-            Optional<LocationResponseDTO> originLocOpt = locationService.getLocationById(trip.getOriginLocationId());
-            originLocOpt.ifPresent(locationResponseDTO -> dto.setOriginCity(locationResponseDTO.getCity()));
-        }
+        String originCityName = locationService.getLocationById(trip.getOriginLocationId())
+                .map(LocationResponseDTO::city)
+                .orElse("Unknown");
 
-        String destinationCityName = "Unknown";
-        if (trip.getDestinationLocationId() != null) {
-            Optional<LocationResponseDTO> destLocOpt = locationService.getLocationById(trip.getDestinationLocationId());
-            destLocOpt.ifPresent(locationResponseDTO -> dto.setDestinationCity(locationResponseDTO.getCity()));
-        }
+        String destinationCityName = locationService.getLocationById(trip.getDestinationLocationId())
+                .map(LocationResponseDTO::city)
+                .orElse("Unknown");
 
-        if (trip.getCompanyId() != null) {
-            companyDAO.findById(trip.getCompanyId())
-                    .map(Company::getName)
-                    .ifPresent(dto::setVehicleCompany);
-        } else {
-            dto.setVehicleCompany("Unknown Company");
-        }
+        String companyName = companyDAO.findById(trip.getCompanyId())
+                .map(Company::getName)
+                .orElse("Unknown Company");
 
-        dto.setTripId(trip.getTripId());
-        dto.setAge(ticket.getAge());
-        dto.setDepartureTimestamp(trip.getDepartureTimestamp());
-        dto.setArrivalTimestamp(trip.getArrivalTimestamp());
-        dto.setTripVehicle(ticket.getTripVehicle());
-        dto.setPrice(ticket.getPrice());
-
-        return dto;
+        return new TicketResultItemDTO(
+                trip.getTripId(),
+                ticket.getAge(),
+                originCityName,
+                destinationCityName,
+                trip.getDepartureTimestamp(),
+                trip.getArrivalTimestamp(),
+                ticket.getTripVehicle(),
+                ticket.getPrice(),
+                companyName
+        );
     }
 }

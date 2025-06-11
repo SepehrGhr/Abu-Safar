@@ -58,23 +58,24 @@ public class BookingHistoryServiceImpl implements BookingHistoryService {
     }
 
     private TicketResultItemDTO createTicketInfo(RawHistoryRecordDTO raw) {
-        TicketResultItemDTO ticketInfo = new TicketResultItemDTO();
-        ticketInfo.setTripId(raw.tripId());
-        ticketInfo.setAge(raw.ticketAge());
-        ticketInfo.setDepartureTimestamp(raw.departureTimestamp());
-        ticketInfo.setArrivalTimestamp(raw.arrivalTimestamp());
-        ticketInfo.setTripVehicle(raw.tripVehicle());
-        ticketInfo.setPrice(raw.ticketPrice());
-        ticketInfo.setVehicleCompany(raw.vehicleCompany());
+        String originCity = locationService.getLocationById(raw.originLocationId())
+                .map(LocationResponseDTO::city)
+                .orElse("Unknown");
 
-        locationService.getLocationById(raw.originLocationId())
-                .map(LocationResponseDTO::getCity)
-                .ifPresent(ticketInfo::setOriginCity);
+        String destinationCity = locationService.getLocationById(raw.destinationLocationId())
+                .map(LocationResponseDTO::city)
+                .orElse("Unknown");
 
-        locationService.getLocationById(raw.destinationLocationId())
-                .map(LocationResponseDTO::getCity)
-                .ifPresent(ticketInfo::setDestinationCity);
-
-        return ticketInfo;
+        return new TicketResultItemDTO(
+                raw.tripId(),
+                raw.ticketAge(),
+                originCity,
+                destinationCity,
+                raw.departureTimestamp(),
+                raw.arrivalTimestamp(),
+                raw.tripVehicle(),
+                raw.ticketPrice(),
+                raw.vehicleCompany()
+        );
     }
 }
