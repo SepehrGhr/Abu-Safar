@@ -1,7 +1,7 @@
 package ir.ac.kntu.abusafar.repository.impl;
 
 import ir.ac.kntu.abusafar.dto.reserve_record.RawHistoryRecordDTO;
-import ir.ac.kntu.abusafar.repository.PaidReservationDAO;
+import ir.ac.kntu.abusafar.repository.ReservationHistoryDAO;
 import ir.ac.kntu.abusafar.util.constants.enums.AgeRange;
 import ir.ac.kntu.abusafar.util.constants.enums.TicketStatus;
 import ir.ac.kntu.abusafar.util.constants.enums.TripType;
@@ -9,17 +9,18 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Repository;
+
 import java.sql.Timestamp;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
 
 @Repository
-public class PaidReservationDAOImpl implements PaidReservationDAO {
+public class ReservationHistoryDAOImpl implements ReservationHistoryDAO {
 
     private final JdbcTemplate jdbcTemplate;
 
-    private static final String FETCH_HISTORY_BY_USER_SQL = """
+    private static final String BASE_HISTORY_QUERY_SELECT = """
         SELECT
             CASE
                 WHEN r.reserve_status = 'CANCELLED' THEN 'CANCELLED'
@@ -54,42 +55,17 @@ public class PaidReservationDAOImpl implements PaidReservationDAO {
             companies c ON t.company_id = c.company_id
         LEFT JOIN
             payments p ON r.reservation_id = p.reservation_id
-        WHERE
-            r.user_id = ?
-        ORDER BY
-            r.reservation_datetime DESC
     """;
 
-    private static final String FETCH_HISTORY_BY_STATUS_SQL = """
-        SELECT
-            CASE
-                WHEN r.reserve_status = 'CANCELLED' THEN 'CANCELLED'
-                WHEN r.reserve_status = 'RESERVED' THEN 'PENDING_PAYMENT'
-                WHEN r.reserve_status = 'PAID' AND t.departure_timestamp > NOW() THEN 'UPCOMING_TRIP'
-                WHEN r.reserve_status = 'PAID' AND t.departure_timestamp <= NOW() THEN 'PAST_TRIP'
-                ELSE 'UNKNOWN'
-            END AS calculated_status,
-            r.reservation_id, r.is_round_trip, p.payment_id, p.payment_timestamp,
-            tr.seat_number, t.trip_id, t.origin_location_id, t.destination_location_id,
-            t.departure_timestamp, t.arrival_timestamp, c.name AS vehicle_company,
-            tk.age AS tck_age, tk.price AS tck_price, tk.trip_vehicle AS tck_trip_vehicle
-        FROM
-            reservations r
-        JOIN ticket_reservation tr ON r.reservation_id = tr.reservation_id
-        JOIN trips t ON tr.trip_id = t.trip_id
-        JOIN tickets tk ON t.trip_id = tk.trip_id AND tr.age = tk.age
-        JOIN companies c ON t.company_id = c.company_id
-        LEFT JOIN payments p ON r.reservation_id = p.reservation_id
-        WHERE
-            CASE
-                WHEN r.reserve_status = 'CANCELLED' THEN 'CANCELLED'
-                WHEN r.reserve_status = 'RESERVED' THEN 'PENDING_PAYMENT'
-                WHEN r.reserve_status = 'PAID' AND t.departure_timestamp > NOW() THEN 'UPCOMING_TRIP'
-                ELSE 'PAST_TRIP'
-            END = ?
-        ORDER BY
-            r.reservation_datetime DESC
-    """;
+    private static final String FETCH_HISTORY_BY_USER_SQL = BASE_HISTORY_QUERY_SELECT + " WHERE r.user_id = ? ORDER BY r.reservation_datetime DESC";
+
+    private static final String FETCH_HISTORY_BY_ID_SQL = BASE_HISTORY_QUERY_SELECT + " WHERE r.reservation_id = ?";
+
+    private static final String FETCH_HISTORY_BY_STATUS_SQL = BASE_HISTORY_QUERY_SELECT + " WHERE CASE " +
+            "WHEN r.reserve_status = 'CANCELLED' THEN 'CANCELLED' " +
+            "WHEN r.reserve_status = 'RESERVED' THEN 'PENDING_PAYMENT' " +
+            "WHEN r.reserve_status = 'PAID' AND t.departure_timestamp > NOW() THEN 'UPCOMING_TRIP' " +
+            "ELSE 'PAST_TRIP' END = ? ORDER BY r.reservation_datetime DESC";
 
     private final RowMapper<RawHistoryRecordDTO> rowMapper = (rs, rowNum) -> {
         Long paymentId = rs.getObject("payment_id", Long.class);
@@ -119,7 +95,7 @@ public class PaidReservationDAOImpl implements PaidReservationDAO {
     };
 
     @Autowired
-    public PaidReservationDAOImpl(JdbcTemplate jdbcTemplate) {
+    public ReservationHistoryDAOImpl(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
     }
 
@@ -129,13 +105,12 @@ public class PaidReservationDAOImpl implements PaidReservationDAO {
     }
 
     @Override
-    public List<RawHistoryRecordDTO> findReservationHistoryByStatus(TicketStatus statusFilter) {
-        return jdbcTemplate.query(FETCH_HISTORY_BY_STATUS_SQL, rowMapper, statusFilter.name());
+    public List<RawHistoryRecordDTO> findDetailedReservationById(Long reservationId) {
+        return jdbcTemplate.query(FETCH_HISTORY_BY_ID_SQL, rowMapper, reservationId);
     }
 
     @Override
-    public List<RawHistoryRecordDTO> findDetailedReservationById(Long reservationId) {
-        String sql = FETCH_HISTORY_BY_USER_SQL.replace("WHERE r.user_id = ?", "WHERE r.reservation_id = ?");
-        return jdbcTemplate.query(sql, rowMapper, reservationId);
+    public List<RawHistoryRecordDTO> findReservationHistoryByStatus(TicketStatus statusFilter) {
+        return jdbcTemplate.query(FETCH_HISTORY_BY_STATUS_SQL, rowMapper, statusFilter.name());
     }
 }

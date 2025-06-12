@@ -25,30 +25,29 @@ import org.thymeleaf.spring6.SpringTemplateEngine;
 
 import java.math.BigDecimal;
 import java.time.format.DateTimeFormatter;
-import java.util.List;
 import java.util.Optional;
 
 @Service
 public class NotificationServiceImpl implements NotificationService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(NotificationServiceImpl.class);
-    private static final String REMINDER_EMAIL_SUBJECT = "Payment Reminder for Your AbuSafar Reservation";
 
     private final JavaMailSender mailSender;
     private final SpringTemplateEngine emailTemplateEngine;
-    private final ReservationDAO reservationDAO;
     private final UserDAO userDAO;
+    private final ReservationDAO reservationDAO;
     private final BookingHistoryService bookingHistoryService;
 
     @Autowired
     public NotificationServiceImpl(JavaMailSender mailSender,
                                    @Qualifier("emailTemplateEngine") SpringTemplateEngine emailTemplateEngine,
+                                   UserDAO userDAO,
                                    ReservationDAO reservationDAO,
-                                   UserDAO userDAO, BookingHistoryService bookingHistoryService) {
+                                   BookingHistoryService bookingHistoryService) {
         this.mailSender = mailSender;
         this.emailTemplateEngine = emailTemplateEngine;
-        this.reservationDAO = reservationDAO;
         this.userDAO = userDAO;
+        this.reservationDAO = reservationDAO;
         this.bookingHistoryService = bookingHistoryService;
     }
 
@@ -67,61 +66,36 @@ public class NotificationServiceImpl implements NotificationService {
             return;
         }
 
-        Optional<UserContact> userContactOpt = userDAO.findContactByUserIdAndType(reservation.getUserId(), ContactType.EMAIL);
-
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm 'on' yyyy-MM-dd");
-        String expirationTimeFormatted = reservation.getExpirationDatetime().format(formatter);
-        String reminderMessage = String.format(
-                "Reminder: Payment for reservation #%d is required before %s.",
-                reservation.getReservationId(),
-                expirationTimeFormatted
-        );
+        Long userId = reservation.getUserId();
+        Optional<UserContact> userContactOpt = userDAO.findContactByUserIdAndType(userId, ContactType.EMAIL);
 
         if (userContactOpt.isEmpty()) {
-            LOGGER.warn("Cannot send email reminder for reservation ID: {}. No email found for user ID: {}. Printing to console.", reservationId, reservation.getUserId());
-            System.out.println("--- PAYMENT REMINDER ---");
-            System.out.println(reminderMessage);
-            System.out.println("------------------------");
+            LOGGER.warn("Cannot send payment reminder for reservation ID: {}. No email found for user ID: {}.", reservationId, userId);
             return;
         }
 
         String userEmail = userContactOpt.get().getContactInfo();
 
-        try {
-            MimeMessage mimeMessage = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true, "UTF-8");
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm 'on' yyyy-MM-dd");
+        String expirationTimeFormatted = reservation.getExpirationDatetime().format(formatter);
 
-            Context context = new Context();
-            context.setVariable("subject", REMINDER_EMAIL_SUBJECT);
-            context.setVariable("reservationId", reservation.getReservationId());
-            context.setVariable("expirationTime", expirationTimeFormatted);
+        Context context = new Context();
+        context.setVariable("reservationId", reservation.getReservationId());
+        context.setVariable("expirationTime", expirationTimeFormatted);
 
-            String htmlContent = emailTemplateEngine.process("payment-reminder-email", context);
-
-            helper.setTo(userEmail);
-            helper.setSubject(REMINDER_EMAIL_SUBJECT);
-            helper.setText(htmlContent, true);
-
-            mailSender.send(mimeMessage);
-            LOGGER.info("Payment reminder email sent to {} for reservation ID: {}", userEmail, reservationId);
-        } catch (MessagingException | MailException e) {
-            LOGGER.error("Error sending payment reminder email for reservation ID {}: {}", reservationId, e.getMessage(), e);
-            throw new NotificationSendException("Error sending payment reminder email to " + userEmail, e);
-        }
+        sendEmail(userEmail, "Payment Reminder for Your AbuSafar Reservation", "payment-reminder-email", context);
 
     }
 
     @Override
     public void sendBookingConfirmationEmail(Long reservationId) {
-        List<ReserveRecordItemDTO> history = bookingHistoryService.getReservationHistoryForUser(reservationId, Optional.empty());
-        if (history.isEmpty()) {
-            LOGGER.warn("Cannot send booking confirmation for reservation ID: {}. No history found.", reservationId);
+        ReserveRecordItemDTO reservationDetails = bookingHistoryService.getReservationDetailsById(reservationId);
+
+        Long userId = getUserIdFromReservation(reservationId);
+        if (userId == null) {
+            LOGGER.error("CRITICAL: Could not find user for reservation {}. Confirmation email not sent.", reservationId);
             return;
         }
-
-        ReserveRecordItemDTO reservationDetails = history.get(0);
-        Long userId = getUserIdFromReservation(reservationId); // You'll need to implement this helper or fetch the user
-        if(userId == null) return;
 
         Optional<UserContact> userContactOpt = userDAO.findContactByUserIdAndType(userId, ContactType.EMAIL);
 
@@ -159,7 +133,6 @@ public class NotificationServiceImpl implements NotificationService {
 
         sendEmail(userEmail, "Your AbuSafar Reservation has been Cancelled", "cancellation-confirmation-email", context);
     }
-
 
     private void sendEmail(String to, String subject, String templateName, Context context) {
         try {

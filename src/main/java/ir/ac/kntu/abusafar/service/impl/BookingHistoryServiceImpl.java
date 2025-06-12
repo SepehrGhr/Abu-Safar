@@ -4,7 +4,8 @@ import ir.ac.kntu.abusafar.dto.location.LocationResponseDTO;
 import ir.ac.kntu.abusafar.dto.reserve_record.RawHistoryRecordDTO;
 import ir.ac.kntu.abusafar.dto.reserve_record.ReserveRecordItemDTO;
 import ir.ac.kntu.abusafar.dto.ticket.TicketResultItemDTO;
-import ir.ac.kntu.abusafar.repository.PaidReservationDAO;
+import ir.ac.kntu.abusafar.exception.ReservationNotFoundException;
+import ir.ac.kntu.abusafar.repository.ReservationHistoryDAO;
 import ir.ac.kntu.abusafar.service.BookingHistoryService;
 import ir.ac.kntu.abusafar.service.LocationService;
 import ir.ac.kntu.abusafar.util.constants.enums.TicketStatus;
@@ -20,43 +21,34 @@ import java.util.stream.Collectors;
 @Service
 public class BookingHistoryServiceImpl implements BookingHistoryService {
 
-    private final PaidReservationDAO paidReservationDAO;
+    private final ReservationHistoryDAO reservationHistoryDAO;
     private final LocationService locationService;
 
     @Autowired
-    public BookingHistoryServiceImpl(PaidReservationDAO paidReservationDAO, LocationService locationService) {
-        this.paidReservationDAO = paidReservationDAO;
+    public BookingHistoryServiceImpl(ReservationHistoryDAO reservationHistoryDAO, LocationService locationService) {
+        this.reservationHistoryDAO = reservationHistoryDAO;
         this.locationService = locationService;
     }
 
     @Override
+    public ReserveRecordItemDTO getReservationDetailsById(Long reservationId) {
+        List<RawHistoryRecordDTO> rawRecords = reservationHistoryDAO.findDetailedReservationById(reservationId);
+        if (rawRecords.isEmpty()) {
+            throw new ReservationNotFoundException("Reservation with ID " + reservationId + " not found.");
+        }
+        return consolidateRawRecords(rawRecords);
+    }
+
+    @Override
     public List<ReserveRecordItemDTO> getReservationHistoryForUser(Long userId, Optional<TicketStatus> statusFilter) {
-        List<RawHistoryRecordDTO> rawRecords = paidReservationDAO.findReservationHistoryByUserId(userId);
+        List<RawHistoryRecordDTO> rawRecords = reservationHistoryDAO.findReservationHistoryByUserId(userId);
 
         Map<Long, List<RawHistoryRecordDTO>> recordsByReservationId = rawRecords.stream()
                 .collect(Collectors.groupingBy(RawHistoryRecordDTO::reservationId));
 
         List<ReserveRecordItemDTO> consolidatedRecords = new ArrayList<>();
         for (List<RawHistoryRecordDTO> group : recordsByReservationId.values()) {
-            RawHistoryRecordDTO firstRecord = group.get(0);
-
-            List<TicketResultItemDTO> tickets = group.stream()
-                    .map(this::createTicketInfo)
-                    .collect(Collectors.toList());
-
-            List<Short> seatNumbers = group.stream()
-                    .map(RawHistoryRecordDTO::seatNumber)
-                    .collect(Collectors.toList());
-
-            consolidatedRecords.add(new ReserveRecordItemDTO(
-                    firstRecord.calculatedStatus(),
-                    firstRecord.reservationId(),
-                    firstRecord.paymentId(),
-                    firstRecord.paymentTimestamp(),
-                    seatNumbers,
-                    firstRecord.isRoundTrip(),
-                    tickets
-            ));
+            consolidatedRecords.add(consolidateRawRecords(group));
         }
 
         List<ReserveRecordItemDTO> filteredRecords = consolidatedRecords;
@@ -75,6 +67,30 @@ public class BookingHistoryServiceImpl implements BookingHistoryService {
         });
 
         return filteredRecords;
+    }
+
+    private ReserveRecordItemDTO consolidateRawRecords(List<RawHistoryRecordDTO> group) {
+        if (group == null || group.isEmpty()) return null;
+
+        RawHistoryRecordDTO firstRecord = group.get(0);
+
+        List<TicketResultItemDTO> tickets = group.stream()
+                .map(this::createTicketInfo)
+                .collect(Collectors.toList());
+
+        List<Short> seatNumbers = group.stream()
+                .map(RawHistoryRecordDTO::seatNumber)
+                .collect(Collectors.toList());
+
+        return new ReserveRecordItemDTO(
+                firstRecord.calculatedStatus(),
+                firstRecord.reservationId(),
+                firstRecord.paymentId(),
+                firstRecord.paymentTimestamp(),
+                seatNumbers,
+                firstRecord.isRoundTrip(),
+                tickets
+        );
     }
 
     private TicketResultItemDTO createTicketInfo(RawHistoryRecordDTO raw) {

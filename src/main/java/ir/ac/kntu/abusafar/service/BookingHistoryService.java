@@ -8,4 +8,5 @@ import java.util.Optional;
 
 public interface BookingHistoryService {
     List<ReserveRecordItemDTO> getReservationHistoryForUser(Long userId, Optional<TicketStatus> statusFilter);
+    ReserveRecordItemDTO getReservationDetailsById(Long reservationId);
 }

@@ -32,7 +32,7 @@ import java.util.stream.Collectors;
 public class AdminServiceImpl implements AdminService {
 
     private final ReservationDAO reservationDAO;
-    private final PaidReservationDAO paidReservationDAO;
+    private final ReservationHistoryDAO reservationHistoryDAO;
     private final LocationService locationService;
     private final PaymentDAO paymentDAO;
     private final ReportDAO reportDAO;
@@ -40,9 +40,9 @@ public class AdminServiceImpl implements AdminService {
     private final TicketReservationDAO ticketReservationDAO;
     private final TripDAO tripDAO;
 
-    public AdminServiceImpl(ReservationDAO reservationDAO, PaidReservationDAO paidReservationDAO, LocationService locationService, PaymentDAO paymentDAO, ReportDAO reportDAO, CancellationService cancellationService, TicketReservationDAO ticketReservationDAO, TripDAO tripDAO) {
+    public AdminServiceImpl(ReservationDAO reservationDAO, ReservationHistoryDAO reservationHistoryDAO, LocationService locationService, PaymentDAO paymentDAO, ReportDAO reportDAO, CancellationService cancellationService, TicketReservationDAO ticketReservationDAO, TripDAO tripDAO) {
         this.reservationDAO = reservationDAO;
-        this.paidReservationDAO = paidReservationDAO;
+        this.reservationHistoryDAO = reservationHistoryDAO;
         this.locationService = locationService;
         this.paymentDAO = paymentDAO;
         this.reportDAO = reportDAO;
@@ -53,7 +53,7 @@ public class AdminServiceImpl implements AdminService {
 
     @Override
     public List<ReserveRecordItemDTO> getAllCancelledReservations() {
-        List<RawHistoryRecordDTO> rawRecords = paidReservationDAO.findReservationHistoryByStatus(TicketStatus.CANCELLED);
+        List<RawHistoryRecordDTO> rawRecords = reservationHistoryDAO.findReservationHistoryByStatus(TicketStatus.CANCELLED);
 
         Map<Long, List<RawHistoryRecordDTO>> recordsByReservationId = rawRecords.stream()
                 .collect(Collectors.groupingBy(RawHistoryRecordDTO::reservationId));
@@ -67,7 +67,7 @@ public class AdminServiceImpl implements AdminService {
 
     @Override
     public List<ReserveRecordItemDTO> getReservationDetailsById(Long reservationId) {
-        List<RawHistoryRecordDTO> rawRecords = paidReservationDAO.findDetailedReservationById(reservationId);
+        List<RawHistoryRecordDTO> rawRecords = reservationHistoryDAO.findDetailedReservationById(reservationId);
         if (rawRecords.isEmpty()) {
             throw new ReservationNotFoundException("Reservation with ID " + reservationId + " not found.");
         }
