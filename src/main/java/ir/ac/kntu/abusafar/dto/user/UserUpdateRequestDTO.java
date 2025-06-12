@@ -30,5 +30,5 @@ public class UserUpdateRequestDTO {
     private String phoneNumber;
 
     @Past(message = "Birth date must be in the past")
-    private LocalDate birthDate;
+    private LocalDate birthdayDate;
 }

@@ -15,7 +15,10 @@ import ir.ac.kntu.abusafar.service.TripService;
 import ir.ac.kntu.abusafar.util.constants.enums.AgeRange;
 
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 
@@ -34,6 +37,7 @@ public class TicketSearchServiceImpl implements TicketSearchService {
     private final LocationService locationService;
     private final TicketDetailsMapper ticketDetailsMapper;
     private final TicketItemMapper ticketItemMapper;
+    private final Logger LOGGER = LoggerFactory.getLogger(TicketSearchServiceImpl.class);
 
     @Autowired
     public TicketSearchServiceImpl(
@@ -47,7 +51,9 @@ public class TicketSearchServiceImpl implements TicketSearchService {
     }
 
     @Override
+    @Cacheable(value = "ticketSearchResults", key = "#requestDTO")
     public List<TicketResultItemDTO> searchTickets(TicketSearchRequestDTO requestDTO) {
+        LOGGER.info("Executing searchTickets method... If you see this, it's a CACHE MISS.");
         if (requestDTO == null) {
             throw new IllegalArgumentException("Search request DTO cannot be null.");
         }
@@ -98,7 +104,9 @@ public class TicketSearchServiceImpl implements TicketSearchService {
     }
 
     @Override
+    @Cacheable(value = "selectedTickets", key = "#requestDTO", unless = "#result == null")
     public Optional<TicketResultDetailsDTO> selectTicket(TicketSelectRequestDTO requestDTO){
+        LOGGER.info("Executing selectTicket method... If you see this, it's a CACHE MISS.");
         Long trip_id = requestDTO.getTripId();
         AgeRange age = requestDTO.getAgeCategory();
 
