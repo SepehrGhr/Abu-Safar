@@ -13,11 +13,10 @@ import (
 )
 
 func main() {
-
 	var db *sql.DB
 	var err error
 
-	connStr := "user=db_user password=db_password dbname=db_name sslmode=disable host=localhost port=db_port"
+	connStr := "user=postgres password=98979695 dbname=postgres sslmode=disable host=localhost port=5432"
 	db, err = sql.Open("postgres", connStr)
 	if err != nil {
 		log.Fatal(err)
@@ -26,17 +25,16 @@ func main() {
 
 	gofakeit.Seed(time.Now().UnixNano())
 
+	// Seed in a logical order
 	seedUsers(db)
 	seedUserContact(db)
 	seedLocationDetails(db)
-	seedTrips(db)
-	seedTickets(db)
-	seedReservations(db)
-	seedPayments(db, 301, 600)
-	seedAdditionalServices(db, 1, 60)
-	seedTransportDetails(db)
-	seedReports(db)
+	seedCompanies(db)
+	seedOneWayTrips(db)
 	seedRoundTrips(db)
+	seedReservations(db)
+	seedPayments(db)
+	seedReports(db)
 }
 
 func hashPassword(password string) (string, error) {
@@ -47,435 +45,411 @@ func hashPassword(password string) (string, error) {
 	return string(hashedPassword), nil
 }
 
+// --- Seeder Functions ---
+
 func seedUsers(db *sql.DB) {
 	numUsers := 30
-
+	fmt.Println("🌱 Seeding", numUsers, "users...")
 	for i := 0; i < numUsers; i++ {
-		firstName := gofakeit.FirstName()
-		lastName := gofakeit.LastName()
-		userRole := "USER"
-		accountStatus := "ACTIVE"
-		city := gofakeit.City()
-		signUpDate := gofakeit.DateRange(time.Now().AddDate(-2, 0, 0), time.Now())
-
 		password := gofakeit.Password(true, true, true, true, false, 12)
 		hashedPassword, err := hashPassword(password)
 		if err != nil {
-			log.Printf("Error hashing password for user %d: %v\n", i+1, err)
+			log.Printf("Error hashing password: %v\n", err)
 			continue
 		}
-
-		profilePicture := "default.png"
-
 		_, err = db.Exec(`
-			INSERT INTO users (
-				first_name, last_name, user_role, account_status, city, 
-				hashed_password, profile_picture, sign_up_date
-			) 
-			VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-		`, firstName, lastName, userRole, accountStatus, city, hashedPassword, profilePicture, signUpDate)
-
+            INSERT INTO users (first_name, last_name, user_role, account_status, city, hashed_password, profile_picture, sign_up_date)
+            VALUES ($1, $2, 'USER', 'ACTIVE', $3, $4, 'default.png', $5)
+        `, gofakeit.FirstName(), gofakeit.LastName(), gofakeit.City(), hashedPassword, gofakeit.DateRange(time.Now().AddDate(-2, 0, 0), time.Now()))
 		if err != nil {
-			log.Printf("Error inserting user %d: %v\n", i+1, err)
+			log.Printf("Error inserting user: %v\n", err)
 		}
 	}
-
-	fmt.Println("✅ Seeded", numUsers, "users.")
+	fmt.Println("✅ Finished seeding users.")
 }
 
 func seedUserContact(db *sql.DB) {
-	numUsers := 1030
-
-	for i := 1001; i <= numUsers; i++ {
-		contactTypes := rand.Intn(2) + 1
-
-		if contactTypes == 1 {
-			if rand.Intn(2) == 0 {
-				email := gofakeit.Email()
-				_, err := db.Exec(`
-					INSERT INTO user_contact (user_id, contact_type, contact_info)
-					VALUES ($1, 'EMAIL', $2)
-				`, i, email)
-				if err != nil {
-					log.Printf("Error inserting email for user %d: %v\n", i, err)
-				}
-			} else {
-				phone := gofakeit.Phone()
-				_, err := db.Exec(`
-					INSERT INTO user_contact (user_id, contact_type, contact_info)
-					VALUES ($1, 'PHONE_NUMBER', $2)
-				`, i, phone)
-				if err != nil {
-					log.Printf("Error inserting phone number for user %d: %v\n", i, err)
-				}
-			}
-		} else if contactTypes == 2 {
-			email := gofakeit.Email()
-			phone := gofakeit.Phone()
-
-			_, err := db.Exec(`
-				INSERT INTO user_contact (user_id, contact_type, contact_info)
-				VALUES ($1, 'EMAIL', $2)
-			`, i, email)
+	fmt.Println("🌱 Seeding user contacts...")
+	for i := 1; i <= 30; i++ { // Assuming user IDs are 1-30
+		if gofakeit.Bool() {
+			_, err := db.Exec(`INSERT INTO user_contact (user_id, contact_type, contact_info) VALUES ($1, 'EMAIL', $2)`, i, gofakeit.Email())
 			if err != nil {
 				log.Printf("Error inserting email for user %d: %v\n", i, err)
 			}
-
-			_, err = db.Exec(`
-				INSERT INTO user_contact (user_id, contact_type, contact_info)
-				VALUES ($1, 'PHONE_NUMBER', $2)
-			`, i, phone)
+		}
+		if gofakeit.Bool() {
+			_, err := db.Exec(`INSERT INTO user_contact (user_id, contact_type, contact_info) VALUES ($1, 'PHONE_NUMBER', $2)`, i, gofakeit.Phone())
 			if err != nil {
-				log.Printf("Error inserting phone number for user %d: %v\n", i, err)
+				log.Printf("Error inserting phone for user %d: %v\n", i, err)
 			}
 		}
 	}
-
-	fmt.Println("✅ Seeded user_contact data.")
+	fmt.Println("✅ Finished seeding user contacts.")
 }
 
 var locations = map[string]map[string][]string{
-	"USA": {
-		"California": {"Los Angeles", "San Francisco", "San Diego"},
-		"New York":   {"New York City", "Buffalo", "Rochester"},
-		"Texas":      {"Austin", "Houston", "Dallas"},
-	},
-	"Canada": {
-		"Ontario":          {"Toronto", "Ottawa", "Hamilton"},
-		"Quebec":           {"Montreal", "Quebec City", "Gatineau"},
-		"British Columbia": {"Vancouver", "Victoria", "Kelowna"},
-	},
-	"Germany": {
-		"Berlin":  {"Berlin City", "Potsdam"},
-		"Bavaria": {"Munich", "Nuremberg", "Augsburg"},
-	},
-	"Iran": {
-		"Mazandaran": {"Sari", "Babol", "Ramsar"},
-		"Tehran":     {"Tehran", "Damavand"},
-		"Markazi":    {"Arak", "Saveh"},
-	},
+	"USA":    {"California": {"Los Angeles", "San Francisco"}, "New York": {"New York City"}},
+	"Canada": {"Ontario": {"Toronto"}, "Quebec": {"Montreal"}},
+	"Iran":   {"Tehran": {"Tehran"}, "Mazandaran": {"Sari"}},
 }
 
 func seedLocationDetails(db *sql.DB) {
+	fmt.Println("🌱 Seeding locations...")
 	for country, provinces := range locations {
 		for province, cities := range provinces {
 			for _, city := range cities {
-				_, err := db.Exec(`
-					INSERT INTO location_details (country, province, city)
-					VALUES ($1, $2, $3)
-				`, country, province, city)
+				_, err := db.Exec(`INSERT INTO location_details (country, province, city) VALUES ($1, $2, $3)`, country, province, city)
 				if err != nil {
-					log.Printf("Error inserting location (%s, %s, %s): %v\n", country, province, city, err)
+					log.Printf("Error inserting location: %v\n", err)
 				}
 			}
 		}
 	}
-
-	fmt.Println("✅ Seeded location_details data.")
+	fmt.Println("✅ Finished seeding locations.")
 }
 
-var vehicleCompanies = []string{
-	"Delta Airlines", "Air France", "British Airways", "Emirates", "United Airlines",
-	"Amtrak", "Deutsche Bahn", "Eurostar", "Indian Railways", "China Railway",
-	"Singapore Airlines", "Qatar Airways", "Lufthansa", "Southwest Airlines", "Alitalia",
-}
-
-func seedTrips(db *sql.DB) {
-
-	for i := 1; i <= 60; i++ {
-		originLocationID := rand.Intn(30) + 1
-		destinationLocationID := rand.Intn(30) + 1
-
-		for originLocationID == destinationLocationID {
-			destinationLocationID = rand.Intn(30) + 1
+func seedCompanies(db *sql.DB) {
+	fmt.Println("🌱 Seeding companies...")
+	companies := map[string]string{
+		"Delta Airlines": "FLIGHT", "United Airlines": "FLIGHT", "Lufthansa": "FLIGHT",
+		"Amtrak": "TRAIN", "Deutsche Bahn": "TRAIN", "Eurostar": "TRAIN",
+		"Greyhound": "BUS", "FlixBus": "BUS", "Peter Pan": "BUS",
+	}
+	for name, vehicleType := range companies {
+		_, err := db.Exec(`INSERT INTO companies (name, vehicle_type) VALUES ($1, $2)`, name, vehicleType)
+		if err != nil {
+			log.Printf("Error inserting company: %v\n", err)
 		}
+	}
+	fmt.Println("✅ Finished seeding companies.")
+}
 
+func seedOneWayTrips(db *sql.DB) {
+	fmt.Println("🌱 Seeding one-way trips...")
+	companyIDs := getCompanyIDs(db)
+	locationIDs := getLocationIDs(db)
+	numTrips := 60
+
+	for i := 0; i < numTrips; i++ {
+		originLocationID, destinationLocationID := getRandomLocationPair(locationIDs)
+		companyID := companyIDs[rand.Intn(len(companyIDs))]
 		departureTimestamp := time.Now().Add(time.Duration(rand.Intn(1000)) * time.Hour)
+		arrivalTimestamp := departureTimestamp.Add(time.Duration(rand.Intn(23)+1) * time.Hour)
 
-		hoursCount := rand.Intn(24) + 1
-		arrivalTimestamp := departureTimestamp.Add(time.Hour * time.Duration(hoursCount))
-
-		stopCount := rand.Intn(3)
-
-		totalCapacity := rand.Intn(51) + 50
-
-		vehicleCompany := vehicleCompanies[rand.Intn(len(vehicleCompanies))]
-
-		_, err := db.Exec(`
-			INSERT INTO trips (
-				origin_location_id, 
-				destination_location_id, 
-				departure_timestamp, 
-				arrival_timestamp, 
-				stop_count, 
-				total_capacity, 
-				vehicle_company
-			)
-			VALUES ($1, $2, $3, $4, $5, $6, $7)
-		`, originLocationID, destinationLocationID, departureTimestamp, arrivalTimestamp, stopCount, totalCapacity, vehicleCompany)
-
-		if err != nil {
-			log.Printf("Error inserting trip from %d to %d: %v\n", originLocationID, destinationLocationID, err)
-		}
-	}
-
-	fmt.Println("✅ Seeded trips data with vehicle company.")
-}
-
-func seedTickets(db *sql.DB) {
-
-	tripTypes := []string{"TRAIN", "BUS", "FLIGHT"}
-	ageCategories := []string{"BABY", "CHILD", "ADULT"}
-
-	for tripID := 1; tripID <= 60; tripID++ {
-		tripType := tripTypes[rand.Intn(len(tripTypes))]
-
-		basePrice := float64(rand.Intn(101) + 100)
-
-		priceMap := map[string]float64{
-			"BABY":  basePrice,
-			"CHILD": basePrice + 50,
-			"ADULT": basePrice + 150,
-		}
-
-		for _, age := range ageCategories {
-			_, err := db.Exec(`
-				INSERT INTO tickets (trip_id, age, price, trip_vehicle)
-				VALUES ($1, $2, $3, $4)
-			`, tripID, age, priceMap[age], tripType)
-
-			if err != nil {
-				log.Printf("Error inserting ticket for trip %d (%s): %v", tripID, age, err)
-			}
-		}
-	}
-
-	fmt.Println("✅ Seeded tickets for trips 1 to 60.")
-}
-
-func seedReservations(db *sql.DB) {
-	ageCategories := []string{"ADULT", "CHILD", "BABY"}
-
-	count := 300 
-
-	for i := 0; i < count; i++ {
-		userID := gofakeit.Number(1, 1000)
-
-		var reservationID int64
+		var tripID int64
 		err := db.QueryRow(`
-			INSERT INTO reservations (user_id)
-			VALUES ($1)
-			RETURNING reservation_id
-		`, userID).Scan(&reservationID)
+            INSERT INTO trips (origin_location_id, destination_location_id, departure_timestamp, arrival_timestamp, company_id, stop_count, total_capacity)
+            VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING trip_id
+        `, originLocationID, destinationLocationID, departureTimestamp, arrivalTimestamp, companyID, rand.Intn(3), rand.Intn(51)+50).Scan(&tripID)
 
 		if err != nil {
-			log.Printf("❌ Failed to insert reservation %d: %v", i+1, err)
+			log.Printf("Error inserting one-way trip: %v\n", err)
 			continue
 		}
 
-		tripID := gofakeit.Number(1, 60)
-		age := ageCategories[gofakeit.Number(0, 2)]
-		seatNumber := gofakeit.Number(1, 30)
+		var vehicleType string
+		err = db.QueryRow(`SELECT vehicle_type FROM companies WHERE company_id = $1`, companyID).Scan(&vehicleType)
+		if err != nil {
+			log.Printf("Could not get vehicle type for company %d: %v", companyID, err)
+			continue
+		}
+
+		seedTicketsForTrip(db, tripID, vehicleType)
+		seedVehicleDetailsForTrip(db, tripID, vehicleType)
+		seedAdditionalServicesForTrip(db, tripID)
+	}
+	fmt.Println("✅ Finished seeding one-way trips.")
+}
+
+func seedRoundTrips(db *sql.DB) {
+	fmt.Println("🌱 Seeding round-trip data...")
+	locationIDs := getLocationIDs(db)
+	companyIDsByType := getCompanyIDsByType(db)
+	tripTypes := []string{"TRAIN", "BUS", "FLIGHT"}
+	numRoundTrips := 20
+
+	for i := 0; i < numRoundTrips; i++ {
+		originLocationID, destinationLocationID := getRandomLocationPair(locationIDs)
+		tripVehicleType := tripTypes[rand.Intn(len(tripTypes))]
+
+		validCompanyIDs := companyIDsByType[tripVehicleType]
+		if len(validCompanyIDs) == 0 {
+			log.Printf("⚠️ No companies found for vehicle type %s, skipping round trip.", tripVehicleType)
+			continue
+		}
+		outgoingCompanyID := validCompanyIDs[rand.Intn(len(validCompanyIDs))]
+		returnCompanyID := validCompanyIDs[rand.Intn(len(validCompanyIDs))]
+
+		departureTimestamp := time.Now().Add(time.Duration(rand.Intn(20)+1) * 24 * time.Hour)
+		arrivalTimestamp := departureTimestamp.Add(time.Duration(rand.Intn(11)+2) * time.Hour)
+
+		var outgoingTripID int64
+		err := db.QueryRow(`
+            INSERT INTO trips (origin_location_id, destination_location_id, departure_timestamp, arrival_timestamp, company_id, stop_count, total_capacity)
+            VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING trip_id
+        `, originLocationID, destinationLocationID, departureTimestamp, arrivalTimestamp, outgoingCompanyID, rand.Intn(3), rand.Intn(51)+50).Scan(&outgoingTripID)
+
+		if err != nil {
+			log.Printf("❌ Failed to insert outgoing trip: %v", err)
+			continue
+		}
+		seedTicketsForTrip(db, outgoingTripID, tripVehicleType)
+		seedVehicleDetailsForTrip(db, outgoingTripID, tripVehicleType)
+		seedAdditionalServicesForTrip(db, outgoingTripID)
+
+		returnDepartureTimestamp := arrivalTimestamp.Add(time.Duration(rand.Intn(5)+1) * 24 * time.Hour)
+		returnArrivalTimestamp := returnDepartureTimestamp.Add(time.Duration(rand.Intn(11)+2) * time.Hour)
+
+		var returnTripID int64
+		err = db.QueryRow(`
+            INSERT INTO trips (origin_location_id, destination_location_id, departure_timestamp, arrival_timestamp, company_id, stop_count, total_capacity)
+            VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING trip_id
+        `, destinationLocationID, originLocationID, returnDepartureTimestamp, returnArrivalTimestamp, returnCompanyID, rand.Intn(3), rand.Intn(51)+50).Scan(&returnTripID)
+
+		if err != nil {
+			log.Printf("❌ Failed to insert return trip: %v", err)
+			continue
+		}
+		seedTicketsForTrip(db, returnTripID, tripVehicleType)
+		seedVehicleDetailsForTrip(db, returnTripID, tripVehicleType)
+		seedAdditionalServicesForTrip(db, returnTripID)
+	}
+	fmt.Println("✅ Finished seeding round-trip data.")
+}
+
+func seedReservations(db *sql.DB) {
+	fmt.Println("🌱 Seeding reservations...")
+	type TripInfo struct {
+		ID        int64
+		Departure time.Time
+	}
+	var trips []TripInfo
+	rows, err := db.Query("SELECT trip_id, departure_timestamp FROM trips")
+	if err != nil {
+		log.Fatalf("❌ Could not fetch trips for reservations: %v", err)
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var trip TripInfo
+		if err := rows.Scan(&trip.ID, &trip.Departure); err != nil {
+			log.Printf("⚠️ Could not scan trip: %v", err)
+			continue
+		}
+		trips = append(trips, trip)
+	}
+
+	if len(trips) == 0 {
+		log.Println("⚠️ No trips found to create reservations for. Skipping.")
+		return
+	}
+
+	ageCategories := []string{"ADULT", "CHILD", "BABY"}
+
+	for i := 0; i < 200; i++ {
+		trip := trips[rand.Intn(len(trips))]
+
+		reservationTimestamp := gofakeit.DateRange(time.Now().AddDate(0, -1, 0), trip.Departure.Add(-time.Hour))
+		expirationTimestamp := reservationTimestamp.Add(10 * time.Minute)
+
+		var reservationID int64
+		err := db.QueryRow(`
+            INSERT INTO reservations (user_id, reservation_datetime, expiration_datetime, reserve_status)
+            VALUES ($1, $2, $3, 'PAID') RETURNING reservation_id
+        `, gofakeit.Number(1, 30), reservationTimestamp, expirationTimestamp).Scan(&reservationID)
+		if err != nil {
+			log.Printf("Error inserting reservation: %v\n", err)
+			continue
+		}
 
 		_, err = db.Exec(`
 			INSERT INTO ticket_reservation (trip_id, age, reservation_id, seat_number)
 			VALUES ($1, $2, $3, $4)
-		`, tripID, age, reservationID, seatNumber)
-
+		`, trip.ID, gofakeit.RandomString(ageCategories), reservationID, gofakeit.Number(1, 100))
 		if err != nil {
 			log.Printf("❌ Failed to insert ticket_reservation for reservation %d: %v", reservationID, err)
 		}
 	}
-
-	fmt.Printf("✅ Seeded %d reservations and matching ticket_reservations.\n", count)
+	fmt.Println("✅ Finished seeding reservations and their ticket links.")
 }
 
-func seedPayments(db *sql.DB, fromID, toID int) {
-	paymentMeans := []string{"CARD", "WALLET", "CRYPTO"}
-
-	for reservationID := fromID; reservationID <= toID; reservationID++ {
-		var userID int
-		var tripID int
-		var age string
-
-		err := db.QueryRow(`SELECT user_id FROM reservations WHERE reservation_id = $1`, reservationID).Scan(&userID)
-		if err != nil {
-			log.Printf("❌ Failed to find reservation %d: %v", reservationID, err)
+func seedPayments(db *sql.DB) {
+	fmt.Println("🌱 Seeding payments...")
+	type ReservationInfo struct {
+		ID   int64
+		Time time.Time
+	}
+	var reservations []ReservationInfo
+	rows, err := db.Query("SELECT reservation_id, reservation_datetime FROM reservations")
+	if err != nil {
+		log.Fatalf("❌ Could not fetch reservations for payments: %v", err)
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var res ReservationInfo
+		if err := rows.Scan(&res.ID, &res.Time); err != nil {
+			log.Printf("⚠️ Could not scan reservation: %v", err)
 			continue
 		}
-
-		err = db.QueryRow(`
-			SELECT trip_id, age FROM ticket_reservation WHERE reservation_id = $1
-		`, reservationID).Scan(&tripID, &age)
-		if err != nil {
-			log.Printf("❌ Failed to find ticket_reservation for reservation %d: %v", reservationID, err)
-			continue
-		}
-
-		var price float64
-		err = db.QueryRow(`
-			SELECT price FROM tickets WHERE trip_id = $1 AND age = $2
-		`, tripID, age).Scan(&price)
-		if err != nil {
-			log.Printf("❌ Failed to find ticket price for reservation %d: %v", reservationID, err)
-			continue
-		}
-
-		paymentType := paymentMeans[gofakeit.Number(0, 2)]
-
-		_, err = db.Exec(`
-			INSERT INTO payments (reservation_id, user_id, payment_status, payment_type, price)
-			VALUES ($1, $2, 'SUCCESSFUL', $3, $4)
-		`, reservationID, userID, paymentType, price)
-
-		if err != nil {
-			log.Printf("❌ Failed to insert payment for reservation %d: %v", reservationID, err)
-			continue
-		}
+		reservations = append(reservations, res)
 	}
 
-	fmt.Printf("✅ Seeded payments for reservations %d to %d.\n", fromID, toID)
-}
+	for _, res := range reservations {
+		paymentTimestamp := gofakeit.DateRange(res.Time, res.Time.Add(9*time.Minute))
 
-func seedAdditionalServices(db *sql.DB, fromID, toID int) {
-	services := []string{"Internet", "Food service", "Bed"}
-
-	for tripID := fromID; tripID <= toID; tripID++ {
-		numServices := gofakeit.Number(0, 3)
-
-		gofakeit.ShuffleStrings(services)
-		selectedServices := services[:numServices]
-
-		for _, service := range selectedServices {
-			_, err := db.Exec(`
-				INSERT INTO additional_services (trip_id, service_type)
-				VALUES ($1, $2)
-			`, tripID, service)
-			if err != nil {
-				log.Printf("❌ Failed to insert service %s for trip %d: %v", service, tripID, err)
-			}
-		}
-	}
-
-	fmt.Printf("✅ Seeded additional_services for trips %d to %d.\n", fromID, toID)
-}
-
-func seedTransportDetails(db *sql.DB) {
-	airportNames := []string{
-		"JFK International", "LAX", "Heathrow", "Charles de Gaulle", "Dubai Intl",
-		"Singapore Changi", "Mehr Abad", "Frankfurt", "Amsterdam Schiphol", "Istanbul Airport", "Haneda Tokyo",
-	}
-
-	for tripID := 1; tripID <= 60; tripID++ {
-		var tripType string
-		err := db.QueryRow(`SELECT trip_vehicle FROM tickets WHERE trip_id = $1 LIMIT 1`, tripID).Scan(&tripType)
+		_, err := db.Exec(`
+            INSERT INTO payments (reservation_id, user_id, payment_status, payment_type, price, payment_timestamp)
+            VALUES ($1, $2, 'SUCCESSFUL', $3, $4, $5)
+        `, res.ID, gofakeit.Number(1, 30), gofakeit.RandomString([]string{"CARD", "WALLET"}), gofakeit.Price(50, 500), paymentTimestamp)
 		if err != nil {
-			log.Printf("❌ Failed to fetch trip type for trip %d: %v", tripID, err)
-			continue
-		}
-
-		switch tripType {
-		case "TRAIN":
-			stars := gofakeit.Number(1, 5)
-			roomType := gofakeit.RandomString([]string{"4-BED", "6-BED"})
-
-			_, err = db.Exec(`
-				INSERT INTO trains (trip_id, stars, room_type)
-				VALUES ($1, $2, $3)
-			`, tripID, stars, roomType)
-			if err != nil {
-				log.Printf("❌ Failed to insert train for trip %d: %v", tripID, err)
-			}
-
-		case "FLIGHT":
-			class := gofakeit.RandomString([]string{"Economy class", "Business class", "First class"})
-
-			var depAirport, arrAirport string
-			for {
-				depAirport = gofakeit.RandomString(airportNames)
-				arrAirport = gofakeit.RandomString(airportNames)
-				if depAirport != arrAirport {
-					break
-				}
-			}
-
-			_, err = db.Exec(`
-				INSERT INTO flights (trip_id, class, departure_airport, arrival_airport)
-				VALUES ($1, $2, $3, $4)
-			`, tripID, class, depAirport, arrAirport)
-			if err != nil {
-				log.Printf("❌ Failed to insert flight for trip %d: %v", tripID, err)
-			}
-
-		case "BUS":
-			busClass := gofakeit.RandomString([]string{"VIP", "Standard", "Sleeper"})
-			chairType := gofakeit.RandomString([]string{"1-2", "2-2"})
-
-			_, err = db.Exec(`
-				INSERT INTO buses (trip_id, class, chair_type)
-				VALUES ($1, $2, $3)
-			`, tripID, busClass, chairType)
-			if err != nil {
-				log.Printf("❌ Failed to insert bus for trip %d: %v", tripID, err)
-			}
-
-		default:
-			log.Printf("❓ Unknown trip type for trip %d: %s", tripID, tripType)
+			log.Printf("Error inserting payment for reservation %d: %v\n", res.ID, err)
 		}
 	}
-
-	fmt.Println("✅ All transport-specific details inserted.")
-}
-
-var reportTopics = []string{
-	"Incorrect price", "Seat not available", "Wrong destination", "Late departure",
-	"Overcharged", "Unclear cancellation policy", "Vehicle condition poor", "Misleading info",
-	"Incorrect passenger type", "Refund not processed", "Booking failed", "Duplicate reservation",
-	"Reservation timeout", "Wrong user info", "Incorrect travel class", "Schedule mismatch",
-	"Service missing", "Trip was cancelled", "Unavailable support", "Other",
-}
-
-var reportContents = []string{
-	"I was charged more than the shown price.", "Seat selected was not reserved for me.",
-	"The trip destination was incorrect in the confirmation.", "The bus/train/flight left much later than scheduled.",
-	"I didn't receive a refund after cancellation.", "There was no information on what to do after booking.",
-	"I booked for an adult but was treated as a child passenger.", "I didn't get the class I paid for.",
-	"My reservation failed but money was deducted.", "Customer support didn't help when I contacted them.",
-	"The trip was cancelled but I wasn't informed in time.", "The platform showed wrong info about the trip.",
-	"I got duplicate reservations for one booking.", "The system timed out during payment.",
-	"My user details were changed without permission.", "The services mentioned (like internet) weren't available.",
-	"Company was different than what I saw while booking.", "I need to change the passenger name but couldn't.",
-	"Security on the vehicle was concerning.", "General issue not listed elsewhere.",
+	fmt.Println("✅ Finished seeding payments.")
 }
 
 func seedReports(db *sql.DB) {
-
-	for i := 0; i < 80; i++ {
-		resID := gofakeit.Number(301, 600)
-
-		var userID int
-		err := db.QueryRow(`SELECT user_id FROM reservations WHERE reservation_id = $1`, resID).Scan(&userID)
-		if err != nil {
-			log.Printf("❌ Could not fetch user for reservation %d: %v", resID, err)
-			continue
+	fmt.Println("🌱 Seeding reports...")
+	reportTopics := []string{"Incorrect price", "Seat not available", "Late departure"}
+	reportContents := []string{"I was charged more than the shown price.", "The vehicle left much later than scheduled."}
+	var reservationIDs []int64
+	rows, err := db.Query("SELECT reservation_id FROM reservations")
+	if err != nil {
+		log.Fatalf("❌ Could not fetch reservations for reports: %v", err)
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var id int64
+		if err := rows.Scan(&id); err != nil {
+			log.Fatal(err)
 		}
-
-		topic := gofakeit.RandomString(reportTopics)
-		content := gofakeit.RandomString(reportContents)
-
-		_, err = db.Exec(`
-			INSERT INTO reports (user_id, link_type, link_id, topic, content)
-			VALUES ($1, 'RESERVATION', $2, $3, $4)
-		`, userID, resID, topic, content)
-
-		if err != nil {
-			log.Printf("❌ Failed to insert report for reservation %d: %v", resID, err)
-		}
+		reservationIDs = append(reservationIDs, id)
 	}
 
-	fmt.Println("✅ Inserted 80 reservation-based reports.")
+	if len(reservationIDs) == 0 {
+		log.Println("⚠️ No reservations to report on. Skipping.")
+		return
+	}
+
+	for i := 0; i < 50; i++ {
+		resID := reservationIDs[rand.Intn(len(reservationIDs))]
+		_, err := db.Exec(`
+            INSERT INTO reports (user_id, link_type, link_id, topic, content, report_status)
+            VALUES ($1, 'RESERVATION', $2, $3, $4, $5)
+        `, gofakeit.Number(1, 30), resID, gofakeit.RandomString(reportTopics), gofakeit.RandomString(reportContents), gofakeit.RandomString([]string{"PENDING", "REVIEWED"}))
+		if err != nil {
+			log.Printf("Error inserting report: %v\n", err)
+		}
+	}
+	fmt.Println("✅ Finished seeding reports.")
 }
 
+// --- Helper Functions for Seeding ---
 
+func seedTicketsForTrip(db *sql.DB, tripID int64, vehicleType string) {
+	ageCategories := []string{"BABY", "CHILD", "ADULT"}
+	for _, age := range ageCategories {
+		_, err := db.Exec(`
+            INSERT INTO tickets (trip_id, age, price, trip_vehicle)
+            VALUES ($1, $2, $3, $4)
+        `, tripID, age, gofakeit.Price(50, 500), vehicleType)
+		if err != nil {
+			log.Printf("Error inserting ticket for trip %d: %v\n", tripID, err)
+		}
+	}
+}
 
+func seedVehicleDetailsForTrip(db *sql.DB, tripID int64, vehicleType string) {
+	switch vehicleType {
+	case "TRAIN":
+		_, err := db.Exec(`INSERT INTO trains (trip_id, stars, room_type) VALUES ($1, $2, $3)`,
+			tripID, gofakeit.Number(3, 5), gofakeit.RandomString([]string{"4-BED", "6-BED"}))
+		if err != nil {
+			log.Printf("Error inserting train details for trip %d: %v\n", tripID, err)
+		}
+	case "FLIGHT":
+		_, err := db.Exec(`INSERT INTO flights (trip_id, class, departure_airport, arrival_airport) VALUES ($1, $2, $3, $4)`,
+			tripID, gofakeit.RandomString([]string{"Economy class", "Business class"}), gofakeit.AirportIata(), gofakeit.AirportIata())
+		if err != nil {
+			log.Printf("Error inserting flight details for trip %d: %v\n", tripID, err)
+		}
+	case "BUS":
+		_, err := db.Exec(`INSERT INTO buses (trip_id, class, chair_type) VALUES ($1, $2, $3)`,
+			tripID, gofakeit.RandomString([]string{"VIP", "Standard"}), gofakeit.RandomString([]string{"1-2", "2-2"}))
+		if err != nil {
+			log.Printf("Error inserting bus details for trip %d: %v\n", tripID, err)
+		}
+	}
+}
 
+func seedAdditionalServicesForTrip(db *sql.DB, tripID int64) {
+	services := []string{"Internet", "Food service", "Bed"}
+	numServices := gofakeit.Number(1, 3)
+	gofakeit.ShuffleStrings(services)
+	for i := 0; i < numServices; i++ {
+		_, err := db.Exec(`INSERT INTO additional_services (trip_id, service_type) VALUES ($1, $2)`, tripID, services[i])
+		if err != nil {
+			log.Printf("Error inserting service for trip %d: %v\n", tripID, err)
+		}
+	}
+}
+
+func getCompanyIDs(db *sql.DB) []int {
+	rows, err := db.Query("SELECT company_id FROM companies")
+	if err != nil {
+		log.Fatalf("Could not get company IDs: %v", err)
+	}
+	defer rows.Close()
+	var ids []int
+	for rows.Next() {
+		var id int
+		if err := rows.Scan(&id); err != nil {
+			log.Fatal(err)
+		}
+		ids = append(ids, id)
+	}
+	return ids
+}
+
+func getLocationIDs(db *sql.DB) []int {
+	rows, err := db.Query("SELECT location_id FROM location_details")
+	if err != nil {
+		log.Fatalf("Could not get location IDs: %v", err)
+	}
+	defer rows.Close()
+	var ids []int
+	for rows.Next() {
+		var id int
+		if err := rows.Scan(&id); err != nil {
+			log.Fatal(err)
+		}
+		ids = append(ids, id)
+	}
+	return ids
+}
+
+func getRandomLocationPair(ids []int) (int, int) {
+	origin := ids[rand.Intn(len(ids))]
+	destination := ids[rand.Intn(len(ids))]
+	for origin == destination {
+		destination = ids[rand.Intn(len(ids))]
+	}
+	return origin, destination
+}
+
+func getCompanyIDsByType(db *sql.DB) map[string][]int {
+	rows, err := db.Query("SELECT company_id, vehicle_type FROM companies")
+	if err != nil {
+		log.Fatalf("Could not get company IDs by type: %v", err)
+	}
+	defer rows.Close()
+	idsByType := make(map[string][]int)
+	for rows.Next() {
+		var id int
+		var vehicleType string
+		if err := rows.Scan(&id, &vehicleType); err != nil {
+			log.Fatal(err)
+		}
+		idsByType[vehicleType] = append(idsByType[vehicleType], id)
+	}
+	return idsByType
+}
