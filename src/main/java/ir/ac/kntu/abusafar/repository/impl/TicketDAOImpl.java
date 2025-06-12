@@ -133,13 +133,13 @@ public class TicketDAOImpl implements TicketDAO {
                 case BUS:
                     if (params.getBusClass() != null) {
                         fromParts.add("INNER JOIN buses b ON tr.trip_id = b.trip_id");
-                        addSingleParamCondition.accept("b.class = CAST(? AS bus_class)", params.getBusClass().name());
+                        addSingleParamCondition.accept("b.class = CAST(? AS bus_class)", params.getBusClass().getDbValue());
                     }
                     break;
                 case FLIGHT:
                     if (params.getFlightClass() != null) {
                         fromParts.add("INNER JOIN flights f ON tr.trip_id = f.trip_id");
-                        addSingleParamCondition.accept("f.class = CAST(? AS flight_class)", params.getFlightClass().name());
+                        addSingleParamCondition.accept("f.class = CAST(? AS flight_class)", params.getFlightClass().getDbValue());
                     }
                     break;
                 case TRAIN:
