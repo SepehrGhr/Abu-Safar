@@ -61,16 +61,17 @@ public class TicketDAOImpl implements TicketDAO {
     };
 
     private final RowMapper<TicketResultItemDTO> TICKET_RESULT_ITEM_ROW_MAPPER = (rs, rowNum) -> {
-        TicketResultItemDTO dto = new TicketResultItemDTO();
-        dto.setTripId(rs.getLong("trip_id"));
-        dto.setAge(AgeRange.valueOf(rs.getString("tck_age").toUpperCase()));
-        dto.setDepartureTimestamp(rs.getObject("departure_timestamp", OffsetDateTime.class));
-        dto.setArrivalTimestamp(rs.getObject("arrival_timestamp", OffsetDateTime.class));
-        dto.setTripVehicle(TripType.valueOf(rs.getString("tck_trip_vehicle").toUpperCase()));
-        dto.setPrice(rs.getBigDecimal("tck_price"));
-        dto.setVehicleCompany(rs.getString("comp_name"));
-
-        return dto;
+        return new TicketResultItemDTO(
+                rs.getLong("trip_id"),
+                AgeRange.valueOf(rs.getString("tck_age").toUpperCase()),
+                null,
+                null,
+                rs.getObject("departure_timestamp", OffsetDateTime.class),
+                rs.getObject("arrival_timestamp", OffsetDateTime.class),
+                TripType.valueOf(rs.getString("tck_trip_vehicle").toUpperCase()),
+                rs.getBigDecimal("tck_price"),
+                rs.getString("comp_name")
+        );
     };
 
     @Autowired
@@ -132,13 +133,13 @@ public class TicketDAOImpl implements TicketDAO {
                 case BUS:
                     if (params.getBusClass() != null) {
                         fromParts.add("INNER JOIN buses b ON tr.trip_id = b.trip_id");
-                        addSingleParamCondition.accept("b.class = CAST(? AS bus_class)", params.getBusClass().name());
+                        addSingleParamCondition.accept("b.class = CAST(? AS bus_class)", params.getBusClass().getDbValue());
                     }
                     break;
                 case FLIGHT:
                     if (params.getFlightClass() != null) {
                         fromParts.add("INNER JOIN flights f ON tr.trip_id = f.trip_id");
-                        addSingleParamCondition.accept("f.class = CAST(? AS flight_class)", params.getFlightClass().name());
+                        addSingleParamCondition.accept("f.class = CAST(? AS flight_class)", params.getFlightClass().getDbValue());
                     }
                     break;
                 case TRAIN:

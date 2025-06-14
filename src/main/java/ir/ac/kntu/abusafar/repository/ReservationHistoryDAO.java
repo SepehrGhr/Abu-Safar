@@ -5,7 +5,7 @@ import ir.ac.kntu.abusafar.util.constants.enums.TicketStatus;
 
 import java.util.List;
 
-public interface PaidReservationDAO {
+public interface ReservationHistoryDAO {
     List<RawHistoryRecordDTO> findReservationHistoryByUserId(Long userId);
     List<RawHistoryRecordDTO> findReservationHistoryByStatus(TicketStatus statusFilter);
     List<RawHistoryRecordDTO> findDetailedReservationById(Long reservationId);

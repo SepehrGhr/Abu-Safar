@@ -12,6 +12,7 @@ import ir.ac.kntu.abusafar.repository.ReservationDAO;
 import ir.ac.kntu.abusafar.service.PaymentService;
 import ir.ac.kntu.abusafar.service.RedisReserveService;
 import ir.ac.kntu.abusafar.service.UserService;
+import ir.ac.kntu.abusafar.service.NotificationService;
 import ir.ac.kntu.abusafar.util.constants.enums.PaymentMeans;
 import ir.ac.kntu.abusafar.util.constants.enums.PaymentStatus;
 import ir.ac.kntu.abusafar.util.constants.enums.ReserveStatus;
@@ -28,16 +29,18 @@ public class PaymentServiceImpl implements PaymentService {
     private final PaymentDAO paymentDAO;
     private final RedisReserveService redisService;
     private final UserService userService;
+    private final NotificationService notificationService;
 
     private static final String REDIS_RESERVATION_EXPIRE_PREFIX = "reservation:expire:";
     private static final String REDIS_RESERVATION_REMIND_PREFIX = "reservation:remind:";
 
     @Autowired
-    public PaymentServiceImpl(ReservationDAO reservationDAO, PaymentDAO paymentDAO, RedisReserveService redisService, UserService userService) {
+    public PaymentServiceImpl(ReservationDAO reservationDAO, PaymentDAO paymentDAO, RedisReserveService redisService, UserService userService, NotificationService notificationService) {
         this.reservationDAO = reservationDAO;
         this.paymentDAO = paymentDAO;
         this.redisService = redisService;
         this.userService = userService;
+        this.notificationService = notificationService;
     }
 
     @Override
@@ -69,6 +72,8 @@ public class PaymentServiceImpl implements PaymentService {
         }
 
         paymentDAO.updatePaymentStatus(pendingPayment.getPaymentId(), PaymentStatus.SUCCESSFUL);
+
+        notificationService.sendBookingConfirmationEmail(reservation.getReservationId());
 
         redisService.deleteKey(REDIS_RESERVATION_EXPIRE_PREFIX + reservationId);
         redisService.deleteKey(REDIS_RESERVATION_REMIND_PREFIX + reservationId);

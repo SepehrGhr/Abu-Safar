@@ -58,6 +58,22 @@ CREATE TABLE location_details
     city        VARCHAR(30) NOT NULL
 );
 
+CREATE TYPE trip_type AS ENUM ('TRAIN', 'BUS', 'FLIGHT');
+CREATE TYPE age_range AS ENUM ('ADULT', 'CHILD', 'BABY');
+
+CREATE TABLE companies
+(
+    company_id                BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    name                      VARCHAR(100)     NOT NULL UNIQUE,
+    vehicle_type              trip_type        NOT NULL,
+    cancellation_penalty_rate NUMERIC(5, 2)    NOT NULL DEFAULT 10.00,
+    logo_picture_url          VARCHAR(255)     DEFAULT 'default_company.png',
+    description               TEXT             NULL,
+    is_active                 BOOLEAN          NOT NULL DEFAULT TRUE,
+
+    CONSTRAINT check_penalty_rate CHECK (cancellation_penalty_rate >= 0.00 AND cancellation_penalty_rate <= 100.00)
+);
+
 CREATE TABLE trips
 (
     trip_id                 BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
@@ -74,21 +90,7 @@ CREATE TABLE trips
 );
 
 
-CREATE TYPE trip_type AS ENUM ('TRAIN', 'BUS', 'FLIGHT');
-CREATE TYPE age_range AS ENUM ('ADULT', 'CHILD', 'BABY');
 
-CREATE TABLE companies
-(
-    company_id                BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    name                      VARCHAR(100)     NOT NULL UNIQUE,
-    vehicle_type              trip_type        NOT NULL,
-    cancellation_penalty_rate NUMERIC(5, 2)    NOT NULL DEFAULT 10.00,
-    logo_picture_url          VARCHAR(255)     DEFAULT 'default_company.png',
-    description               TEXT             NULL,
-    is_active                 BOOLEAN          NOT NULL DEFAULT TRUE,
-
-    CONSTRAINT check_penalty_rate CHECK (cancellation_penalty_rate >= 0.00 AND cancellation_penalty_rate <= 100.00)
-);
 
 CREATE TABLE tickets
 (
@@ -288,11 +290,11 @@ BEGIN
             SELECT trip_id
             FROM ticket_reservation
             WHERE reservation_id = OLD.reservation_id
-        LOOP
-            UPDATE trips
-            SET reserved_capacity = reserved_capacity - 1
-            WHERE trips.trip_id = v_trip_id;
-        END LOOP;
+            LOOP
+                UPDATE trips
+                SET reserved_capacity = reserved_capacity - 1
+                WHERE trips.trip_id = v_trip_id;
+            END LOOP;
 
         UPDATE ticket_reservation
         SET seat_number = 0

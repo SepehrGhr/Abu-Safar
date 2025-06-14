@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Booking Confirmation</title>
+    <style>
+        body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background-color: #f4f4f4; margin: 0; padding: 0; }
+        .container { max-width: 600px; margin: 20px auto; background-color: #ffffff; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); overflow: hidden; }
+        .header { background-color: #28a745; color: #ffffff; padding: 30px 20px; text-align: center; }
+        .header h1 { margin: 0; font-size: 28px; font-weight: bold; }
+        .content { padding: 30px 25px; color: #333333; line-height: 1.6; }
+        .content h2 { color: #0056b3; }
+        .footer { background-color: #eeeeee; color: #777777; padding: 20px; text-align: center; font-size: 12px; }
+        .ticket-details { border: 1px solid #ddd; border-radius: 5px; padding: 15px; margin-bottom: 20px; }
+        .ticket-details p { margin: 5px 0; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header"><h1>Booking Confirmed!</h1></div>
+    <div class="content">
+        <h2>Thank You for Your Purchase!</h2>
+        <p>Your reservation with AbuSafar is confirmed. Please find your booking details below.</p>
+        <p><b>Reservation ID:</b> <span th:text="${reservationId}">#12345</span></p>
+        <hr/>
+        <div th:each="ticket, iterStat : ${tickets}">
+            <h3>Trip <span th:text="${iterStat.count}">1</span> Details</h3>
+            <div class="ticket-details">
+                <p><b>From:</b> <span th:text="${ticket.originCity}">CityA</span> <b>To:</b> <span th:text="${ticket.destinationCity}">CityB</span></p>
+                <p><b>Departure:</b> <span th:text="${#temporals.format(ticket.departureTimestamp, 'eeee, MMMM dd, yyyy HH:mm z')}">Monday, June 12, 2025 09:00 CEST</span></p>
+                <p><b>Arrival:</b> <span th:text="${#temporals.format(ticket.arrivalTimestamp, 'eeee, MMMM dd, yyyy HH:mm z')}">Monday, June 12, 2025 12:00 CEST</span></p>
+                <p><b>Company:</b> <span th:text="${ticket.vehicleCompany}">Bus Inc.</span></p>
+                <p><b>Seat Number:</b> <span th:text="${seatNumbers[iterStat.index]}">5A</span></p>
+            </div>
+        </div>
+        <p>We wish you a pleasant journey!</p>
+    </div>
+    <div class="footer">
+        &copy; <span th:text="${#dates.year(#dates.createNow())}">2025</span> AbuSafar. All rights reserved.
+    </div>
+</div>
+</body>
+</html>

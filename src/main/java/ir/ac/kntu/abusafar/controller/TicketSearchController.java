@@ -48,6 +48,8 @@ public class TicketSearchController {
     public ResponseEntity<BaseResponse<?>> findTickets(@Valid @RequestBody TicketSearchRequestDTO requestDTO){
         try{
             List<TicketResultItemDTO> results = ticketSearchService.searchTickets(requestDTO);
+            if(results.isEmpty())
+                return ResponseEntity.ok(BaseResponse.success(Collections.emptyList(), "No tickets found with given criteria.", HttpStatus.OK.value()));
             return ResponseEntity.ok(BaseResponse.success(results));
         } catch (LocationNotFoundException e){
             return ResponseEntity.ok(BaseResponse.success(Collections.emptyList(), "Origin or destination not found.", HttpStatus.OK.value()));

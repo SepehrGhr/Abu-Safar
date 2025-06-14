@@ -4,12 +4,10 @@ import ir.ac.kntu.abusafar.dto.reservation.InitialReserveResultDTO;
 import ir.ac.kntu.abusafar.dto.reservation.ReserveConfirmationDTO;
 import ir.ac.kntu.abusafar.dto.reservation.ReservationInputDTO;
 import ir.ac.kntu.abusafar.dto.reservation.TicketReserveDetailsDTO;
+import ir.ac.kntu.abusafar.dto.ticket.TicketResultItemDTO;
 import ir.ac.kntu.abusafar.dto.ticket.TicketSelectRequestDTO;
-import ir.ac.kntu.abusafar.exception.InvalidRoundTripException;
-import ir.ac.kntu.abusafar.exception.ReservationFailedException;
-import ir.ac.kntu.abusafar.exception.SeatUnavailableException;
-import ir.ac.kntu.abusafar.exception.TicketNotFoundException;
-import ir.ac.kntu.abusafar.exception.TripCapacityExceededException;
+import ir.ac.kntu.abusafar.exception.*;
+import ir.ac.kntu.abusafar.mapper.custom.TicketItemMapper;
 import ir.ac.kntu.abusafar.model.Reservation;
 import ir.ac.kntu.abusafar.model.Ticket;
 import ir.ac.kntu.abusafar.model.Trip;
@@ -19,7 +17,6 @@ import ir.ac.kntu.abusafar.service.BookingService;
 import ir.ac.kntu.abusafar.service.RedisReserveService;
 import ir.ac.kntu.abusafar.util.constants.enums.AgeRange;
 import ir.ac.kntu.abusafar.util.constants.enums.ReserveStatus;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,6 +29,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Random;
+import java.util.stream.Collectors;
 
 @Service
 public class BookingServiceImpl implements BookingService {
@@ -41,6 +39,7 @@ public class BookingServiceImpl implements BookingService {
     private final TicketDAO ticketDAO;
     private final ReservationDAO reservationDAO;
     private final RedisReserveService redisService;
+    private final TicketItemMapper ticketItemMapper;
 
     private static final String REDIS_RESERVATION_EXPIRE_PREFIX = "reservation:expire:";
     private static final String REDIS_RESERVATION_REMIND_PREFIX = "reservation:remind:";
@@ -51,10 +50,11 @@ public class BookingServiceImpl implements BookingService {
     private record ProcessedTicketInfo(Ticket ticket, BigDecimal price, Short seatNumber) {}
 
     @Autowired
-    public BookingServiceImpl(TicketDAO ticketDAO, ReservationDAO reservationDAO, RedisReserveService redisService) {
+    public BookingServiceImpl(TicketDAO ticketDAO, ReservationDAO reservationDAO, RedisReserveService redisService, TicketItemMapper ticketItemMapper) {
         this.ticketDAO = ticketDAO;
         this.reservationDAO = reservationDAO;
         this.redisService = redisService;
+        this.ticketItemMapper = ticketItemMapper;
     }
 
     @Override
@@ -63,11 +63,11 @@ public class BookingServiceImpl implements BookingService {
         if (userId == null || ticketRequest == null) {
             throw new IllegalArgumentException("User ID and TicketSelectRequestDTO cannot be null for one-way reservation.");
         }
-        if (ticketRequest.getTrip_id() == null || ticketRequest.getAgeCategory() == null) {
+        if (ticketRequest.getTripId() == null || ticketRequest.getAgeCategory() == null) {
             throw new IllegalArgumentException("Trip ID and Age Category in TicketSelectRequestDTO cannot be null.");
         }
 
-        ProcessedTicketInfo processedTicket = processSingleTicketLeg(ticketRequest.getTrip_id(), ticketRequest.getAgeCategory());
+        ProcessedTicketInfo processedTicket = processSingleTicketLeg(ticketRequest.getTripId(), ticketRequest.getAgeCategory());
 
         List<TicketReserveDetailsDTO> ticketDetailsList = Collections.singletonList(
                 new TicketReserveDetailsDTO(
@@ -76,7 +76,10 @@ public class BookingServiceImpl implements BookingService {
                         processedTicket.seatNumber())
         );
 
-        return completeReservationProcess(userId, ticketDetailsList, processedTicket.price(), false, processedTicket.seatNumber());
+        List<TicketResultItemDTO> tickets = List.of(ticketItemMapper.toDTO(processedTicket.ticket()));
+        List<Short> seatNumbers = List.of(processedTicket.seatNumber());
+
+        return completeReservationProcess(userId, ticketDetailsList, processedTicket.price(), false, tickets, seatNumbers);
     }
 
     @Override
@@ -85,13 +88,13 @@ public class BookingServiceImpl implements BookingService {
         if (userId == null || ticketRequests == null || ticketRequests.length != 2) {
             throw new IllegalArgumentException("User ID cannot be null and exactly two TicketSelectRequestDTOs are required for a two-way reservation.");
         }
-        if (ticketRequests[0] == null || ticketRequests[0].getTrip_id() == null || ticketRequests[0].getAgeCategory() == null ||
-                ticketRequests[1] == null || ticketRequests[1].getTrip_id() == null || ticketRequests[1].getAgeCategory() == null) {
+        if (ticketRequests[0] == null || ticketRequests[0].getTripId() == null || ticketRequests[0].getAgeCategory() == null ||
+                ticketRequests[1] == null || ticketRequests[1].getTripId() == null || ticketRequests[1].getAgeCategory() == null) {
             throw new IllegalArgumentException("Trip ID and Age Category in both TicketSelectRequestDTOs cannot be null.");
         }
 
-        ProcessedTicketInfo outgoingProcessedTicket = processSingleTicketLeg(ticketRequests[0].getTrip_id(), ticketRequests[0].getAgeCategory());
-        ProcessedTicketInfo returnProcessedTicket = processSingleTicketLeg(ticketRequests[1].getTrip_id(), ticketRequests[1].getAgeCategory());
+        ProcessedTicketInfo outgoingProcessedTicket = processSingleTicketLeg(ticketRequests[0].getTripId(), ticketRequests[0].getAgeCategory());
+        ProcessedTicketInfo returnProcessedTicket = processSingleTicketLeg(ticketRequests[1].getTripId(), ticketRequests[1].getAgeCategory());
 
         validateRoundTripLegs(outgoingProcessedTicket.ticket(), returnProcessedTicket.ticket());
 
@@ -108,7 +111,13 @@ public class BookingServiceImpl implements BookingService {
                         returnProcessedTicket.seatNumber())
         );
 
-        return completeReservationProcess(userId, ticketDetailsList, totalPrice, true, outgoingProcessedTicket.seatNumber());
+        List<TicketResultItemDTO> tickets = List.of(
+                ticketItemMapper.toDTO(outgoingProcessedTicket.ticket()),
+                ticketItemMapper.toDTO(returnProcessedTicket.ticket())
+        );
+        List<Short> seatNumbers = List.of(outgoingProcessedTicket.seatNumber(), returnProcessedTicket.seatNumber());
+
+        return completeReservationProcess(userId, ticketDetailsList, totalPrice, true, tickets, seatNumbers);
     }
 
     @Override
@@ -157,7 +166,14 @@ public class BookingServiceImpl implements BookingService {
         return new ProcessedTicketInfo(selectedTicket, price, seatNumber);
     }
 
-    private ReserveConfirmationDTO completeReservationProcess(Long userId, List<TicketReserveDetailsDTO> ticketDetailsList, BigDecimal totalPrice, boolean isRoundTrip, Short displaySeatNumber) {
+    private ReserveConfirmationDTO completeReservationProcess(
+            Long userId,
+            List<TicketReserveDetailsDTO> ticketDetailsList,
+            BigDecimal totalPrice,
+            boolean isRoundTrip,
+            List<TicketResultItemDTO> tickets,
+            List<Short> seatNumbers) {
+
         ReservationInputDTO reservationInput = new ReservationInputDTO(userId, isRoundTrip);
 
         InitialReserveResultDTO daoResult;
@@ -166,7 +182,7 @@ public class BookingServiceImpl implements BookingService {
         } catch (TripCapacityExceededException e) {
             throw e;
         } catch (Exception e) {
-            throw new ReservationFailedException("Failed to persist reservation in database.");
+            throw new ReservationPersistenceException("Failed to persist reservation in database.");
         }
 
         if (daoResult == null) {
@@ -179,8 +195,15 @@ public class BookingServiceImpl implements BookingService {
         String reminderKey = REDIS_RESERVATION_REMIND_PREFIX + daoResult.reservationId();
         redisService.setKeyWithTTL(reminderKey, REDIS_KEY_VALUE, FIVE_MINUTES_IN_SECONDS);
 
-        return new ReserveConfirmationDTO(daoResult.reservationId(), daoResult.reservationDatetime(),
-                daoResult.expirationDatetime(), isRoundTrip, displaySeatNumber, totalPrice);
+        return new ReserveConfirmationDTO(
+                daoResult.reservationId(),
+                daoResult.reservationDatetime(),
+                daoResult.expirationDatetime(),
+                isRoundTrip,
+                tickets,
+                seatNumbers,
+                totalPrice
+        );
     }
 
     private void validateRoundTripLegs(Ticket outgoingTicket, Ticket returnTicket) {

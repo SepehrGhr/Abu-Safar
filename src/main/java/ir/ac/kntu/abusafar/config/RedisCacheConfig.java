@@ -18,6 +18,9 @@ import java.time.Duration;
 @Configuration
 public class RedisCacheConfig {
 
+    @JsonTypeInfo(use = JsonTypeInfo.Id.CLASS)
+    interface ObjectMixIn {}
+
 
     @Bean
     @Primary
@@ -35,13 +38,12 @@ public class RedisCacheConfig {
         ObjectMapper mapper = new ObjectMapper();
         mapper.registerModule(new JavaTimeModule());
         mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
-
         mapper.activateDefaultTyping(
                 mapper.getPolymorphicTypeValidator(),
                 ObjectMapper.DefaultTyping.NON_FINAL,
                 JsonTypeInfo.As.PROPERTY
         );
-
+        mapper.addMixIn(Object.class, ObjectMixIn.class);
         return mapper;
     }
 

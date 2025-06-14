@@ -6,6 +6,7 @@ import ir.ac.kntu.abusafar.exception.*;
 import ir.ac.kntu.abusafar.model.*;
 import ir.ac.kntu.abusafar.repository.*;
 import ir.ac.kntu.abusafar.service.CancellationService;
+import ir.ac.kntu.abusafar.service.NotificationService;
 import ir.ac.kntu.abusafar.util.constants.enums.ReserveStatus;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.AccessDeniedException;
@@ -26,15 +27,17 @@ public class CancellationServiceImpl implements CancellationService {
     private final TicketDAO ticketDAO;
     private final CompanyDAO companyDAO;
     private final UserDAO userDAO;
+    private final NotificationService notificationService;
 
     @Autowired
-    public CancellationServiceImpl(ReservationDAO reservationDAO, TicketReservationDAO ticketReservationDAO, TripDAO tripDAO, TicketDAO ticketDAO, CompanyDAO companyDAO, UserDAO userDAO) {
+    public CancellationServiceImpl(ReservationDAO reservationDAO, TicketReservationDAO ticketReservationDAO, TripDAO tripDAO, TicketDAO ticketDAO, CompanyDAO companyDAO, UserDAO userDAO, NotificationService notificationService) {
         this.reservationDAO = reservationDAO;
         this.ticketReservationDAO = ticketReservationDAO;
         this.tripDAO = tripDAO;
         this.ticketDAO = ticketDAO;
         this.companyDAO = companyDAO;
         this.userDAO = userDAO;
+        this.notificationService = notificationService;
     }
 
     @Override
@@ -109,6 +112,8 @@ public class CancellationServiceImpl implements CancellationService {
 
         reservationDAO.updateStatus(reservationId, ReserveStatus.CANCELLED, userId);
 
+        notificationService.sendCancellationConfirmationEmail(reservationId, totalRefund, newWalletBalance);
+
         return new CancellationResponseDTO(
                 "Reservation " + reservationId + " cancelled successfully.",
                 totalRefund,
@@ -136,6 +141,8 @@ public class CancellationServiceImpl implements CancellationService {
         userDAO.updateWalletBalance(user.getId(), newWalletBalance);
 
         reservationDAO.updateStatus(reservationId, ReserveStatus.CANCELLED, adminId);
+
+        notificationService.sendCancellationConfirmationEmail(reservationId, totalRefund, newWalletBalance);
 
         return new CancellationResponseDTO(
                 "Reservation " + reservationId + " cancelled successfully by admin.",

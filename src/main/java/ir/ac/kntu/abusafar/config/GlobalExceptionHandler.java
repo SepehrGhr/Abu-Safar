@@ -2,12 +2,11 @@ package ir.ac.kntu.abusafar.config;
 
 import ir.ac.kntu.abusafar.dto.exception.BindExceptionResponseDTO;
 import ir.ac.kntu.abusafar.dto.response.BaseResponse;
-import ir.ac.kntu.abusafar.exception.CompanyNotFoundException;
-import ir.ac.kntu.abusafar.exception.DuplicateContactInfoException;
-import ir.ac.kntu.abusafar.exception.ReservationNotFoundException;
+import ir.ac.kntu.abusafar.exception.*;
 import jakarta.validation.ConstraintViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
@@ -66,6 +65,30 @@ public class GlobalExceptionHandler {
                 .body(BaseResponse.fail(ex.getMessage()));
     }
 
+    @ExceptionHandler(UserNotFoundException.class)
+    public ResponseEntity<BaseResponse<String>> handleUserNotFound(UserNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(BaseResponse.fail(null, ex.getMessage(), HttpStatus.NOT_FOUND.value()));
+    }
+
+    @ExceptionHandler(TicketNotFoundException.class)
+    public ResponseEntity<BaseResponse<String>> handleTicketNotFound(TicketNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(BaseResponse.fail(null, ex.getMessage(), HttpStatus.NOT_FOUND.value()));
+    }
+
+    @ExceptionHandler(TripNotFoundException.class)
+    public ResponseEntity<BaseResponse<String>> handleTripNotFound(TripNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(BaseResponse.fail(null, ex.getMessage(), HttpStatus.NOT_FOUND.value()));
+    }
+
+    @ExceptionHandler(LocationNotFoundException.class)
+    public ResponseEntity<BaseResponse<String>> handleLocationNotFound(LocationNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(BaseResponse.fail(null, ex.getMessage(), HttpStatus.NOT_FOUND.value()));
+    }
+
     @ExceptionHandler(ReservationNotFoundException.class)
     public ResponseEntity<BaseResponse<String>> handleReservationNotFound(ReservationNotFoundException ex) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
@@ -76,6 +99,24 @@ public class GlobalExceptionHandler {
     public ResponseEntity<BaseResponse<String>> handleCompanyNotFound(CompanyNotFoundException ex) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
                 .body(BaseResponse.fail(null, ex.getMessage(), HttpStatus.NOT_FOUND.value()));
+    }
+
+    @ExceptionHandler({SeatUnavailableException.class, TripCapacityExceededException.class})
+    public ResponseEntity<BaseResponse<String>> handleConflictExceptions(RuntimeException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(BaseResponse.fail(null, ex.getMessage(), HttpStatus.CONFLICT.value()));
+    }
+
+    @ExceptionHandler({OtpValidationException.class, PaymentFailedException.class, InsufficientBalanceException.class, InvalidRoundTripException.class, ReservationFailedException.class})
+    public ResponseEntity<BaseResponse<String>> handleBadRequestExceptions(RuntimeException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(BaseResponse.fail(null, ex.getMessage(), HttpStatus.BAD_REQUEST.value()));
+    }
+
+    @ExceptionHandler({ReservationPersistenceException.class, NotificationSendException.class})
+    public ResponseEntity<BaseResponse<String>> handleInternalServerErrors(RuntimeException ex) {
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(BaseResponse.fail(null, "An internal service error occurred: " + ex.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR.value()));
     }
 
     /**

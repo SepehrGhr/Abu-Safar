@@ -22,7 +22,9 @@ import ir.ac.kntu.abusafar.util.constants.enums.TicketStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -30,7 +32,7 @@ import java.util.stream.Collectors;
 public class AdminServiceImpl implements AdminService {
 
     private final ReservationDAO reservationDAO;
-    private final PaidReservationDAO paidReservationDAO;
+    private final ReservationHistoryDAO reservationHistoryDAO;
     private final LocationService locationService;
     private final PaymentDAO paymentDAO;
     private final ReportDAO reportDAO;
@@ -38,9 +40,9 @@ public class AdminServiceImpl implements AdminService {
     private final TicketReservationDAO ticketReservationDAO;
     private final TripDAO tripDAO;
 
-    public AdminServiceImpl(ReservationDAO reservationDAO, PaidReservationDAO paidReservationDAO, LocationService locationService, PaymentDAO paymentDAO, ReportDAO reportDAO, CancellationService cancellationService, TicketReservationDAO ticketReservationDAO, TripDAO tripDAO) {
+    public AdminServiceImpl(ReservationDAO reservationDAO, ReservationHistoryDAO reservationHistoryDAO, LocationService locationService, PaymentDAO paymentDAO, ReportDAO reportDAO, CancellationService cancellationService, TicketReservationDAO ticketReservationDAO, TripDAO tripDAO) {
         this.reservationDAO = reservationDAO;
-        this.paidReservationDAO = paidReservationDAO;
+        this.reservationHistoryDAO = reservationHistoryDAO;
         this.locationService = locationService;
         this.paymentDAO = paymentDAO;
         this.reportDAO = reportDAO;
@@ -51,38 +53,77 @@ public class AdminServiceImpl implements AdminService {
 
     @Override
     public List<ReserveRecordItemDTO> getAllCancelledReservations() {
-        List<RawHistoryRecordDTO> rawRecords = paidReservationDAO.findReservationHistoryByStatus(TicketStatus.CANCELLED);
-        return rawRecords.stream()
-                .map(this::mapToReserveRecordItemDTO)
+        List<RawHistoryRecordDTO> rawRecords = reservationHistoryDAO.findReservationHistoryByStatus(TicketStatus.CANCELLED);
+
+        Map<Long, List<RawHistoryRecordDTO>> recordsByReservationId = rawRecords.stream()
+                .collect(Collectors.groupingBy(RawHistoryRecordDTO::reservationId));
+
+        List<ReserveRecordItemDTO> consolidatedRecords = new ArrayList<>();
+        for (List<RawHistoryRecordDTO> group : recordsByReservationId.values()) {
+            consolidatedRecords.add(consolidateRawRecords(group));
+        }
+        return consolidatedRecords;
+    }
+
+    @Override
+    public List<ReserveRecordItemDTO> getReservationDetailsById(Long reservationId) {
+        List<RawHistoryRecordDTO> rawRecords = reservationHistoryDAO.findDetailedReservationById(reservationId);
+        if (rawRecords.isEmpty()) {
+            throw new ReservationNotFoundException("Reservation with ID " + reservationId + " not found.");
+        }
+
+        Map<Long, List<RawHistoryRecordDTO>> recordsByReservationId = rawRecords.stream()
+                .collect(Collectors.groupingBy(RawHistoryRecordDTO::reservationId));
+
+        return recordsByReservationId.values().stream()
+                .map(this::consolidateRawRecords)
                 .collect(Collectors.toList());
     }
 
-    private ReserveRecordItemDTO mapToReserveRecordItemDTO(RawHistoryRecordDTO raw) {
-        TicketResultItemDTO ticketInfo = new TicketResultItemDTO();
-        ticketInfo.setTripId(raw.tripId());
-        ticketInfo.setAge(raw.ticketAge());
-        ticketInfo.setDepartureTimestamp(raw.departureTimestamp());
-        ticketInfo.setArrivalTimestamp(raw.arrivalTimestamp());
-        ticketInfo.setTripVehicle(raw.tripVehicle());
-        ticketInfo.setPrice(raw.ticketPrice());
-        ticketInfo.setVehicleCompany(raw.vehicleCompany());
+    private ReserveRecordItemDTO consolidateRawRecords(List<RawHistoryRecordDTO> group) {
+        if (group == null || group.isEmpty()) {
+            return null;
+        }
+        RawHistoryRecordDTO firstRecord = group.get(0);
 
-        locationService.getLocationById(raw.originLocationId())
-                .map(LocationResponseDTO::getCity)
-                .ifPresent(ticketInfo::setOriginCity);
+        List<TicketResultItemDTO> tickets = group.stream()
+                .map(this::createTicketInfo)
+                .collect(Collectors.toList());
 
-        locationService.getLocationById(raw.destinationLocationId())
-                .map(LocationResponseDTO::getCity)
-                .ifPresent(ticketInfo::setDestinationCity);
+        List<Short> seatNumbers = group.stream()
+                .map(RawHistoryRecordDTO::seatNumber)
+                .collect(Collectors.toList());
 
         return new ReserveRecordItemDTO(
-                raw.calculatedStatus(),
-                raw.reservationId(),
-                raw.paymentId(),
-                raw.paymentTimestamp(),
-                raw.seatNumber(),
-                raw.isRoundTrip(),
-                ticketInfo
+                firstRecord.calculatedStatus(),
+                firstRecord.reservationId(),
+                firstRecord.paymentId(),
+                firstRecord.paymentTimestamp(),
+                seatNumbers,
+                firstRecord.isRoundTrip(),
+                tickets
+        );
+    }
+
+    private TicketResultItemDTO createTicketInfo(RawHistoryRecordDTO raw) {
+        String originCity = locationService.getLocationById(raw.originLocationId())
+                .map(LocationResponseDTO::city)
+                .orElse("Unknown");
+
+        String destinationCity = locationService.getLocationById(raw.destinationLocationId())
+                .map(LocationResponseDTO::city)
+                .orElse("Unknown");
+
+        return new TicketResultItemDTO(
+                raw.tripId(),
+                raw.ticketAge(),
+                originCity,
+                destinationCity,
+                raw.departureTimestamp(),
+                raw.arrivalTimestamp(),
+                raw.tripVehicle(),
+                raw.ticketPrice(),
+                raw.vehicleCompany()
         );
     }
 
@@ -137,16 +178,5 @@ public class AdminServiceImpl implements AdminService {
         if (updatedRows == 0) {
             throw new ReservationNotFoundException("Could not find a matching ticket reservation leg to update for reservation ID " + request.getReservationId() + " and trip ID " + request.getTripId());
         }
-    }
-
-    @Override
-    public List<ReserveRecordItemDTO> getReservationDetailsById(Long reservationId) {
-        List<RawHistoryRecordDTO> rawRecords = paidReservationDAO.findDetailedReservationById(reservationId);
-        if (rawRecords.isEmpty()) {
-            throw new ReservationNotFoundException("Reservation with ID " + reservationId + " not found.");
-        }
-        return rawRecords.stream()
-                .map(this::mapToReserveRecordItemDTO)
-                .collect(Collectors.toList());
     }
 }

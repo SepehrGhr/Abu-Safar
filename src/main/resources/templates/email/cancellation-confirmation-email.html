@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Cancellation Confirmation</title>
+  <style>
+    body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background-color: #f4f4f4; margin: 0; padding: 0; }
+    .container { max-width: 600px; margin: 20px auto; background-color: #ffffff; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); overflow: hidden; }
+    .header { background-color: #dc3545; color: #ffffff; padding: 30px 20px; text-align: center; }
+    .header h1 { margin: 0; font-size: 28px; font-weight: bold; }
+    .content { padding: 30px 25px; color: #333333; line-height: 1.6; }
+    .content h2 { color: #0056b3; }
+    .footer { background-color: #eeeeee; color: #777777; padding: 20px; text-align: center; font-size: 12px; }
+    .refund-box { background-color: #e9f7ef; border-left: 5px solid #28a745; color: #155724; padding: 15px 20px; margin: 20px 0; border-radius: 5px; }
+  </style>
+</head>
+<body>
+<div class="container">
+  <div class="header"><h1>Reservation Cancelled</h1></div>
+  <div class="content">
+    <h2>Cancellation Confirmation</h2>
+    <p>This email confirms that your reservation <b th:text="'#' + ${reservationId}">#12345</b> has been successfully cancelled.</p>
+    <div class="refund-box">
+      <p><b>Refunded Amount:</b> <span th:text="${#numbers.formatCurrency(refundedAmount)}">$50.00</span></p>
+      <p>This amount has been credited to your AbuSafar wallet.</p>
+      <p><b>Your New Wallet Balance:</b> <span th:text="${#numbers.formatCurrency(newWalletBalance)}">$150.00</span></p>
+    </div>
+    <p>We are sorry to see you go and hope to serve you again in the future.</p>
+  </div>
+  <div class="footer">
+    &copy; <span th:text="${#dates.year(#dates.createNow())}">2025</span> AbuSafar. All rights reserved.
+  </div>
+</div>
+</body>
+</html>
