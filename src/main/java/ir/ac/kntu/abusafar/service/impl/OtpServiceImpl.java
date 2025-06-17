@@ -16,22 +16,21 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.mail.MailException;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 import org.thymeleaf.context.Context;
 import org.thymeleaf.spring6.SpringTemplateEngine;
-import redis.clients.jedis.Jedis;
-import redis.clients.jedis.JedisPool;
-import redis.clients.jedis.exceptions.JedisException;
 
 import java.io.IOException;
 import java.security.SecureRandom;
+import java.time.Duration;
 import java.util.Optional;
 import java.util.regex.Pattern;
 
-//@TODO comments
 @Service
 public class OtpServiceImpl implements OtpService {
 
@@ -42,10 +41,9 @@ public class OtpServiceImpl implements OtpService {
     );
     private static final Pattern PHONE_PATTERN = Pattern.compile("^\\+?[1-9][0-9\\s().-]{7,20}$");
 
-    private final JedisPool jedisPool;
+    private final RedisTemplate<String, String> redisTemplate;
     private final JavaMailSender mailSender;
     private final SpringTemplateEngine emailTemplateEngine;
-
     private final OkHttpClient httpClient;
     private final UserDAO userDAO;
 
@@ -72,8 +70,8 @@ public class OtpServiceImpl implements OtpService {
 
 
     @Autowired
-    public OtpServiceImpl(JedisPool jedisPool, JavaMailSender mailSender, @Qualifier("emailTemplateEngine") SpringTemplateEngine emailTemplateEngine, OkHttpClient httpClient, UserDAO userDAO) {
-        this.jedisPool = jedisPool;
+    public OtpServiceImpl(RedisTemplate<String, String> redisTemplate, JavaMailSender mailSender, @Qualifier("emailTemplateEngine") SpringTemplateEngine emailTemplateEngine, OkHttpClient httpClient, UserDAO userDAO) {
+        this.redisTemplate = redisTemplate;
         this.mailSender = mailSender;
         this.emailTemplateEngine = emailTemplateEngine;
         this.httpClient = httpClient;
@@ -83,13 +81,13 @@ public class OtpServiceImpl implements OtpService {
     @Override
     public String generateAndSendOtp(UserInfoDTO user, String targetContactInfo) {
         String otp = generateRandomOtp();
-        long otpCacheDurationSeconds = otpCacheDurationMs / 1000;
         String redisKey = Strings.OTP_REDIS_PREFIX + targetContactInfo;
 
-        try (Jedis jedis = jedisPool.getResource()) {
-            jedis.setex(redisKey, otpCacheDurationSeconds, otp);
-            LOGGER.info("OTP for contact {} stored in Redis with key {} and TTL {}s", targetContactInfo, redisKey, otpCacheDurationSeconds);
-        } catch (JedisException e) {
+        try {
+            ValueOperations<String, String> ops = redisTemplate.opsForValue();
+            ops.set(redisKey, otp, Duration.ofMillis(otpCacheDurationMs));
+            LOGGER.info("OTP for contact {} stored in Redis with key {} and TTL {}ms", targetContactInfo, redisKey, otpCacheDurationMs);
+        } catch (Exception e) {
             LOGGER.error("Failed to store OTP in Redis for contact {}. Error: {}", targetContactInfo, e.getMessage(), e);
             throw new NotificationSendException("Failed to store OTP in Redis for " + targetContactInfo, e);
         }
@@ -111,14 +109,15 @@ public class OtpServiceImpl implements OtpService {
         String redisKey = Strings.OTP_REDIS_PREFIX + contactInfo;
         String storedOtp;
 
-        try (Jedis jedis = jedisPool.getResource()) {
-            storedOtp = jedis.get(redisKey);
+        try {
+            ValueOperations<String, String> ops = redisTemplate.opsForValue();
+            storedOtp = ops.get(redisKey);
             if (otp != null && otp.equals(storedOtp)) {
-                jedis.del(redisKey);
+                redisTemplate.delete(redisKey);
                 LOGGER.info("OTP validation successful for contact {}", contactInfo);
                 return true;
             }
-        } catch (JedisException e) {
+        } catch (Exception e) {
             LOGGER.error("Redis error during OTP validation for contact {}. Error: {}", contactInfo, e.getMessage(), e);
             return false;
         }

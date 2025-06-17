@@ -1,5 +1,4 @@
-FROM maven:3.9.6-eclipse-temurin-23-jammy AS build
-
+FROM maven:3.9.6-eclipse-temurin-21-jammy AS build
 WORKDIR /app
 
 COPY pom.xml .
@@ -10,8 +9,7 @@ COPY src ./src
 
 RUN mvn package -DskipTests
 
-FROM eclipse-temurin:23-jre-jammy
-
+FROM eclipse-temurin:21-jre-jammy
 WORKDIR /app
 
 RUN addgroup --system abusafar && adduser --system --ingroup abusafar abusafar

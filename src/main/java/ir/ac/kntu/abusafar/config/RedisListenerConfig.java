@@ -18,15 +18,6 @@ public class RedisListenerConfig {
 
     @Bean
     RedisMessageListenerContainer keyExpirationListenerContainer(RedisConnectionFactory connectionFactory, RedisKeyExpirationListener expirationListener) {
-
-        try (RedisConnection connection = connectionFactory.getConnection()) {
-            Properties properties = new Properties();
-            properties.setProperty("notify-keyspace-events", "Ex");
-            connection.serverCommands().setConfig("notify-keyspace-events", "Ex");
-        } catch (Exception e) {
-            LOGGER.error("CRITICAL ERROR: Could not configure Redis keyspace notifications. Expiry/reminder features will not work.", e);
-        }
-
         RedisMessageListenerContainer listenerContainer = new RedisMessageListenerContainer();
         listenerContainer.setConnectionFactory(connectionFactory);
 

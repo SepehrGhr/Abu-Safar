@@ -1,11 +1,14 @@
 package ir.ac.kntu.abusafar.config;
 
-import okhttp3.OkHttpClient;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import redis.clients.jedis.JedisPool;
-import redis.clients.jedis.JedisPoolConfig;
+import org.springframework.context.annotation.Primary;
+import org.springframework.data.redis.connection.RedisConnectionFactory;
+import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
+import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.serializer.StringRedisSerializer;
 
 @Configuration
 public class RedisConfig {
@@ -17,22 +20,18 @@ public class RedisConfig {
     private int redisPort;
 
     @Bean
-    public JedisPool jedisPool() {
-        JedisPoolConfig poolConfig = new JedisPoolConfig();
-        // poolConfig.setMaxTotal(128);
-        // poolConfig.setMaxIdle(128);
-        // poolConfig.setMinIdle(16);
-        // poolConfig.setTestOnBorrow(true);
-        // poolConfig.setTestOnReturn(true);
-        // poolConfig.setTestWhileIdle(true);
-        // poolConfig.setNumTestsPerEvictionRun(3);
-        // poolConfig.setBlockWhenExhausted(true);
-        poolConfig.setJmxEnabled(false);
-        return new JedisPool(poolConfig, redisHost, redisPort);
+    public LettuceConnectionFactory redisConnectionFactory() {
+        RedisStandaloneConfiguration config = new RedisStandaloneConfiguration(redisHost, redisPort);
+        return new LettuceConnectionFactory(config);
     }
 
     @Bean
-    public OkHttpClient okHttpClient() {
-        return new OkHttpClient();
+    @Primary
+    public RedisTemplate<String, String> redisTemplate(RedisConnectionFactory redisConnectionFactory) {
+        RedisTemplate<String, String> template = new RedisTemplate<>();
+        template.setConnectionFactory(redisConnectionFactory);
+        template.setKeySerializer(new StringRedisSerializer());
+        template.setValueSerializer(new StringRedisSerializer());
+        return template;
     }
 }

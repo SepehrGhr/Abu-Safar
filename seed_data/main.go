@@ -6,6 +6,7 @@ import (
 	"log"
 	"math/rand"
 	"time"
+	"os"
 
 	"github.com/brianvoe/gofakeit/v6"
 	_ "github.com/lib/pq"
@@ -22,15 +23,29 @@ const (
 )
 
 func main() {
-	var db *sql.DB
-	var err error
+    var db *sql.DB
+    var err error
 
-	connStr := "user=postgres password=98979695 dbname=postgres sslmode=disable host=localhost port=5432"
-	db, err = sql.Open("postgres", connStr)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer db.Close()
+    dbUser := os.Getenv("DB_USERNAME")
+    dbPassword := os.Getenv("DB_PASSWORD")
+    dbName := os.Getenv("DB_NAME")
+    dbHost := os.Getenv("DB_HOST")
+    dbPort := "5432"
+
+    connStr := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable",
+        dbUser, dbPassword, dbHost, dbPort, dbName)
+
+    db, err = sql.Open("postgres", connStr)
+    if err != nil {
+        log.Fatal(err)
+    }
+    defer db.Close()
+
+    err = db.Ping()
+    if err != nil {
+        log.Fatalf("Could not connect to the database: %v", err)
+    }
+    fmt.Println("✅ Successfully connected to the database.")
 
 	gofakeit.Seed(time.Now().UnixNano())
 
