@@ -92,9 +92,16 @@ The application stack is configured using an `.env` file in the project root.
 ```dotenv
 # PostgreSQL Database Settings
 # These are used by docker-compose to initialize the database
+DB_URL=jdbc:postgresql://db:5432/AbuSafar
 DB_NAME=abusafar_db
-DB_USER=your_db_user
+DB_USERNAME=your_db_user
 DB_PASSWORD=your_db_password
+
+# Redis Settings
+REDIS_HOST=redis
+REDIS_PORT=6379
+
+
 
 # JWT Secret (must be a long, secure, random string)
 JWT_SECRET=your-super-secret-jwt-key-that-is-long-enough
@@ -125,19 +132,6 @@ The services will be launched:
 * **Redis**: Accessible on host port `6379`
 
 The database schema (`db/AbuSafar.sql`) is automatically initialized the first time the database container starts.
-
-### 4. (Optional) Populating with Test Data
-
-If you want to populate the database with sample data, run the following command after the containers are up and running:
-
-```bash
-# Execute the TestData.sql script inside the running postgres container
-docker-compose exec -T abusafar-db psql -U ${DB_USER} -d ${DB_NAME} < db/TestData.sql
-```
-
-*Note: This command may require the `DB_USER` and `DB_NAME` environment variables to be present in your shell, or you can replace them with the literal values from your `.env` file.*
-
-Alternatively, you can configure and run the Go data seeder located in `seed_data/`.
 
 ### 5. Stopping the Application
 
