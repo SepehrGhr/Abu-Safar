@@ -46,7 +46,7 @@ This project is built with a modern, enterprise-grade technology stack, demonstr
 
 | Domain                 | Technology / Concept                                                                                                        |
 | :--------------------- | :-------------------------------------------------------------------------------------------------------------------------- |
-| **Backend Framework** | **Spring Boot 3.3.0** (`Java 23`)                                                                                           |
+| **Backend Framework** | **Spring Boot 3.3.0** (`Java 21`)                                                                                           |
 | **Containerization** | **Docker** & **Docker Compose** for consistent development and deployment environments.                                     |
 | **Security** | **Spring Security 6** (RBAC), **JWT** for stateless authentication                                                          |
 | **Database** | **PostgreSQL** with **Spring Data JDBC** & `JdbcTemplate` for performance                                                   |
