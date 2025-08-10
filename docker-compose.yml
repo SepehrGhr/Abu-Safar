@@ -1,3 +1,4 @@
+
 services:
   db:
     image: postgres:16-alpine
@@ -27,9 +28,10 @@ services:
       retries: 5
     command: redis-server --notify-keyspace-events Ex
 
-  app:
-    container_name: abusafar-app
-    build: .
+  backend:
+    container_name: abusafar-backend
+    build:
+      context: ./backend
     ports:
       - "8888:8888"
     env_file:
@@ -40,14 +42,28 @@ services:
       redis:
         condition: service_healthy
 
+  frontend:
+    build:
+      context: ./frontend
+    container_name: abusafar-frontend
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    depends_on:
+      - backend
+
   db-seeder:
     container_name: abusafar-db-seeder
     build:
       context: ./seed_data
+    profiles:
+      - seed
     env_file:
       - .env
     environment:
-        - DB_HOST=db
+      - DB_HOST=db
     depends_on:
       db:
         condition: service_healthy
