@@ -127,7 +127,7 @@ docker-compose up --build -d
 ```
 
 The services will be launched:
-* **AbuSafar Application**: Available at `http://localhost:8080`
+* **AbuSafar Application**: Available at `http://localhost:8888`
 * **PostgreSQL Database**: Accessible on host port `5432`
 * **Redis**: Accessible on host port `6379`
 
@@ -189,12 +189,12 @@ You can also use an API client like Postman. Here is a typical workflow:
 
 ```bash
 # First, log in to get a token (replace with your actual login flow)
-TOKEN=$(curl -s -X POST http://localhost:8080/api/auth/login/otp/verify \
+TOKEN=$(curl -s -X POST http://localhost:8888/api/auth/login/otp/verify \
 -H "Content-Type: application/json" \
 -d '{"contactInfo": "user@example.com", "otp": "123456"}' | jq -r '.data.accessToken')
 
 # Then, use the token to access a protected route
-curl -X GET http://localhost:8080/api/bookings/history \
+curl -X GET http://localhost:8888/api/bookings/history \
 -H "Authorization: Bearer $TOKEN"
 ```
 
