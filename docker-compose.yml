@@ -103,7 +103,7 @@ services:
       db:
         condition: service_healthy
     environment:
-      BOOTSTRAP_SERVERS: 'kafka:9092'
+      BOOTSTRAP_SERVERS: 'kafka:29092'
       GROUP_ID: 'compose-connect-group'
       CONFIG_STORAGE_TOPIC: 'connect-configs'
       OFFSET_STORAGE_TOPIC: 'connect-offsets'
@@ -124,12 +124,26 @@ services:
           connections:
             docker-kafka-cluster:
               properties:
-                bootstrap.servers: "kafka:9092"
+                bootstrap.servers: "kafka:29092"
               connect:
                 - name: "connect"
                   url: "http://kafka-connect:8083"
     networks:
       - abusafar-net
+
+  connect-setup:
+    image: confluentinc/cp-kafka-connect:7.6.1
+    container_name: abusafar-connect-setup
+    depends_on:
+      kafka-connect:
+        condition: service_started
+    networks:
+      - abusafar-net
+    volumes:
+      - ./kafka-connect:/config
+    command: sh -c "sleep 20 && /config/configure-connector.sh"
+    env_file:
+      - .env
 
   backend:
     container_name: abusafar-backend
