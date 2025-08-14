@@ -14,6 +14,7 @@ http://kafka-connect:8083/connectors/ticket-connector/config \
 {
     "connector.class": "io.debezium.connector.postgresql.PostgresConnector",
     "plugin.name": "pgoutput",
+    "snapshot.mode": "initial",
     "database.hostname": "db",
     "database.port": "5432",
     "database.user": "${DB_USERNAME}",
