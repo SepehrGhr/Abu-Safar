@@ -29,7 +29,7 @@ const ShinyButton: React.FC<ShinyButtonProps> = ({ children, className = '' }) =
                     background: useMotionTemplate`
                         radial-gradient(
                             200px circle at ${mouseX}px ${mouseY}px,
-                            rgba(249, 115, 22, 0.2),
+                            rgba(235, 171, 94, 0.2),
                             transparent 80%
                         )
                     `,
