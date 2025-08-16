@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Menu, X, User, Sun, Moon } from 'lucide-react';
 import ShinyButton from '../common/ShinyButton';
-import Logo from '../../assets/logo.svg';
+import CarpetLogo from '../icons/Carpet.tsx';
 
 const Header = ({ theme, setTheme }) => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -13,8 +13,8 @@ const Header = ({ theme, setTheme }) => {
         <header className="bg-white/80 dark:bg-slate-950/50 backdrop-blur-md shadow-sm fixed top-0 left-0 right-0 z-50">
             <div className="container mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex items-center justify-between h-16">
-                    <a href="#" className="flex items-center space-x-3">
-                        <img src={Logo} alt="AbuSafar Logo" className="h-8 w-8" />
+                    <a href="#" className="flex items-center space-x-3 text-slate-950 dark:text-white">
+                        <CarpetLogo className="h-8 w-8" />
                         <span className="font-kameron font-bold text-2xl text-gray-800 dark:text-white">AbuSafar</span>
                     </a>
                     <nav className="hidden md:flex flex-grow items-center justify-center">
