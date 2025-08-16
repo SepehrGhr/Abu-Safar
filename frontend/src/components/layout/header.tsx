@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Menu, X, User, Sun, Moon } from 'lucide-react';
-import ShinyButton from '../ui/ShinyButton';
+import ShinyButton from '../common/ShinyButton';
 import Logo from '../../assets/logo.svg';
 
 const Header = ({ theme, setTheme }) => {

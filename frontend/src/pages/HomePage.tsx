@@ -1,17 +1,15 @@
 import React from 'react';
 import HeroSection from '../components/home/HeroSection';
+import FeaturesSection from '../components/home/FeatureSection';
 
-// import FeaturesSection from '../components/home/FeaturesSection';
-// import DestinationsSection from '../components/home/DestinationsSection';
 
 const HomePage = () => {
-  return (
-    <>
-      <HeroSection />
-      {/* <FeaturesSection /> */}
-      {/* <DestinationsSection /> */}
-    </>
-  );
+    return (
+        <>
+            <HeroSection />
+            <FeaturesSection />
+        </>
+    );
 };
 
 export default HomePage;
