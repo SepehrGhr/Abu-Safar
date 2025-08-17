@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion';
+import ActionButton from '../common/ActionButton';
 
 const TicketCard = ({ ticket }) => {
     const itemVariants = { hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } };
@@ -31,7 +32,12 @@ const TicketCard = ({ ticket }) => {
                 </div>
                 <div className="flex flex-col items-center text-center">
                     <p className="text-2xl font-bold text-[#a57c44] dark:text-[#ebab5e]">${ticket.price}</p>
-                    <motion.button whileHover={{scale: 1.05}} whileTap={{scale: 0.95}} className="px-6 py-2 mt-2 bg-[#ebab5e] text-white font-bold rounded-lg hover:bg-[#d49e54] transition-colors">Select</motion.button>
+                    <ActionButton
+                        onClick={() => alert(`Selected ticket from ${ticket.company} for $${ticket.price}`)}
+                        className="w-auto h-auto px-6 py-2 mt-2 rounded-lg"
+                    >
+                        Select
+                    </ActionButton>
                     <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">{ticket.seatsLeft} seats left</p>
                 </div>
             </div>

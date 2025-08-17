@@ -15,7 +15,7 @@ module.exports = {
           sandDark: 'rgba(158, 141, 96, 0.2)',
           sandLight: 'rgba(244, 226, 198, 0.4)',
           actionButtonLight: 'rgb(250, 242, 159)',
-          actionButtonDark: 'rgb(250, 242, 159)',
+          actionButtonDark: 'rgb(239, 207, 119)',
           lightBackGround: 'rgba(1, 163, 173, 0.6)'
         },
         slate: {
