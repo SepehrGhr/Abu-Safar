@@ -27,14 +27,14 @@ const Footer = () => {
 
 
     return (
-        <footer className="bg-slate-100/80 text-gray-600 dark:bg-brand-dark/20 dark:text-gray-300 relative backdrop-blur-sm">
+        <footer className="bg-brand-sandLight text-gray-600 dark:bg-brand-sandDark dark:text-gray-300 relative backdrop-blur-sm">
             <div className="container mx-auto py-16 px-4 sm:px-6 lg:px-8">
                 <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-8">
                     {/* Logo and Social Links Section */}
                     <div className="col-span-2 md:col-span-4 lg:col-span-1">
                         <a href="#" className="flex items-center space-x-3 text-slate-950 dark:text-white">
                             <CarpetLogo className="h-8 w-8" />
-                            <span className="font-kameron font-bold text-2xl">AbuSafar</span>
+                            <span className="font-aladin font-bold text-2xl">AbuSafar</span>
                         </a>
                         <p className="mt-4 text-sm text-gray-500 dark:text-gray-400">Your journey starts here. Book with confidence.</p>
                         <div className="flex space-x-4 mt-6">

@@ -1,5 +1,4 @@
-
-export default {
+module.exports = {
   content: [
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
@@ -9,17 +8,23 @@ export default {
     extend: {
       colors: {
         brand: {
-          primary: '#ebab5e', //main gold color
-          secondary: '#d49e54', // The darker shade
-          light: '#fef3c7', // A light accent
-          dark: '#a57c44', // text or dark elements
+          light: '#fef6d5',
+          night: '#043566',
+          lightCardColor: '#fee1bf',
+          nightCardColor: '#03478c',
+          sandDark: 'rgba(158, 141, 96, 0.2)',
+          sandLight: 'rgba(244, 226, 198, 0.4)',
+          actionButtonLight: 'rgb(250, 242, 159)',
+          actionButtonDark: 'rgb(250, 242, 159)',
+          lightBackGround: 'rgba(1, 163, 173, 0.6)'
         },
         slate: {
-            950: '#0f172a' // Example of adding a custom shade
+            950: '#0f172a'
         }
       },
       fontFamily: {
           kameron: ['Kameron', 'serif'],
+          aladin: ['Aladin', 'serif']
       }
     },
   },

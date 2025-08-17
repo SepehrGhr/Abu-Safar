@@ -15,7 +15,7 @@ const Header = ({ theme, setTheme }) => {
                 <div className="flex items-center justify-between h-16">
                     <a href="#" className="flex items-center space-x-3 text-slate-950 dark:text-white">
                         <CarpetLogo className="h-8 w-8" />
-                        <span className="font-kameron font-bold text-2xl text-gray-800 dark:text-white">AbuSafar</span>
+                        <span className="font-aladin font-bold text-2xl text-gray-800 dark:text-white">AbuSafar</span>
                     </a>
                     <nav className="hidden md:flex flex-grow items-center justify-center">
                         {navLinks.map((link) => (

@@ -14,17 +14,8 @@ function App() {
 
     return (
         <>
-            <style>
-              {`@import url('https://fonts.googleapis.com/css2?family=Kameron:wght@700&display=swap'); .font-kameron { font-family: 'Kameron', serif; }`}
-            </style>
-            <div className="relative bg-white dark:bg-slate-900 text-gray-800 dark:text-gray-200 font-sans antialiased transition-colors duration-300">
-                <div
-                    className="fixed inset-0 z-[-1] transition-opacity duration-500"
-                    style={{
-                        backgroundImage: `linear-gradient(to bottom, #0f172a 20%, #4a2f27 75%, #8c7646 100%)`,
-                        opacity: theme === 'dark' ? 1 : 0,
-                    }}
-                />
+            <div className="relative text-gray-800 dark:text-gray-200 font-sans antialiased transition-colors duration-300">
+
                 <Router>
                     <Header theme={theme} setTheme={setTheme} />
                     <main>
