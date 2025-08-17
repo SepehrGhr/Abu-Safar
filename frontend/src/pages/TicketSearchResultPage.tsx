@@ -9,7 +9,9 @@ import backgroundDarkImage from '../assets/images/night.jpg';
 import NavigateButton from '../components/common/NavigateButton'
 
 const TicketSearchResultPage = () => {
-    const query = { from: 'AGR', to: 'DXB' };
+    const location = useLocation();
+
+    const { query } = location.state || { query: { from: 'N/A', to: 'N/A', vehicleType: 'FLIGHT' } };
 
     const mockResults = [
         { id: 1, type: 'flight', company: 'Magic Carpet Air', logo: '✈️', from: 'AGR', to: 'DXB', departure: '08:00', arrival: '12:30', duration: '4h 30m', class: 'Economy', price: 350, seatsLeft: 5, stops: 0 },
@@ -21,12 +23,10 @@ const TicketSearchResultPage = () => {
     return (
         <div className="relative min-h-screen font-sans">
 
-            <div className="absolute inset-0 bg-cover bg-[center_top_35%] opacity-30 -z-10 block dark:hidden"
-            style={{ backgroundImage: `url(${backgroundLightImage})` }}
-           >
+            <div className="absolute inset-0 bg-brand-lightBackGround -z-10 block dark:hidden">
             </div>
 
-            <div className="absolute inset-0 bg-cover bg-[center_top_10%] opacity-30 -z-10 hidden dark:block"
+            <div className="absolute inset-0 bg-cover bg-[center_top_5%] opacity-30 -z-10 hidden dark:block"
             style={{ backgroundImage: `url(${backgroundDarkImage})` }}
             >
             </div>
@@ -35,7 +35,7 @@ const TicketSearchResultPage = () => {
                 <div className="container mx-auto px-4 sm:px-6 lg:px-8">
                     <PersistentSearchBar query={query} />
                     <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-                        <Filters />
+                        <Filters vehicleType={query.vehicleType} />
                         <div className="lg:col-span-3">
                             <div className="flex justify-center mb-4">
                                 <NavigateButton onClick={() => alert('Loading earlier results...')}>

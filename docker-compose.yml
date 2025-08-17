@@ -158,12 +158,12 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-      kafka:
-        condition: service_healthy
-      elasticsearch:
-        condition: service_healthy
-      kafka-connect:
-        condition: service_started
+#      kafka:
+#        condition: service_healthy
+#      elasticsearch:
+#        condition: service_healthy
+#      kafka-connect:
+#        condition: service_started
     networks:
       - abusafar-net
 
