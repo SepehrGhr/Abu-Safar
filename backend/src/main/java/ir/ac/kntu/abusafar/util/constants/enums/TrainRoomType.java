@@ -1,5 +1,8 @@
 package ir.ac.kntu.abusafar.util.constants.enums;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonValue;
+
 public enum TrainRoomType {
     FOUR_BED("4-BED"),
     SIX_BED("6-BED");
@@ -10,19 +13,21 @@ public enum TrainRoomType {
         this.dbValue = dbValue;
     }
 
+    @JsonValue
     public String getDbValue() {
         return dbValue;
     }
 
-    public static TrainRoomType getEnumValue(String text) {
+    @JsonCreator
+    public static TrainRoomType fromString(String text) {
         if (text == null) {
-            throw new IllegalArgumentException("Input text cannot be null for TrainRoomType");
+            return null;
         }
-        for (TrainRoomType fc : TrainRoomType.values()) {
-            if (fc.dbValue.equals(text)) {
-                return fc;
+        for (TrainRoomType trt : TrainRoomType.values()) {
+            if (trt.dbValue.equalsIgnoreCase(text) || trt.name().equalsIgnoreCase(text)) {
+                return trt;
             }
         }
-        throw new IllegalArgumentException("No TrainRoomType constant corresponds to the database value: '" + text + "'");
+        throw new IllegalArgumentException("No TrainRoomType constant corresponds to value: '" + text + "'");
     }
 }

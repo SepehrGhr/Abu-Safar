@@ -1,9 +1,6 @@
 package ir.ac.kntu.abusafar.document;
 
-import ir.ac.kntu.abusafar.util.constants.enums.AgeRange;
-import ir.ac.kntu.abusafar.util.constants.enums.BusClass;
-import ir.ac.kntu.abusafar.util.constants.enums.FlightClass;
-import ir.ac.kntu.abusafar.util.constants.enums.TripType;
+import ir.ac.kntu.abusafar.util.constants.enums.*;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.data.annotation.Id;
@@ -16,6 +13,7 @@ import org.springframework.data.elasticsearch.annotations.InnerField;
 
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
+import java.util.List;
 
 @Getter
 @Setter
@@ -61,6 +59,15 @@ public class TicketDocument {
     @Field(type = FieldType.Object)
     private VehicleDetails vehicleDetails;
 
+    @Field(type = FieldType.Short)
+    private Short totalCapacity;
+
+    @Field(type = FieldType.Short)
+    private Short reservedCapacity;
+
+    @Field(type = FieldType.Keyword)
+    private List<ServiceType> services;
+
 
     @Getter
     @Setter
@@ -100,5 +107,14 @@ public class TicketDocument {
 
         @Field(type = FieldType.Keyword)
         private FlightClass flightClass;
+
+        @Field(type = FieldType.Keyword)
+        private BusChairCountType chairType;
+
+        @Field(type = FieldType.Keyword)
+        private String departureAirport;
+
+        @Field(type = FieldType.Keyword)
+        private String arrivalAirport;
     }
 }

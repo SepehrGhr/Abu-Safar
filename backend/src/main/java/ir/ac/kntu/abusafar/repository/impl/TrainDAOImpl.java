@@ -21,7 +21,7 @@ public class TrainDAOImpl implements TrainDAO {
     private static final RowMapper<Train> TRAIN_ROW_MAPPER = (rs, rowNum) -> {
         Long tripId = rs.getLong("trip_id");
         Short stars = rs.getShort("stars");
-        TrainRoomType roomType = TrainRoomType.getEnumValue(rs.getString("room_type"));
+        TrainRoomType roomType = TrainRoomType.fromString(rs.getString("room_type"));
         return new Train(tripId, stars, roomType);
     };
 
