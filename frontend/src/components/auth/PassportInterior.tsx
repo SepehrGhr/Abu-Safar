@@ -1,19 +1,32 @@
 import React, { useState, useRef } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Mail, KeyRound, User, Users, MapPin, Phone, CheckCircle, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Mail, KeyRound, User, Users, MapPin, Phone, CheckCircle, ChevronLeft, ChevronRight, AlertCircle } from 'lucide-react';
 import Page from './Page';
 import { PageInfo } from './PageInfo';
 import { InputField, ShinyButton, Footer, Spinner, PasswordStrengthMeter } from './common';
+import { requestLoginOtp, verifyLoginOtp, signUpUser } from '../../services/api/authService';
+import type { SignUpData } from '../../services/api/authService';
 
 export default function PassportInterior({ isOpen, onSignOut }) {
     const [currentPage, setCurrentPage] = useState(0);
     const [authStep, setAuthStep] = useState('input');
     const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState('');
+    const [successMessage, setSuccessMessage] = useState('');
+
+    // State for login
+    const [contactInfo, setContactInfo] = useState('');
+
+    // State for signup
+    const [signupData, setSignupData] = useState<Partial<SignUpData>>({});
 
     const resetState = () => {
         setTimeout(() => {
             setAuthStep('input');
             setCurrentPage(0);
+            setError('');
+            setSuccessMessage('');
+            setSignupData({});
             onSignOut();
         }, 2500);
     };
@@ -21,27 +34,57 @@ export default function PassportInterior({ isOpen, onSignOut }) {
     const handleLoginSubmit = async (e) => {
         e.preventDefault();
         setIsLoading(true);
-        await new Promise(resolve => setTimeout(resolve, 1500));
-        setIsLoading(false);
-        setAuthStep('otp');
+        setError('');
+        try {
+            await requestLoginOtp(contactInfo);
+            setAuthStep('otp');
+        } catch (err) {
+            setError(err.response?.data?.message || 'An unexpected error occurred.');
+        } finally {
+            setIsLoading(false);
+        }
     };
 
-    const handleOtpSubmit = async (e) => {
-        e.preventDefault();
+    const handleOtpSubmit = async (otp) => {
         setIsLoading(true);
-        await new Promise(resolve => setTimeout(resolve, 1500));
-        setIsLoading(false);
-        setAuthStep('success');
-        resetState();
+        setError('');
+        try {
+            const response = await verifyLoginOtp(contactInfo, otp);
+            console.log('Login successful!', response.data);
+            setSuccessMessage("Login Successful");
+            setAuthStep('success');
+            resetState();
+        } catch (err) {
+            setError(err.response?.data?.message || 'Invalid OTP or an error occurred.');
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     const handleSignupSubmit = async (e) => {
         e.preventDefault();
         setIsLoading(true);
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        setIsLoading(false);
-        setAuthStep('success');
-        resetState();
+        setError('');
+        try {
+            const response = await signUpUser(signupData as SignUpData);
+            console.log('Signup successful!', response.data);
+            setSuccessMessage("Account Created");
+            setAuthStep('success');
+            resetState();
+        } catch (err) {
+             setError(err.response?.data?.message || 'An error occurred during signup.');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handlePageChange = (page) => {
+        setError(''); // Clear errors when changing pages
+        setCurrentPage(page);
+    };
+    
+    const updateSignupData = (newData: Partial<SignUpData>) => {
+        setSignupData(prev => ({ ...prev, ...newData }));
     };
 
     return (
@@ -62,18 +105,28 @@ export default function PassportInterior({ isOpen, onSignOut }) {
             {/* Right Pages (Dynamic Forms) */}
             <div className="w-1/2 h-full relative" style={{ perspective: '1500px' }}>
                 <AnimatePresence>
-                    {authStep === 'success' && <SuccessPage message={currentPage === 0 ? "Login Successful" : "Account Created"} />}
+                    {authStep === 'success' && <SuccessPage message={successMessage} />}
                 </AnimatePresence>
 
                 <Page isVisible={currentPage === 0 && authStep !== 'success'}>
-                    {authStep === 'input' && <LoginForm onSubmit={handleLoginSubmit} isLoading={isLoading} onSignupClick={() => setCurrentPage(1)} />}
-                    {authStep === 'otp' && <OtpForm onSubmit={handleOtpSubmit} isLoading={isLoading} />}
+                    <AnimatePresence mode="wait">
+                        {authStep === 'input' && (
+                            <motion.div key="login-input" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="h-full">
+                                <LoginForm onSubmit={handleLoginSubmit} isLoading={isLoading} setContactInfo={setContactInfo} onSignupClick={() => handlePageChange(1)} error={error} />
+                            </motion.div>
+                        )}
+                        {authStep === 'otp' && (
+                             <motion.div key="login-otp" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="h-full">
+                                <OtpForm onSubmit={handleOtpSubmit} isLoading={isLoading} error={error} />
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
                 </Page>
                 <Page isVisible={currentPage === 1 && authStep !== 'success'} isFlipping={currentPage > 1}>
-                    <SignupStep1Form onNext={() => setCurrentPage(2)} onBack={() => setCurrentPage(0)} />
+                    <SignupStep1Form onNext={() => handlePageChange(2)} onBack={() => handlePageChange(0)} updateData={updateSignupData} />
                 </Page>
                 <Page isVisible={currentPage === 2 && authStep !== 'success'}>
-                    <SignupStep2Form onSubmit={handleSignupSubmit} isLoading={isLoading} onBack={() => setCurrentPage(1)} />
+                    <SignupStep2Form onSubmit={handleSignupSubmit} isLoading={isLoading} onBack={() => handlePageChange(1)} updateData={updateSignupData} error={error}/>
                 </Page>
             </div>
         </div>
@@ -83,24 +136,44 @@ export default function PassportInterior({ isOpen, onSignOut }) {
 
 // --- Form Components ---
 
-const LoginForm = ({ onSubmit, isLoading, onSignupClick }) => (
+const LoginForm = ({ onSubmit, isLoading, setContactInfo, onSignupClick, error }) => (
     <div className="h-full flex flex-col justify-between"> <div/>
         <form onSubmit={onSubmit} className="space-y-5">
             <h3 className="form-header">Login</h3>
-            <InputField icon={<Mail />} type="text" placeholder="E-mail or Phone" required />
+            <InputField icon={<Mail />} type="text" placeholder="E-mail or Phone" required onChange={(e) => setContactInfo(e.target.value)} />
             <ShinyButton type="submit" disabled={isLoading}>{isLoading ? <Spinner /> : 'Request Access Stamp'}</ShinyButton>
+            {error && <ErrorMessage message={error} />}
         </form>
         <Footer text="Don't have an account?" actionText="Sign Up" onClick={onSignupClick} />
     </div>
 );
 
-const OtpForm = ({ onSubmit, isLoading }) => {
+const OtpForm = ({ onSubmit, isLoading, error }) => {
     const inputsRef = useRef([]);
-    const handleInputChange = (e, index) => { if (e.target.value && index < 5) inputsRef.current[index + 1].focus(); };
-    const handleKeyDown = (e, index) => { if (e.key === 'Backspace' && !e.target.value && index > 0) inputsRef.current[index - 1].focus(); };
+    const [otp, setOtp] = useState(new Array(6).fill(""));
+
+    const handleInputChange = (e, index) => {
+        const newOtp = [...otp];
+        newOtp[index] = e.target.value;
+        setOtp(newOtp);
+        if (e.target.value && index < 5) {
+            inputsRef.current[index + 1].focus();
+        }
+    };
+
+    const handleKeyDown = (e, index) => {
+        if (e.key === 'Backspace' && !otp[index] && index > 0) {
+            inputsRef.current[index - 1].focus();
+        }
+    };
+    
+    const handleSubmit = (e) => {
+        e.preventDefault();
+        onSubmit(otp.join(""));
+    };
 
     return (
-        <form onSubmit={onSubmit} className="h-full w-full flex flex-col items-center justify-center">
+        <form onSubmit={handleSubmit} className="h-full w-full flex flex-col items-center justify-center">
             <motion.div
                 className="otp-container w-full"
                 initial={{ scale: 0.5, opacity: 0 }}
@@ -110,25 +183,26 @@ const OtpForm = ({ onSubmit, isLoading }) => {
                 <p className="text-xs text-stone-500 dark:text-stone-400 mb-2">A 6-digit code has been sent to your device.</p>
                 <p className="text-xs text-stone-500 dark:text-stone-400 mb-4">Enter it below.</p>
                 <div className="flex justify-center space-x-1">
-                    {[...Array(6)].map((_, i) => (
-                        <input key={i} ref={el => inputsRef.current[i] = el} type="text" maxLength="1" onChange={e => handleInputChange(e, i)} onKeyDown={e => handleKeyDown(e, i)} className="otp-input" required />
+                    {otp.map((data, i) => (
+                        <input key={i} ref={el => inputsRef.current[i] = el} type="text" maxLength="1" value={data} onChange={e => handleInputChange(e, i)} onKeyDown={e => handleKeyDown(e, i)} className="otp-input" required />
                     ))}
                 </div>
             </motion.div>
             <div className="mt-5 w-full">
                 <ShinyButton type="submit" disabled={isLoading}>{isLoading ? <Spinner /> : 'Verify Code'}</ShinyButton>
             </div>
+            {error && <ErrorMessage message={error} />}
         </form>
     );
 };
 
-const SignupStep1Form = ({ onNext, onBack }) => (
+const SignupStep1Form = ({ onNext, onBack, updateData }) => (
     <div className="h-full flex flex-col justify-between"> <div/>
         <div className="space-y-4">
             <h3 className="form-header">Passenger Details</h3>
-            <InputField icon={<User />} type="text" placeholder="FIRST NAME" required />
-            <InputField icon={<Users />} type="text" placeholder="LAST NAME" required />
-            <InputField icon={<MapPin />} type="text" placeholder="CITY" required />
+            <InputField icon={<User />} type="text" placeholder="FIRST NAME" required onChange={e => updateData({ firstName: e.target.value })} />
+            <InputField icon={<Users />} type="text" placeholder="LAST NAME" required onChange={e => updateData({ lastName: e.target.value })} />
+            <InputField icon={<MapPin />} type="text" placeholder="CITY" required onChange={e => updateData({ city: e.target.value })}/>
         </div>
         <div className="flex items-center space-x-4">
             <button type="button" onClick={onBack} className="form-back-button"><ChevronLeft size={14} /><span>Login</span></button>
@@ -137,7 +211,7 @@ const SignupStep1Form = ({ onNext, onBack }) => (
     </div>
 );
 
-const SignupStep2Form = ({ onSubmit, isLoading, onBack }) => {
+const SignupStep2Form = ({ onSubmit, isLoading, onBack, updateData, error }) => {
     const [password, setPassword] = useState('');
 
     const getPasswordStrength = () => {
@@ -154,22 +228,26 @@ const SignupStep2Form = ({ onSubmit, isLoading, onBack }) => {
         <div className="h-full flex flex-col justify-between"> <div/>
             <form onSubmit={onSubmit} className="space-y-4">
                 <h3 className="form-header">Account Security</h3>
-                <InputField icon={<Mail />} type="email" placeholder="CONTACT E-MAIL" required />
+                <InputField icon={<Mail />} type="email" placeholder="CONTACT E-MAIL" onChange={e => updateData({ email: e.target.value })} />
                 <div>
                     <InputField
                         icon={<KeyRound />}
                         type="password"
                         placeholder="PASSWORD"
                         required
-                        onChange={(e) => setPassword(e.target.value)}
+                        onChange={(e) => {
+                            setPassword(e.target.value);
+                            updateData({ password: e.target.value });
+                        }}
                     />
                     <PasswordStrengthMeter strength={getPasswordStrength()} />
                 </div>
-                <InputField icon={<Phone />} type="tel" placeholder="PHONE (OPTIONAL)" />
+                <InputField icon={<Phone />} type="tel" placeholder="PHONE (OPTIONAL)" onChange={e => updateData({ phoneNumber: e.target.value })} />
                 <div className="pt-2 flex items-center space-x-4">
                     <button type="button" onClick={onBack} className="form-back-button"><ChevronLeft size={14} /><span>Back</span></button>
                     <ShinyButton type="submit" disabled={isLoading}>{isLoading ? <Spinner /> : 'Create Account'}</ShinyButton>
                 </div>
+                {error && <ErrorMessage message={error} />}
             </form>
             <div/>
         </div>
@@ -184,4 +262,11 @@ const SuccessPage = ({ message }) => (
         <h2 className="mt-6 text-2xl font-bold text-stone-800 dark:text-stone-100">{message}</h2>
         <p className="text-stone-500 dark:text-stone-400">You're ready for your next journey!</p>
     </motion.div>
+);
+
+const ErrorMessage = ({ message }) => (
+    <div className="flex items-center justify-center mt-2 text-xs text-red-500">
+        <AlertCircle size={14} className="mr-1" />
+        <span>{message}</span>
+    </div>
 );
