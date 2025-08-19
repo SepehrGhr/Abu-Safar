@@ -22,6 +22,7 @@ const SearchWidget = ({ activeTab, setActiveTab }) => {
 
     const [departureDate, setDepartureDate] = useState('');
     const [returnDate, setReturnDate] = useState('');
+    const [ageCategory, setAgeCategory] = useState<'ADULT' | 'CHILD' | 'BABY'>('ADULT');
 
     const navigate = useNavigate();
 
@@ -44,10 +45,11 @@ const SearchWidget = ({ activeTab, setActiveTab }) => {
             vehicle: activeTab,
             from: origin.city,
             to: destination.city,
-            fromId: String(origin.id),
-            toId: String(destination.id),
+            fromId: String(origin.locationId),
+            toId: String(destination.locationId),
             departureDate: departureDate,
             tripType: tripType,
+            age: ageCategory,
         });
 
         if (tripType === 'round-trip' && returnDate) {

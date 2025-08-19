@@ -72,6 +72,8 @@ public class TicketDocument {
     @Getter
     @Setter
     public static class Location {
+        @Field(type = FieldType.Long)
+        private Long id;
         @Field(type = FieldType.Keyword)
         private String city;
         @Field(type = FieldType.Keyword)

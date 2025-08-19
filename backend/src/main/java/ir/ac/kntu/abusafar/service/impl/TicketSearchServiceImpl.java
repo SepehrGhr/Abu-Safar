@@ -123,11 +123,14 @@ public class TicketSearchServiceImpl implements TicketSearchService {
     @Override
     public List<TicketResultItemDTO> searchTickets(TicketSearchRequestDTO request) {
         BoolQuery.Builder boolQueryBuilder = new BoolQuery.Builder();
+        boolQueryBuilder.filter(q -> q.term(t -> t.field("origin.id").value(request.getOriginId())));
+        boolQueryBuilder.filter(q -> q.term(t -> t.field("destination.id").value(request.getDestinationId())));
 
-        boolQueryBuilder.filter(q -> q.term(t -> t.field("origin.city").value(request.getOriginCity())));
-        boolQueryBuilder.filter(q -> q.term(t -> t.field("destination.city").value(request.getDestinationCity())));
         boolQueryBuilder.filter(q -> q.term(t -> t.field("tripVehicle").value(request.getTripVehicle().name())));
         boolQueryBuilder.filter(q -> q.range(r -> r.field("availableSeats").gt(JsonData.of(0))));
+        if (request.getAgeCategory() != null) {
+            boolQueryBuilder.filter(q -> q.term(t -> t.field("age").value(request.getAgeCategory().name())));
+        }
 
         if (request.getDepartureDate() != null) {
             LocalDate date = request.getDepartureDate();

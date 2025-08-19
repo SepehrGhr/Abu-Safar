@@ -21,15 +21,11 @@ import java.time.LocalTime;
 @EqualsAndHashCode
 @ToString
 public class TicketSearchRequestDTO {
-    @NotBlank(message = "Origin city cannot be blank.")
-    private String originCity;
-    private String originProvince;
-    private String originCountry;
+    @NotNull(message = "Origin ID cannot be null.")
+    private Long originId;
 
-    @NotBlank(message = "Destination city cannot be blank.")
-    private String destinationCity;
-    private String destinationProvince;
-    private String destinationCountry;
+    @NotNull(message = "Destination ID cannot be null.")
+    private Long destinationId;
 
     @NotNull(message = "Departure date cannot be blank.")
     private LocalDate departureDate;

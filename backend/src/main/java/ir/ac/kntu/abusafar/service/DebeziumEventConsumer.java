@@ -38,15 +38,12 @@ public class DebeziumEventConsumer {
     public void handleTicketEvent(String payload) {
         try {
             if (payload == null) {
-                return; // Silently skip null messages
+                return;
             }
 
             JsonNode message = objectMapper.readTree(payload);
 
-            // --- THIS IS THE FIX ---
-            // The pgoutput plugin has a flat structure. The 'message' is the payload.
             JsonNode payloadNode = message;
-            // --- END FIX ---
 
             String operation = payloadNode.has("op") ? payloadNode.get("op").asText() : null;
             if (operation == null) {
@@ -86,9 +83,6 @@ public class DebeziumEventConsumer {
         }
     }
 
-    // You can add more listeners for other tables like `trips` to handle
-    // updates to `reserved_capacity` more efficiently.
-
     /**
      * Maps the DenormalizedTicketData record from Postgres to the TicketDocument for Elasticsearch.
      * This uses the correct record accessor methods (e.g., data.tripId() instead of data.getTripId()).
@@ -108,19 +102,24 @@ public class DebeziumEventConsumer {
         doc.setAvailableSeats(Math.max(0, available));
 
         TicketDocument.Location origin = new TicketDocument.Location();
+        origin.setId(data.originId());
         origin.setCity(data.originCity());
         origin.setProvince(data.originProvince());
         origin.setCountry(data.originCountry());
         doc.setOrigin(origin);
+
         TicketDocument.Location destination = new TicketDocument.Location();
+        destination.setId(data.destId());
         destination.setCity(data.destCity());
         destination.setProvince(data.destProvince());
         destination.setCountry(data.destCountry());
         doc.setDestination(destination);
+
         TicketDocument.Company company = new TicketDocument.Company();
         company.setName(data.companyName());
         company.setLogo(data.companyLogo());
         doc.setCompany(company);
+
         TicketDocument.VehicleDetails vehicleDetails = new TicketDocument.VehicleDetails();
         vehicleDetails.setTrainStars(data.trainStars());
         vehicleDetails.setRoomType(data.trainRoomType() != null ? data.trainRoomType().name() : null);
@@ -139,8 +138,6 @@ public class DebeziumEventConsumer {
         String age = node.get("age").asText();
         return tripId + "_" + age;
     }
-    // @KafkaListener(topics = "abusafar-db-changes.public.trips")
-    // public void handleTripEvent(String message) { ... }
 
     @DltHandler
     public void handleDlt(String message, @Header(KafkaHeaders.RECEIVED_TOPIC) String topic) {

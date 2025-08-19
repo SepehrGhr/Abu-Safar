@@ -3,7 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Header from './components/layout/Header';
 import Footer from './components/layout/Footer';
 import HomePage from './pages/HomePage';
-import TicketSearchResultsPage from './pages/TicketSearchResultPage';
+import TicketSearchResultPage from './pages/TicketSearchResultPage';
 
 function App() {
     const [theme, setTheme] = useState('dark');
@@ -21,7 +21,8 @@ function App() {
                     <main>
                         <Routes>
                             <Route path="/" element={<HomePage />} />
-                            <Route path="/results" element={<TicketSearchResultsPage />} />
+                            <Route path="/ticket-search-result" element={<TicketSearchResultPage />} /> {/* <-- Add this route */}
+
                         </Routes>
                     </main>
                     <Footer />
