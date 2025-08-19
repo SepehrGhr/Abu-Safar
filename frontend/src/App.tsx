@@ -4,6 +4,7 @@ import Header from './components/layout/Header';
 import Footer from './components/layout/Footer';
 import HomePage from './pages/HomePage';
 import TicketSearchResultsPage from './pages/TicketSearchResultPage';
+import AuthPage from './pages/AuthPage'; // Use the new, improved AuthPage
 
 function App() {
     const [theme, setTheme] = useState('dark');
@@ -22,6 +23,7 @@ function App() {
                         <Routes>
                             <Route path="/" element={<HomePage />} />
                             <Route path="/results" element={<TicketSearchResultsPage />} />
+                            <Route path="/auth" element={<AuthPage />} />
                         </Routes>
                     </main>
                     <Footer />
