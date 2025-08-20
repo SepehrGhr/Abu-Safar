@@ -36,15 +36,15 @@ const getVehicleIcon = (vehicleType: string) => {
 
 interface TicketCardProps {
   ticket: Ticket;
+  // --- NEW: onSelect prop to trigger the animation in the parent ---
+  onSelect: () => void;
 }
 
-const TicketCard: React.FC<TicketCardProps> = ({ ticket }) => {
+const TicketCard: React.FC<TicketCardProps> = ({ ticket, onSelect }) => {
     const [isExpanded, setIsExpanded] = useState(false);
     const [details, setDetails] = useState<TicketDetails | null>(null);
     const [isLoadingDetails, setIsLoadingDetails] = useState(false);
     const [error, setError] = useState<string | null>(null);
-
-    const itemVariants = { hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } };
 
     const handleViewDetails = async () => {
         if (isExpanded) {
@@ -72,7 +72,14 @@ const TicketCard: React.FC<TicketCardProps> = ({ ticket }) => {
     };
 
     return (
-        <motion.div variants={itemVariants} className="bg-white/80 dark:bg-slate-950/50 backdrop-blur-md rounded-xl shadow-lg overflow-hidden transition-shadow hover:shadow-2xl">
+        <motion.div
+            // --- NEW: This layoutId is crucial for the animation ---
+            layoutId={`ticket-${ticket.tripId}`}
+            initial={{ opacity: 0, y: 50 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20, transition: { duration: 0.3 } }}
+            className="bg-white/80 dark:bg-slate-950/50 backdrop-blur-md rounded-xl shadow-lg overflow-hidden transition-shadow hover:shadow-2xl"
+        >
             <div className="p-6 flex flex-col sm:flex-row items-center justify-between space-y-4 sm:space-y-0">
                 <div className="flex items-center space-x-4 min-w-[200px]">
                     <div>{getVehicleIcon(ticket.tripVehicle)}</div>
@@ -97,7 +104,8 @@ const TicketCard: React.FC<TicketCardProps> = ({ ticket }) => {
                 </div>
                 <div className="flex flex-col items-center text-center min-w-[150px]">
                     <p className="text-2xl font-bold text-[#a57c44] dark:text-[#ebab5e]">${ticket.price.toFixed(2)}</p>
-                    <ActionButton onClick={() => alert(`Selected ticket from ${ticket.vehicleCompany} for $${ticket.price}`)} className="w-auto h-auto px-6 py-2 mt-2 rounded-lg">
+                    {/* --- MODIFIED: onClick now calls the onSelect prop from the parent --- */}
+                    <ActionButton onClick={onSelect} className="w-auto h-auto px-6 py-2 mt-2 rounded-lg font-aladin">
                         Select
                     </ActionButton>
                 </div>
