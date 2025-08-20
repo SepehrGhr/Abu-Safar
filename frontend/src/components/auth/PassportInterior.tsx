@@ -4,8 +4,11 @@ import { Mail, KeyRound, User, Users, MapPin, Phone, CheckCircle, ChevronLeft, C
 import Page from './Page';
 import { PageInfo } from './PageInfo';
 import { InputField, ShinyButton, Footer, Spinner, PasswordStrengthMeter } from './common';
-import { requestLoginOtp, verifyLoginOtp, signUpUser } from '../../services/api/authService';
-import type { SignUpData } from '../../services/api/authService';
+import { requestLoginOtp, verifyLoginOtp, signUpUser } from '../../services/api/apiService';
+import type { UserInfoDTO } from '../../services/api/apiService';
+import type { SignUpData } from '../../services/api/apiService';
+import { useAuth } from '../../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 export default function PassportInterior({ isOpen, onSignOut }) {
     const [currentPage, setCurrentPage] = useState(0);
@@ -13,12 +16,10 @@ export default function PassportInterior({ isOpen, onSignOut }) {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
     const [successMessage, setSuccessMessage] = useState('');
-
-    // State for login
     const [contactInfo, setContactInfo] = useState('');
-
-    // State for signup
     const [signupData, setSignupData] = useState<Partial<SignUpData>>({});
+    const { login } = useAuth();
+    const navigate = useNavigate();
 
     const resetState = () => {
         setTimeout(() => {
@@ -50,13 +51,20 @@ export default function PassportInterior({ isOpen, onSignOut }) {
         setError('');
         try {
             const response = await verifyLoginOtp(contactInfo, otp);
-            console.log('Login successful!', response.data);
-            setSuccessMessage("Login Successful");
-            setAuthStep('success');
-            resetState();
+            const { accessToken, user } = response.data;
+            if (accessToken && user) {
+                login(accessToken, user as UserInfoDTO);
+                setSuccessMessage("Login Successful");
+                setAuthStep('success');
+                setTimeout(() => {
+                    onSignOut();
+                    navigate('/profile');
+                }, 1500);
+            } else {
+                throw new Error("Login response was missing token or user data.");
+            }
         } catch (err) {
             setError(err.response?.data?.message || 'Invalid OTP or an error occurred.');
-        } finally {
             setIsLoading(false);
         }
     };
@@ -79,7 +87,7 @@ export default function PassportInterior({ isOpen, onSignOut }) {
     };
 
     const handlePageChange = (page) => {
-        setError(''); // Clear errors when changing pages
+        setError('');
         setCurrentPage(page);
     };
     
@@ -89,7 +97,6 @@ export default function PassportInterior({ isOpen, onSignOut }) {
 
     return (
         <div className="w-full h-full bg-passport-page dark:bg-passport-page-dark rounded-r-2xl relative flex z-10">
-            {/* Left Page (Static Info) */}
             <div className="w-1/2 h-full p-6 border-r-2 border-dashed border-stone-300 dark:border-stone-700 flex flex-col justify-center">
                 <AnimatePresence mode="wait">
                     <motion.div key={currentPage} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
@@ -101,8 +108,6 @@ export default function PassportInterior({ isOpen, onSignOut }) {
                     </motion.div>
                 </AnimatePresence>
             </div>
-
-            {/* Right Pages (Dynamic Forms) */}
             <div className="w-1/2 h-full relative" style={{ perspective: '1500px' }}>
                 <AnimatePresence>
                     {authStep === 'success' && <SuccessPage message={successMessage} />}
