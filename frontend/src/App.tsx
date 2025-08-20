@@ -4,6 +4,9 @@ import Header from './components/layout/Header';
 import Footer from './components/layout/Footer';
 import HomePage from './pages/HomePage';
 import TicketSearchResultPage from './pages/TicketSearchResultPage';
+import AuthPage from './pages/AuthPage';
+import ProfilePage from './pages/ProfilePage';
+import ProtectedRoute from './components/common/ProtectedRoute'; 
 
 function App() {
     const [theme, setTheme] = useState('dark');
@@ -13,8 +16,15 @@ function App() {
     }, [theme]);
 
     return (
-        <>
-            <div className="relative text-gray-800 dark:text-gray-200 font-sans antialiased transition-colors duration-300">
+        <div className="relative text-gray-800 dark:text-gray-200 font-sans antialiased transition-colors duration-300">
+            <Router>
+                <Header theme={theme} setTheme={setTheme} />
+                <main>
+                    <Routes>
+                        {/* Public Routes */}
+                        <Route path="/" element={<HomePage />} />
+                        <Route path="/auth" element={<AuthPage />} />
+                        <Route path="/results" element={<TicketSearchResultsPage />} />
 
                 <Router>
                     <Header theme={theme} setTheme={setTheme} />
@@ -23,6 +33,9 @@ function App() {
                             <Route path="/" element={<HomePage />} />
                             <Route path="/ticket-search-result" element={<TicketSearchResultPage />} /> {/* <-- Add this route */}
                             <Route path="/auth" element={<AuthPage />} />
+                            <Route element={<ProtectedRoute />}>
+                            <Route path="/profile" element={<ProfilePage />} />
+                        </Route>
                         </Routes>
                     </main>
                     <Footer />
