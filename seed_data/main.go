@@ -238,7 +238,7 @@ func seedTickets(db *sql.DB) {
 			continue
 		}
 
-		basePrice := float64(rand.Intn(101) + 100)
+		basePrice := gofakeit.Price(100, 350)
 		priceMap := map[string]float64{"BABY": basePrice, "CHILD": basePrice + 50, "ADULT": basePrice + 150}
 
 		for _, age := range ageCategories {
@@ -450,8 +450,9 @@ func seedReports(db *sql.DB) {
 // seedTicketsForTrip creates ticket entries for a single trip ID.
 func seedTicketsForTrip(db *sql.DB, tripID int64, vehicleType string) {
     ageCategories := []string{"BABY", "CHILD", "ADULT"}
-    basePrice := gofakeit.Float64Range(80, 250)
-    priceMap := map[string]float64{"BABY": basePrice * 0.5, "CHILD": basePrice * 0.8, "ADULT": basePrice}
+
+    basePrice := gofakeit.Price(80, 250)
+    priceMap := map[string]float64{"BABY": basePrice, "CHILD": basePrice + 50, "ADULT": basePrice + 150}
 
     for _, age := range ageCategories {
         _, err := db.Exec(`INSERT INTO tickets (trip_id, age, price, trip_vehicle) VALUES ($1, $2, $3, $4)`, tripID, age, priceMap[age], vehicleType)

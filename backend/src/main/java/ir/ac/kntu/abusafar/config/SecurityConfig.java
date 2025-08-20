@@ -38,7 +38,8 @@ public class SecurityConfig {
                                 "/swagger-ui/**",
                                 "/swagger-ui.html",
                                 "/api/tickets/search/**",
-                                "/api/tickets/select/**"
+                                "/api/tickets/select/**",
+                                "/api/companies/**"
                         ).permitAll()
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .requestMatchers("/api/profile/**").authenticated()

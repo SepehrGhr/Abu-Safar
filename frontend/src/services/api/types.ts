@@ -25,4 +25,10 @@ export interface TicketSearchRequest {
   ageCategory: 'ADULT' | 'CHILD' | 'INFANT';
 }
 
+export interface Company {
+  id: number;
+  name: string;
+  vehicleType: string;
+}
+
 

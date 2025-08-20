@@ -4,6 +4,7 @@ import Header from './components/layout/Header';
 import Footer from './components/layout/Footer';
 import HomePage from './pages/HomePage';
 import TicketSearchResultPage from './pages/TicketSearchResultPage';
+import AuthPage from './pages/AuthPage';
 
 function App() {
     const [theme, setTheme] = useState('dark');
