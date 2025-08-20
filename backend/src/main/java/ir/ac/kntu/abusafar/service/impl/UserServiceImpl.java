@@ -208,5 +208,19 @@ public class UserServiceImpl implements UserService {
         userCacheService.evictUserCaches(userId, emailOpt.orElse(null), phoneOpt.orElse(null));
     }
 
+    @Override
+    @Transactional
+    public UserInfoDTO chargeWallet(Long userId, BigDecimal amount) {
+        User user = userDAO.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException("User not found with ID: " + userId));
+
+        BigDecimal currentBalance = user.getWalletBalance();
+        BigDecimal newBalance = currentBalance.add(amount);
+
+        userDAO.updateWalletBalance(user.getId(), newBalance);
+        user.setWalletBalance(newBalance);
+
+        return getUserInfoDTO(user);
+    }
 
 }

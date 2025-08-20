@@ -27,4 +27,6 @@ public interface UserService {
     Optional<UserInfoDTO> findByPhoneNumber(String phoneNumber);
 
     void debitFromWallet(Long userId, BigDecimal amount);
+
+    UserInfoDTO chargeWallet(Long userId, BigDecimal amount);
 }
