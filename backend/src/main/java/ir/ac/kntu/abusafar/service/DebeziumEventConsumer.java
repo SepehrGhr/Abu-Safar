@@ -3,19 +3,24 @@ package ir.ac.kntu.abusafar.service;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import ir.ac.kntu.abusafar.document.TicketDocument;
+import ir.ac.kntu.abusafar.repository.AdditionalServiceDAO;
 import ir.ac.kntu.abusafar.repository.TicketDAO;
 import ir.ac.kntu.abusafar.repository.impl.TicketDAOImpl;
 import ir.ac.kntu.abusafar.repository.elasticsearch.TicketSearchRepository;
 import ir.ac.kntu.abusafar.util.constants.enums.AgeRange;
+import ir.ac.kntu.abusafar.util.constants.enums.ServiceType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.kafka.annotation.DltHandler;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.support.KafkaHeaders;
 import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class DebeziumEventConsumer {
@@ -25,24 +30,28 @@ public class DebeziumEventConsumer {
     private final ObjectMapper objectMapper;
     private final TicketSearchRepository elasticsearchRepository;
     private final TicketDAO ticketDAO;
+    private final AdditionalServiceDAO additionalServiceDAO;
 
+    @Autowired
     public DebeziumEventConsumer(ObjectMapper objectMapper,
                                  TicketSearchRepository elasticsearchRepository,
-                                 TicketDAO ticketDAO) {
+                                 TicketDAO ticketDAO,
+                                 AdditionalServiceDAO additionalServiceDAO) {
         this.objectMapper = objectMapper;
         this.elasticsearchRepository = elasticsearchRepository;
         this.ticketDAO = ticketDAO;
+        this.additionalServiceDAO = additionalServiceDAO;
     }
 
     @KafkaListener(topics = "abusafar-db-changes.public.tickets")
     public void handleTicketEvent(String payload) {
         try {
             if (payload == null) {
+                LOGGER.warn("Received null payload from Kafka.");
                 return;
             }
 
             JsonNode message = objectMapper.readTree(payload);
-
             JsonNode payloadNode = message;
 
             String operation = payloadNode.has("op") ? payloadNode.get("op").asText() : null;
@@ -53,14 +62,16 @@ public class DebeziumEventConsumer {
 
             if ("d".equals(operation)) {
                 JsonNode beforeNode = payloadNode.get("before");
-                String idToDelete = generateDocumentId(beforeNode);
-                elasticsearchRepository.deleteById(idToDelete);
-                LOGGER.info("Deleted document from Elasticsearch with ID: {}", idToDelete);
+                if (beforeNode != null && !beforeNode.isNull()) {
+                    String idToDelete = generateDocumentId(beforeNode);
+                    elasticsearchRepository.deleteById(idToDelete);
+                    LOGGER.info("Deleted document from Elasticsearch with ID: {}", idToDelete);
+                }
                 return;
             }
 
             JsonNode afterNode = payloadNode.get("after");
-            if (afterNode == null || afterNode.isNull()){
+            if (afterNode == null || afterNode.isNull()) {
                 return; // Skip messages that aren't create/update
             }
 
@@ -84,8 +95,9 @@ public class DebeziumEventConsumer {
     }
 
     /**
-     * Maps the DenormalizedTicketData record from Postgres to the TicketDocument for Elasticsearch.
-     * This uses the correct record accessor methods (e.g., data.tripId() instead of data.getTripId()).
+     * Maps the DenormalizedTicketData and enriches it with additional services
+     * to create a complete TicketDocument for Elasticsearch. It also handles
+     * necessary type conversions safely.
      */
     private TicketDocument mapToTicketDocument(TicketDAOImpl.DenormalizedTicketData data) {
         TicketDocument doc = new TicketDocument();
@@ -98,6 +110,17 @@ public class DebeziumEventConsumer {
         doc.setDepartureTimestamp(data.departureTimestamp());
         doc.setArrivalTimestamp(data.arrivalTimestamp());
         doc.setStopCount(data.stopCount());
+
+        // --- CORRECTED SAFE TYPE CONVERSIONS ---
+        // 1. Safely convert integer to short
+        doc.setTotalCapacity(safeIntToShort(data.totalCapacity()));
+        doc.setReservedCapacity(safeIntToShort(data.reservedCapacity()));
+
+        // 2. Fetch and correctly map the List of ServiceType enums to a List of Strings
+        List<ServiceType> serviceNames = additionalServiceDAO.findServiceTypesByTripId(data.tripId());
+        doc.setServices(serviceNames);
+        // ------------------------------------
+
         int available = data.totalCapacity() - data.reservedCapacity();
         doc.setAvailableSeats(Math.max(0, available));
 
@@ -131,8 +154,18 @@ public class DebeziumEventConsumer {
     }
 
     /**
-     * Generates the unique Elasticsearch document ID from a Debezium payload node.
+     * Safely converts an integer to a short, throwing an exception if the value is out of range.
+     * This prevents data corruption from unchecked narrowing casts.
+     * @param value The integer to convert.
+     * @return The converted short value.
      */
+    private short safeIntToShort(int value) {
+        if (value < Short.MIN_VALUE || value > Short.MAX_VALUE) {
+            throw new IllegalArgumentException("Cannot safely cast int to short, value is out of range: " + value);
+        }
+        return (short) value;
+    }
+
     private String generateDocumentId(JsonNode node) {
         Long tripId = node.get("trip_id").asLong();
         String age = node.get("age").asText();

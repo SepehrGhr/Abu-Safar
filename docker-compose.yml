@@ -14,7 +14,7 @@ services:
     command: postgres -c wal_level=logical
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME} -d ${DB_NAME}"]
-      interval: 10s
+      interval: 5m
       timeout: 5s
       retries: 5
     networks:
@@ -165,6 +165,12 @@ services:
         condition: service_healthy
       kafka-connect:
         condition: service_started
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -f http://localhost:8888/api/locations/cities || exit 1" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
     networks:
       - abusafar-net
 
@@ -178,7 +184,8 @@ services:
       - ./frontend:/app
       - /app/node_modules
     depends_on:
-      - backend
+        backend:
+          condition: service_healthy
     networks:
       - abusafar-net
 

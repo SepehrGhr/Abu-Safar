@@ -7,14 +7,14 @@ export interface Location {
 
 export interface Ticket {
   tripId: number;
-  origin: string;
-  destination: string;
-  departureTime: string;
-  arrivalTime: string;
+  age: 'ADULT' | 'CHILD' | 'BABY';
+  originCity: string;
+  destinationCity: string;
+  departureTimestamp: string;
+  arrivalTimestamp: string;
+  tripVehicle: 'TRAIN' | 'BUS' | 'FLIGHT';
   price: number;
-  companyName: string;
-  vehicleType: 'FLIGHT' | 'BUS' | 'TRAIN';
-  details: any;
+  vehicleCompany: string;
 }
 
 export interface TicketSearchRequest {
@@ -22,7 +22,13 @@ export interface TicketSearchRequest {
   destinationId: number;
   departureDate: string;
   tripVehicle: 'FLIGHT' | 'BUS' | 'TRAIN';
-  ageCategory: 'ADULT' | 'CHILD' | 'INFANT';
+  ageCategory: 'ADULT' | 'CHILD' | 'BABY';
+  vehicleCompany?: string;
+  minPrice?: number;
+  maxPrice?: number;
+  busClass?: string[];
+  flightClass?: string[];
+  trainStars?: number;
 }
 
 export interface Company {
@@ -31,4 +37,39 @@ export interface Company {
   vehicleType: string;
 }
 
+export interface TicketSelectRequest {
+  tripId: number;
+  ageCategory: 'ADULT' | 'CHILD' | 'BABY';
+}
 
+export interface BusDetails {
+  classType: string;
+  chairType: string;
+}
+
+export interface FlightDetails {
+  classType: string;
+  departureAirport: string;
+  arrivalAirport: string;
+}
+
+export interface TrainDetails {
+  stars: number;
+  roomType: string;
+}
+
+export interface TicketDetails {
+  origin: string;
+  destination: string;
+  departureTimestamp: string;
+  arrivalTimestamp: string;
+  tripVehicle: 'TRAIN' | 'BUS' | 'FLIGHT';
+  price: number;
+  companyName: string;
+  vehicleDetails: BusDetails | FlightDetails | TrainDetails;
+  stopCount: number;
+  totalCapacity: number;
+  reservedCapacity: number;
+  age: 'ADULT' | 'CHILD' | 'BABY';
+  service: string[];
+}

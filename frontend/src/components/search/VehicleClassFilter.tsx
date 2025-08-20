@@ -28,9 +28,7 @@ const VehicleClassFilter: React.FC<VehicleClassFilterProps> = ({ vehicleType }) 
             } else {
                 newSelectedValues.add(optionValue);
             }
-        } else { // 'radio'
-            // For radio, clear existing and set the new one.
-            // If the clicked one is already selected, unselect it.
+        } else {
             if (newSelectedValues.has(optionValue)) {
                 newSelectedValues.delete(optionValue);
             } else {

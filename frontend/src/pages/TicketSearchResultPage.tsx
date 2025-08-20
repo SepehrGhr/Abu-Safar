@@ -76,10 +76,10 @@ const TicketSearchResultPage = () => {
                     request.maxPrice = parseFloat(maxPrice);
                 }
                 if (busClass && vehicleType === 'BUS') {
-                    request.busClass = busClass as TicketSearchRequest['busClass'];
-                }
+                                    request.busClass = busClass.split(',');
+                                }
                 if (flightClass && vehicleType === 'FLIGHT') {
-                    request.flightClass = flightClass as TicketSearchRequest['flightClass'];
+                                    request.flightClass = flightClass.split(',');
                 }
                 if (trainStars && vehicleType === 'TRAIN') {
                     request.trainStars = parseInt(trainStars, 10);

@@ -15,6 +15,7 @@ import lombok.ToString;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.List;
 
 @Setter
 @Getter
@@ -37,7 +38,7 @@ public class TicketSearchRequestDTO {
     private AgeRange ageCategory;
     private BigDecimal minPrice;
     private BigDecimal maxPrice;
-    private BusClass busClass;
-    private FlightClass flightClass;
+    private List<BusClass> busClass;
+    private List<FlightClass> flightClass;
     private Short trainStars;
 }
