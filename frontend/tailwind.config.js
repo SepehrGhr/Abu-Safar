@@ -20,7 +20,11 @@ module.exports = {
         },
         slate: {
             950: '#0f172a'
-        }
+        },
+        'passport-cover-rich': '#4A2E2A',
+        'passport-gold': '#D4AF37',
+        'passport-page': '#F5F3ED',
+        'passport-page-dark': '#2c2a2a',
       },
       fontFamily: {
           kameron: ['Kameron', 'serif'],

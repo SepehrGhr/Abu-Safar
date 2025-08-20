@@ -22,7 +22,7 @@ function App() {
                         <Routes>
                             <Route path="/" element={<HomePage />} />
                             <Route path="/ticket-search-result" element={<TicketSearchResultPage />} /> {/* <-- Add this route */}
-
+                            <Route path="/auth" element={<AuthPage />} />
                         </Routes>
                     </main>
                     <Footer />
