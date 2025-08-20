@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { getCompaniesByVehicleType } from '/src/services/api/companies';
 import type { Company } from '/src/services/api/types';
+import { useSearchParams } from 'react-router-dom';
 
 interface CompanyFilterProps {
   vehicleType: string;

@@ -19,6 +19,7 @@ const TicketSearchResultPage = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
+    // This query object is used for display purposes in the PersistentSearchBar and Filters.
     const query = {
         from: searchParams.get('from') || 'N/A',
         to: searchParams.get('to') || 'N/A',
@@ -28,12 +29,22 @@ const TicketSearchResultPage = () => {
 
     useEffect(() => {
         const fetchTickets = async () => {
+            // --- Primary Search Parameters ---
             const vehicleType = searchParams.get('vehicle')?.toUpperCase();
             const fromId = searchParams.get('fromId');
             const toId = searchParams.get('toId');
             const departureDate = searchParams.get('departureDate');
             const tripType = searchParams.get('tripType')?.toUpperCase();
+
+            // --- Filter Parameters from Sidebar and URL ---
             const age = searchParams.get('age')?.toUpperCase() || 'ADULT';
+            const companies = searchParams.get('companies'); // e.g., "Mahan,IranAir"
+            const minPrice = searchParams.get('minPrice');
+            const maxPrice = searchParams.get('maxPrice');
+            const busClass = searchParams.get('busClass');
+            const flightClass = searchParams.get('flightClass');
+            const trainStars = searchParams.get('trainStars');
+
 
             if (!vehicleType || !fromId || !toId || !departureDate || !tripType) {
                 setError("Missing required search parameters in the URL.");
@@ -45,6 +56,7 @@ const TicketSearchResultPage = () => {
             setError(null);
 
             try {
+                // --- Construct the API request object with all parameters ---
                 const request: TicketSearchRequest = {
                     originId: parseInt(fromId, 10),
                     destinationId: parseInt(toId, 10),
@@ -52,6 +64,27 @@ const TicketSearchResultPage = () => {
                     tripVehicle: vehicleType as TicketSearchRequest['tripVehicle'],
                     ageCategory: age as TicketSearchRequest['ageCategory'],
                 };
+
+                // --- Conditionally add filter parameters if they exist in the URL ---
+                if (companies) {
+                    request.vehicleCompany = companies;
+                }
+                if (minPrice) {
+                    request.minPrice = parseFloat(minPrice);
+                }
+                if (maxPrice) {
+                    request.maxPrice = parseFloat(maxPrice);
+                }
+                if (busClass && vehicleType === 'BUS') {
+                    request.busClass = busClass as TicketSearchRequest['busClass'];
+                }
+                if (flightClass && vehicleType === 'FLIGHT') {
+                    request.flightClass = flightClass as TicketSearchRequest['flightClass'];
+                }
+                if (trainStars && vehicleType === 'TRAIN') {
+                    request.trainStars = parseInt(trainStars, 10);
+                }
+
 
                 const results = await searchTickets(request);
                 setTickets(results);
@@ -63,7 +96,7 @@ const TicketSearchResultPage = () => {
         };
 
         fetchTickets();
-    }, [searchParams]);
+    }, [searchParams]); // The dependency on searchParams is crucial. It re-runs the search on ANY URL change.
 
     const listVariants = {
         hidden: { opacity: 0 },
@@ -85,8 +118,10 @@ const TicketSearchResultPage = () => {
 
         return (
             <motion.div className="space-y-4" variants={listVariants} initial="hidden" animate="visible">
-                {tickets.map((ticket) => (
-                    <TicketCard key={ticket.id} ticket={ticket} />
+                {/* Assuming TicketCard can handle the Ticket type */}
+                {tickets.map((ticket, index) => (
+                    // It's better to find a unique ID from the ticket object itself if possible
+                    <TicketCard key={ticket.tripId ? `${ticket.tripId}-${index}` : index} ticket={ticket} />
                 ))}
             </motion.div>
         );
@@ -103,7 +138,8 @@ const TicketSearchResultPage = () => {
 
             <div className="relative z-10 pt-24 pb-16">
                 <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-                    <PersistentSearchBar query={query} />
+                    {/* PersistentSearchBar no longer needs the query prop as it's self-contained and URL-driven */}
+                    <PersistentSearchBar />
                     <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 mt-8">
                         {/* The vehicleType from the URL is passed here for dynamic filtering */}
                         <Filters vehicleType={query.vehicleType} />
