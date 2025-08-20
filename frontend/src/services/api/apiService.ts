@@ -48,8 +48,15 @@ export const signUpUser = async (userData: SignUpData) => {
     return response.data;
 };
 
+
 // --- Profile Functions ---
 export const updateUserInfo = async (updateData: UserUpdateData) => {
     const response = await apiClient.put('/api/profile/update', updateData);
+    return response.data;
+};
+
+// --- Wallet Functions ---
+export const chargeWallet = async (amount: number) => {
+    const response = await apiClient.post('/api/wallet/charge', { amount });
     return response.data;
 };
