@@ -24,24 +24,17 @@ function App() {
                         {/* Public Routes */}
                         <Route path="/" element={<HomePage />} />
                         <Route path="/auth" element={<AuthPage />} />
-                        <Route path="/results" element={<TicketSearchResultsPage />} />
+                        <Route path="/ticket-search-result" element={<TicketSearchResultPage />} />
 
-                <Router>
-                    <Header theme={theme} setTheme={setTheme} />
-                    <main>
-                        <Routes>
-                            <Route path="/" element={<HomePage />} />
-                            <Route path="/ticket-search-result" element={<TicketSearchResultPage />} /> {/* <-- Add this route */}
-                            <Route path="/auth" element={<AuthPage />} />
-                            <Route element={<ProtectedRoute />}>
+                        {/* Protected Routes */}
+                        <Route element={<ProtectedRoute />}>
                             <Route path="/profile" element={<ProfilePage />} />
                         </Route>
-                        </Routes>
-                    </main>
-                    <Footer />
-                </Router>
-            </div>
-        </>
+                    </Routes>
+                </main>
+                <Footer />
+            </Router>
+        </div>
     );
 }
 
