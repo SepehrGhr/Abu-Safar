@@ -45,23 +45,21 @@ public class DebeziumEventConsumer {
 
     @KafkaListener(topics = "abusafar-db-changes.public.tickets")
     public void handleTicketEvent(String payload) {
+        if (payload == null) {
+            return;
+        }
+
         try {
-            if (payload == null) {
-                LOGGER.warn("Received null payload from Kafka.");
-                return;
-            }
-
             JsonNode message = objectMapper.readTree(payload);
-            JsonNode payloadNode = message;
+            String operation = message.has("op") ? message.get("op").asText() : null;
 
-            String operation = payloadNode.has("op") ? payloadNode.get("op").asText() : null;
             if (operation == null) {
-                LOGGER.warn("Received a message without an 'op' field, skipping.");
+                LOGGER.warn("Received a message on tickets topic without an 'op' field, skipping.");
                 return;
             }
 
             if ("d".equals(operation)) {
-                JsonNode beforeNode = payloadNode.get("before");
+                JsonNode beforeNode = message.get("before");
                 if (beforeNode != null && !beforeNode.isNull()) {
                     String idToDelete = generateDocumentId(beforeNode);
                     elasticsearchRepository.deleteById(idToDelete);
@@ -70,9 +68,9 @@ public class DebeziumEventConsumer {
                 return;
             }
 
-            JsonNode afterNode = payloadNode.get("after");
+            JsonNode afterNode = message.get("after");
             if (afterNode == null || afterNode.isNull()) {
-                return; // Skip messages that aren't create/update
+                return;
             }
 
             Long tripId = afterNode.get("trip_id").asLong();
@@ -89,16 +87,61 @@ public class DebeziumEventConsumer {
             }
 
         } catch (Exception e) {
-            LOGGER.error("CRITICAL ERROR: An exception was thrown during message processing.", e);
+            LOGGER.error("CRITICAL ERROR processing ticket event: {}", e.getMessage(), e);
             throw new RuntimeException(e);
         }
     }
 
-    /**
-     * Maps the DenormalizedTicketData and enriches it with additional services
-     * to create a complete TicketDocument for Elasticsearch. It also handles
-     * necessary type conversions safely.
-     */
+    @KafkaListener(topics = "abusafar-db-changes.public.trips")
+    public void handleTripEvent(String payload) {
+        if (payload == null) {
+            return;
+        }
+
+        try {
+            JsonNode message = objectMapper.readTree(payload);
+            String operation = message.has("op") ? message.get("op").asText() : null;
+
+            if (operation == null) {
+                LOGGER.warn("Received a message on trips topic without an 'op' field, skipping.");
+                return;
+            }
+
+            if ("d".equals(operation)) {
+                JsonNode beforeNode = message.get("before");
+                if (beforeNode != null && !beforeNode.isNull()) {
+                    Long tripId = beforeNode.get("trip_id").asLong();
+                    LOGGER.info("Received delete for tripId: {}. Deleting associated tickets from Elasticsearch.", tripId);
+                    for (AgeRange age : AgeRange.values()) {
+                        elasticsearchRepository.deleteById(tripId + "_" + age.name());
+                    }
+                }
+                return;
+            }
+
+            JsonNode afterNode = message.get("after");
+            if (afterNode == null || afterNode.isNull()){
+                return;
+            }
+
+            Long tripId = afterNode.get("trip_id").asLong();
+            LOGGER.info("Received update for tripId: {}. Re-indexing associated tickets.", tripId);
+
+            for (AgeRange age : AgeRange.values()) {
+                Optional<TicketDAOImpl.DenormalizedTicketData> dataOpt = ticketDAO.findFullyJoinedTicket(tripId, age);
+                if (dataOpt.isPresent()) {
+                    TicketDocument doc = mapToTicketDocument(dataOpt.get());
+                    elasticsearchRepository.save(doc);
+                    LOGGER.info("Re-indexed document due to trip update. ID: {}", doc.getId());
+                }
+            }
+
+        } catch (Exception e) {
+            LOGGER.error("CRITICAL ERROR processing trip event: {}", e.getMessage(), e);
+            throw new RuntimeException(e);
+        }
+    }
+
     private TicketDocument mapToTicketDocument(TicketDAOImpl.DenormalizedTicketData data) {
         TicketDocument doc = new TicketDocument();
 
@@ -111,15 +154,11 @@ public class DebeziumEventConsumer {
         doc.setArrivalTimestamp(data.arrivalTimestamp());
         doc.setStopCount(data.stopCount());
 
-        // --- CORRECTED SAFE TYPE CONVERSIONS ---
-        // 1. Safely convert integer to short
         doc.setTotalCapacity(safeIntToShort(data.totalCapacity()));
         doc.setReservedCapacity(safeIntToShort(data.reservedCapacity()));
 
-        // 2. Fetch and correctly map the List of ServiceType enums to a List of Strings
         List<ServiceType> serviceNames = additionalServiceDAO.findServiceTypesByTripId(data.tripId());
         doc.setServices(serviceNames);
-        // ------------------------------------
 
         int available = data.totalCapacity() - data.reservedCapacity();
         doc.setAvailableSeats(Math.max(0, available));
@@ -153,12 +192,6 @@ public class DebeziumEventConsumer {
         return doc;
     }
 
-    /**
-     * Safely converts an integer to a short, throwing an exception if the value is out of range.
-     * This prevents data corruption from unchecked narrowing casts.
-     * @param value The integer to convert.
-     * @return The converted short value.
-     */
     private short safeIntToShort(int value) {
         if (value < Short.MIN_VALUE || value > Short.MAX_VALUE) {
             throw new IllegalArgumentException("Cannot safely cast int to short, value is out of range: " + value);
