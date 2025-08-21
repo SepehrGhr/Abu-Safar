@@ -2,10 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronUp, ChevronDown, AlertCircle } from 'lucide-react';
-import { searchTickets } from '../services/api/tickets';
 import { createReservation } from '../services/api/reservations';
 import { useAuth } from '../context/AuthContext';
-import type { Ticket, TicketSearchRequest, ReserveConfirmation } from '../services/api/types';
+import type { Ticket, ReserveConfirmation, TicketSearchRequestDTO } from '../services/api/types';
+
+import { searchTickets } from '../services/api/tickets';
 
 import PersistentSearchBar from '../components/search/PersistentSearchBar';
 import Filters from '../components/search/Filters';
@@ -17,139 +18,178 @@ import SelectedTicket from '../components/search/SelectedTicket';
 import backgroundDarkImage from '../assets/images/night.jpg';
 
 const TicketSearchResultPage = () => {
-     const [searchParams] = useSearchParams();
-     const navigate = useNavigate();
-     const { isAuthenticated } = useAuth();
+    const [searchParams, setSearchParams] = useSearchParams();
+    const navigate = useNavigate();
+    const { isAuthenticated } = useAuth();
 
-     const [tickets, setTickets] = useState<Ticket[]>([]);
-     const [isLoading, setIsLoading] = useState(true);
-     const [error, setError] = useState<string | null>(null);
-     const [selectedTickets, setSelectedTickets] = useState<Ticket[]>([]);
-     const [isCreatingReservation, setIsCreatingReservation] = useState(false);
+    const [tickets, setTickets] = useState<Ticket[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    const [selectedTickets, setSelectedTickets] = useState<Ticket[]>([]);
+    const [isCreatingReservation, setIsCreatingReservation] = useState(false);
+    const [originalDepartureDate, setOriginalDepartureDate] = useState<string | null>(null);
 
-     const tripType = searchParams.get('tripType')?.toUpperCase();
-     const isRoundTrip = tripType === 'ROUNDTRIP';
-     const ageCategory = searchParams.get('age')?.toUpperCase() || 'ADULT';
+    const tripType = searchParams.get('tripType')?.toUpperCase().replace('-', '');
+    const isRoundTrip = tripType === 'ROUNDTRIP';
 
-     useEffect(() => {
-         const fetchTickets = async () => {
-             const vehicleType = searchParams.get('vehicle')?.toUpperCase();
+    const ageCategory = searchParams.get('age')?.toUpperCase() || 'ADULT';
+
+    useEffect(() => {
+        if (!originalDepartureDate) {
+            setOriginalDepartureDate(searchParams.get('departureDate'));
+        }
+
+        const fetchTickets = async () => {
+            setTickets([]);
+
+            const vehicleType = searchParams.get('vehicle')?.toUpperCase();
+            const fromId = searchParams.get('fromId');
+            const toId = searchParams.get('toId');
+            const departureDate = searchParams.get('departureDate');
+            const companies = searchParams.get('companies');
+            const minPrice = searchParams.get('minPrice');
+            const maxPrice = searchParams.get('maxPrice');
+            const busClass = searchParams.get('busClass');
+            const flightClass = searchParams.get('flightClass');
+            const trainStars = searchParams.get('trainStars');
+
+            if (!vehicleType || !fromId || !toId || !departureDate || !tripType) {
+                setError("Missing required search parameters in the URL.");
+                setIsLoading(false);
+                return;
+            }
+            setIsLoading(true);
+            setError(null);
+            try {
+                const request: TicketSearchRequestDTO = {
+                    originId: parseInt(fromId, 10),
+                    destinationId: parseInt(toId, 10),
+                    departureDate,
+                    tripVehicle: vehicleType as TicketSearchRequestDTO['tripVehicle'],
+                    ageCategory: ageCategory as TicketSearchRequestDTO['ageCategory'],
+                    vehicleCompany: companies || undefined,
+                    minPrice: minPrice ? parseFloat(minPrice) : undefined,
+                    maxPrice: maxPrice ? parseFloat(maxPrice) : undefined,
+                    busClass: busClass ? busClass.split(',') : undefined,
+                    flightClass: flightClass ? flightClass.split(',') : undefined,
+                    trainStars: trainStars ? parseInt(trainStars, 10) : undefined,
+                };
+
+                // The searchTickets function from tickets.ts correctly returns the array
+                const results = await searchTickets(request);
+                setTickets(results || []);
+            } catch (err: any) {
+                setError(err.response?.data?.data || err.message || "An unexpected error occurred.");
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        fetchTickets();
+    }, [searchParams, ageCategory, tripType, originalDepartureDate]);
+
+
+    const handleSelectTicket = (ticket: Ticket) => {
+        const maxSelection = isRoundTrip ? 2 : 1;
+        if (selectedTickets.length >= maxSelection) return;
+
+        const ticketWithAge = { ...ticket, ageCategory };
+        setSelectedTickets(prev => [...prev, ticketWithAge]);
+
+        if (isRoundTrip && selectedTickets.length === 0) {
+            const from = searchParams.get('from');
+            const to = searchParams.get('to');
+            const fromId = searchParams.get('fromId');
+            const toId = searchParams.get('toId');
+            const returnDate = searchParams.get('returnDate');
+
+            const newSearchParams = new URLSearchParams(searchParams);
+            newSearchParams.set('from', to || '');
+            newSearchParams.set('to', from || '');
+            newSearchParams.set('fromId', toId || '');
+            newSearchParams.set('toId', fromId || '');
+            newSearchParams.set('departureDate', returnDate || '');
+
+            setSearchParams(newSearchParams, { replace: true });
+        }
+    };
+
+    const handleDeselectTicket = (ticketId: number) => {
+        const isFirstTicket = selectedTickets.length > 0 && selectedTickets[0].tripId === ticketId;
+
+        if (isRoundTrip && isFirstTicket) {
+             const from = searchParams.get('from');
+             const to = searchParams.get('to');
              const fromId = searchParams.get('fromId');
              const toId = searchParams.get('toId');
-             const departureDate = searchParams.get('departureDate');
-             const companies = searchParams.get('companies');
-             const minPrice = searchParams.get('minPrice');
-             const maxPrice = searchParams.get('maxPrice');
-             const busClass = searchParams.get('busClass');
-             const flightClass = searchParams.get('flightClass');
-             const trainStars = searchParams.get('trainStars');
 
-             if (!vehicleType || !fromId || !toId || !departureDate || !tripType) {
-                 setError("Missing required search parameters in the URL.");
-                 setIsLoading(false);
-                 return;
-             }
-             setIsLoading(true);
-             setError(null);
-             try {
-                 const request: TicketSearchRequest = {
-                     originId: parseInt(fromId, 10),
-                     destinationId: parseInt(toId, 10),
-                     departureDate,
-                     tripVehicle: vehicleType as TicketSearchRequest['tripVehicle'],
-                     ageCategory: ageCategory as TicketSearchRequest['ageCategory'],
-                 };
-                 if (companies) request.vehicleCompany = companies;
-                 if (minPrice) request.minPrice = parseFloat(minPrice);
-                 if (maxPrice) request.maxPrice = parseFloat(maxPrice);
-                 if (busClass && vehicleType === 'BUS') request.busClass = busClass.split(',');
-                 if (flightClass && vehicleType === 'FLIGHT') request.flightClass = flightClass.split(',');
-                 if (trainStars && vehicleType === 'TRAIN') request.trainStars = parseInt(trainStars, 10);
-                 const results = await searchTickets(request);
-                 setTickets(results);
-             } catch (err: any) {
-                 setError(err.message || "An unexpected error occurred.");
-             } finally {
-                 setIsLoading(false);
-             }
-         };
-         fetchTickets();
-     }, [searchParams, ageCategory, tripType]);
+             const newSearchParams = new URLSearchParams(searchParams);
+             newSearchParams.set('from', to || '');
+             newSearchParams.set('to', from || '');
+             newSearchParams.set('fromId', toId || '');
+             newSearchParams.set('toId', fromId || '');
+             newSearchParams.set('departureDate', originalDepartureDate || '');
 
+             setSearchParams(newSearchParams, { replace: true });
+        }
+        setSelectedTickets(prev => prev.filter(t => t.tripId !== ticketId));
+    };
 
-     const handleSelectTicket = (ticket: Ticket) => {
-         const maxSelection = isRoundTrip ? 2 : 1;
-         if (selectedTickets.length < maxSelection) {
+    const handleProceedToReservation = async () => {
+        if (!isAuthenticated) {
+            setError("You must be logged in to make a reservation.");
+            setTimeout(() => setError(null), 5000);
+            return;
+        }
 
-             const ticketWithAge = { ...ticket, ageCategory };
-             setSelectedTickets(prev => [...prev, ticketWithAge]);
-         }
-     };
+        if (isCreatingReservation) return;
 
-     const handleDeselectTicket = (ticketId: string) => {
-         setSelectedTickets(prev => prev.filter(t => t.tripId !== ticketId));
-     };
+        setIsCreatingReservation(true);
+        setError(null);
+        try {
+            const reservationDetails: ReserveConfirmation = await createReservation(selectedTickets, isRoundTrip);
+            navigate('/reservation', { state: { reservationDetails } });
+        } catch (err: any) {
+            setError(err.response?.data?.data || err.message || "Could not create your reservation. Please try again.");
+        } finally {
+            setIsCreatingReservation(false);
+        }
+    };
 
-     const handleProceedToReservation = async () => {
-        console.log('*************Checking authentication. Is authenticated:', isAuthenticated);
-         if (!isAuthenticated) {
-             setError("You must be logged in to make a reservation.");
+    const canProceed = isRoundTrip ? selectedTickets.length === 2 : selectedTickets.length === 1;
+    const topBarTitle = isRoundTrip && selectedTickets.length === 1 ? "Find your return ticket" : "Find your ticket";
 
-             setTimeout(() => setError(null), 5000);
-             return;
-         }
-console.log('***************Checking if a reservation is already being created:', isCreatingReservation);
+    const unselectedTickets = Array.isArray(tickets)
+        ? tickets.filter(t => !selectedTickets.some(st => st.tripId === t.tripId))
+        : [];
 
-         if (isCreatingReservation) return;
+    const renderTicketList = () => {
+        if (isLoading) return <div className="text-center p-10 text-white">Loading tickets...</div>;
+        if (error && !isCreatingReservation) return null;
 
-         setIsCreatingReservation(true);
-         setError(null);
-         try {
-             console.log('*****************Attempting to create reservation with tickets:', selectedTickets);
+        const noTicketsMessage = isRoundTrip
+            ? "No tickets found for this leg of the trip."
+            : "No tickets found for this trip.";
 
+        if (unselectedTickets.length === 0 && !isLoading) return <div className="text-center p-10 text-white bg-black/20 rounded-lg">{noTicketsMessage}</div>;
 
-             const reservationDetails: ReserveConfirmation = await createReservation(selectedTickets, isRoundTrip);
+        return (
+            <motion.div className="space-y-4" layout>
+                <AnimatePresence>
+                    {unselectedTickets.map((ticket) => (
+                        <TicketCard
+                            key={ticket.tripId}
+                            ticket={ticket}
+                            onSelect={() => handleSelectTicket(ticket)}
+                            isDisabled={selectedTickets.length >= (isRoundTrip ? 2 : 1)}
+                        />
+                    ))}
+                </AnimatePresence>
+            </motion.div>
+        );
+    };
 
-console.log("Reservation details received:", reservationDetails);
-
-             navigate('/reservation', { state: { reservationDetails } });
-         } catch (err: any) {
-             setError(err.message || "Could not create your reservation. Please try again.");
-         } finally {
-             setIsCreatingReservation(false);
-         }
-     };
-
-
-     const canProceed = isRoundTrip ? selectedTickets.length === 2 : selectedTickets.length === 1;
-     const topBarTitle = isRoundTrip && selectedTickets.length === 1
-         ? "Find your return ticket"
-         : "Find your ticket";
-     const unselectedTickets = tickets.filter(t => !selectedTickets.find(st => st.tripId === t.tripId));
-
-     const renderTicketList = () => {
-         if (isLoading) return <div className="text-center p-10 text-white">Loading tickets...</div>;
-         if (error && !isCreatingReservation) return null; // Error is now shown at the top
-         if (tickets.length === 0 && !isLoading) return <div className="text-center p-10 text-white bg-black/20 rounded-lg">No tickets found.</div>;
-
-         return (
-             <motion.div className="space-y-4" layout>
-                 <AnimatePresence>
-                     {unselectedTickets.map((ticket) => (
-                         <TicketCard
-                             key={ticket.tripId}
-                             ticket={ticket}
-                             onSelect={() => handleSelectTicket(ticket)}
-                             isDisabled={selectedTickets.length >= (isRoundTrip ? 2 : 1)}
-                         />
-                     ))}
-                 </AnimatePresence>
-             </motion.div>
-         );
-     };
-
-     return (
-         <div className="relative min-h-screen font-sans">
+    return (
+        <div className="relative min-h-screen font-sans">
              <div className="absolute inset-0 bg-brand-lightBackGround -z-10 block dark:hidden"></div>
              <div
                  className="absolute inset-0 bg-cover bg-[center_top_5%] opacity-30 -z-10 hidden dark:block"
@@ -192,7 +232,6 @@ console.log("Reservation details received:", reservationDetails);
                          </div>
                      </div>
 
-                     {/* --- NEW: Centralized Error Display --- */}
                      <AnimatePresence>
                          {error && (
                               <motion.div
@@ -207,7 +246,10 @@ console.log("Reservation details received:", reservationDetails);
                          )}
                      </AnimatePresence>
 
-                     <PersistentSearchBar />
+                     <PersistentSearchBar
+                        key={`${searchParams.get('fromId')}-${searchParams.get('departureDate')}`}
+                     />
+
                      <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 mt-8">
                          <Filters vehicleType={searchParams.get('vehicle')?.toUpperCase() || 'FLIGHT'} />
                          <div className="lg:col-span-3">
@@ -228,8 +270,8 @@ console.log("Reservation details received:", reservationDetails);
                      </div>
                  </div>
              </div>
-         </div>
-     );
- };
+        </div>
+    );
+};
 
- export default TicketSearchResultPage;
+export default TicketSearchResultPage;
