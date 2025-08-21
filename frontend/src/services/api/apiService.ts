@@ -63,6 +63,11 @@ export interface PaymentRecordDTO {
     price: number;
 }
 
+export interface PaymentRequestData {
+    reservationId: number;
+    paymentMeans: 'WALLET';
+}
+
 // --- Auth Functions ---
 export const requestLoginOtp = async (contactInfo: string) => {
     const response = await apiClient.post('/api/auth/login/otp/request', { contactInfo });
@@ -111,9 +116,18 @@ export const cancelReservation = async (reservationId: number) => {
     return response.data;
 };
 
-// --- Payment History Functions ---
+// --- Payment History & Processing Functions ---
 
 export const getPaymentHistory = async () => {
     const response = await apiClient.get('/api/payments');
+    return response.data;
+};
+
+export const processPayment = async (reservationId: number) => {
+    const paymentRequest: PaymentRequestData = {
+        reservationId,
+        paymentMeans: 'WALLET'
+    };
+    const response = await apiClient.post('/api/payment/pay', paymentRequest);
     return response.data;
 };

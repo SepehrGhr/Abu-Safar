@@ -43,7 +43,7 @@ export default function ReservationHistory() {
         setSelectedReservationId(null);
     };
     
-    const handleCancellationSuccess = () => {
+    const handleActionSuccess = () => {
         fetchHistory(activeTab); 
     };
 
@@ -56,7 +56,12 @@ export default function ReservationHistory() {
             <motion.div layout className="space-y-4">
                 <AnimatePresence>
                     {reservations.map(record => (
-                        <ReservationCard key={record.reservationId} record={record} onCancelClick={handleOpenCancelModal} />
+                        <ReservationCard 
+                            key={record.reservationId} 
+                            record={record} 
+                            onCancelClick={handleOpenCancelModal}
+                            onPaymentSuccess={handleActionSuccess}
+                        />
                     ))}
                 </AnimatePresence>
             </motion.div>
@@ -88,7 +93,7 @@ export default function ReservationHistory() {
                     isOpen={isModalOpen}
                     onClose={handleCloseModal}
                     reservationId={selectedReservationId}
-                    onCancellationSuccess={handleCancellationSuccess}
+                    onCancellationSuccess={handleActionSuccess}
                 />
             )}
         </>

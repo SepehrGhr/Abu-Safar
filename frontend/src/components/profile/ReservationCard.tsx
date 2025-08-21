@@ -1,7 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Plane, Bus, Train, Calendar, AlertTriangle, CheckCircle, XCircle, Clock } from 'lucide-react';
-import ActionButton from '../common/ActionButton';
+import { Plane, Bus, Train, Calendar, CheckCircle, XCircle, Clock } from 'lucide-react';
+import { ActionButton } from '../common/ActionButton';
+import { Spinner } from '../auth/common';
+import { processPayment } from '../../services/api/apiService';
 
 const statusInfo = {
     UPCOMING_TRIP: { icon: <Calendar size={16} />, color: 'text-blue-500', label: 'Upcoming' },
@@ -16,10 +18,26 @@ const vehicleIcons = {
     TRAIN: <Train size={20} />
 };
 
-export default function ReservationCard({ record, onCancelClick }) {
+export default function ReservationCard({ record, onCancelClick, onPaymentSuccess }) {
     const { status, reservationId, ticketsInformation } = record;
     const currentStatus = statusInfo[status];
     const primaryTicket = ticketsInformation[0];
+
+    const [isPaying, setIsPaying] = useState(false);
+    const [paymentError, setPaymentError] = useState('');
+
+    const handlePayNow = async () => {
+        setIsPaying(true);
+        setPaymentError('');
+        try {
+            await processPayment(reservationId);
+            onPaymentSuccess();
+        } catch (err) {
+            setPaymentError(err.response?.data?.message || 'Payment failed.');
+        } finally {
+            setIsPaying(false);
+        }
+    };
 
     return (
         <motion.div
@@ -45,7 +63,7 @@ export default function ReservationCard({ record, onCancelClick }) {
                         <p>{primaryTicket.vehicleCompany} &bull; {vehicleIcons[primaryTicket.tripVehicle]}</p>
                     </div>
                 </div>
-                <div className="mt-4 sm:mt-0 sm:ml-4 flex-shrink-0">
+                <div className="mt-4 sm:mt-0 sm:ml-4 flex-shrink-0 text-right">
                     {status === 'UPCOMING_TRIP' && (
                         <ActionButton onClick={() => onCancelClick(reservationId)} className="w-full sm:w-auto text-sm bg-red-500/10 text-red-500 hover:bg-red-500/20">
                             <XCircle size={16} />
@@ -53,9 +71,12 @@ export default function ReservationCard({ record, onCancelClick }) {
                         </ActionButton>
                     )}
                     {status === 'PENDING_PAYMENT' && (
-                        <ActionButton onClick={() => alert('Redirect to payment page...')} className="w-full sm:w-auto text-sm">
-                            Pay Now
-                        </ActionButton>
+                        <>
+                            <ActionButton onClick={handlePayNow} disabled={isPaying} className="w-full sm:w-auto text-sm">
+                                {isPaying ? <Spinner /> : 'Pay Now'}
+                            </ActionButton>
+                            {paymentError && <p className="text-xs text-red-500 mt-1">{paymentError}</p>}
+                        </>
                     )}
                 </div>
             </div>
