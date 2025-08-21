@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, X, User, Sun, Moon } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Menu, X, User, Sun, Moon, LogOut } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
 import ShinyButton from '../common/ShinyButton';
 import CarpetLogo from '../icons/Carpet.tsx';
 import { useAuth } from '../../context/AuthContext';
@@ -22,9 +22,15 @@ const ProfileIcon = ({ user }) => {
 
 const Header = ({ theme, setTheme }) => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
-    const { isAuthenticated, user } = useAuth(); // Get the real authentication state
+    const { isAuthenticated, user, logout } = useAuth(); // Get the logout function
+    const navigate = useNavigate();
     const navLinks = [{ name: 'Flights', href: '#' }, { name: 'Buses', href: '#' }, { name: 'Trains', href: '#' }];
     const toggleTheme = () => setTheme(theme === 'light' ? 'dark' : 'light');
+
+    const handleLogout = () => {
+        logout();
+        navigate('/'); // Redirect to homepage after logout
+    };
 
     return (
         <header className="bg-white/80 dark:bg-slate-950/50 backdrop-blur-md shadow-sm fixed top-0 left-0 right-0 z-50">
@@ -42,8 +48,12 @@ const Header = ({ theme, setTheme }) => {
                     <div className="hidden md:flex items-center space-x-4">
                         <AnimatePresence mode="wait">
                             {isAuthenticated && user ? (
-                                <motion.div key="profile" initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }}>
+                                <motion.div key="profile" initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }} className="flex items-center space-x-4">
                                     <ProfileIcon user={user} />
+                                    {/* --- TEMPORARY LOGOUT BUTTON --- */}
+                                    <button onClick={handleLogout} title="Debug Logout" className="p-2 text-red-500 rounded-full hover:bg-red-500/10">
+                                        <LogOut size={18} />
+                                    </button>
                                 </motion.div>
                             ) : (
                                 <motion.div key="auth-buttons" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex items-center space-x-4">

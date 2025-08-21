@@ -16,7 +16,7 @@ const CancellationModal: React.FC<CancellationModalProps> = ({ isOpen, onClose, 
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState('');
     const [penaltyDetails, setPenaltyDetails] = useState(null);
-    const { updateUser } = useAuth();
+    const { user, updateUser } = useAuth(); // Get user and updateUser from context
 
     useEffect(() => {
         if (isOpen) {
@@ -41,7 +41,14 @@ const CancellationModal: React.FC<CancellationModalProps> = ({ isOpen, onClose, 
         setError('');
         try {
             const response = await cancelReservation(reservationId);
-            updateUser(response.data.newWalletBalance); // Update wallet in context
+            
+            // --- THIS IS THE FIX ---
+            // We now update the user object correctly, preserving all user data
+            // and only changing the wallet balance.
+            if (user && response.data.newWalletBalance) {
+                updateUser({ ...user, walletBalance: response.data.newWalletBalance });
+            }
+
             onCancellationSuccess();
             onClose();
         } catch (err) {
@@ -88,7 +95,7 @@ const CancellationModal: React.FC<CancellationModalProps> = ({ isOpen, onClose, 
                                     <div className="flex justify-between font-bold text-lg text-green-500"><span>Total Refund:</span> <span>${penaltyDetails.refundAmount.toFixed(2)}</span></div>
                                 </div>
                                 <div className="mt-6 flex space-x-4">
-                                    <button onClick={onClose} className="flex-1 py-2 text-sm font-semibold rounded-lg bg-stone-200 dark:bg-slate-700 hover:bg-stone-300 dark:hover:bg-slate-600 transition-colors">
+                                    <button type="button" onClick={onClose} className="flex-1 py-2 text-sm font-semibold rounded-lg bg-stone-200 dark:bg-slate-700 hover:bg-stone-300 dark:hover:bg-slate-600 transition-colors">
                                         Keep Reservation
                                     </button>
                                     <ShinyButton onClick={handleConfirmCancellation} className="flex-1 bg-red-500/10 text-red-500 hover:bg-red-500/20">
