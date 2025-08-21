@@ -100,3 +100,17 @@ export interface ReserveConfirmation {
   seatNumbers: number[];
   price: number;
 }
+
+export interface PaymentRequestData {
+  reservationId: number;
+  paymentMeans: 'WALLET' | 'BANK_PORTAL';
+}
+
+export interface PaymentRecordDTO {
+  paymentId: string;
+  reservationId: number;
+  amount: number;
+  paymentTimestamp: string;
+  status: 'COMPLETED' | 'PENDING' | 'FAILED';
+  paymentMethod: 'WALLET' | 'BANK_PORTAL';
+}
