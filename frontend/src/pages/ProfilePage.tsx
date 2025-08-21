@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import ProfileIdCard from '../components/profile/ProfileIdCard';
 import WalletWidget from '../components/profile/WalletWidget';
 import ChargeWalletModal from '../components/profile/ChargeWalletModal';
+import ReservationHistory from '../components/profile/ReservationHistory'; 
 import background from '../assets/images/night.jpg';
 
 export default function ProfilePage() {
@@ -39,6 +40,8 @@ export default function ProfilePage() {
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                         <div className="lg:col-span-2">
                             <ProfileIdCard user={user} />
+                            {/* Add the reservation history below the main card */}
+                            <ReservationHistory />
                         </div>
                         <div className="lg:col-span-1">
                             <WalletWidget balance={user.walletBalance} onAddFunds={() => setIsModalOpen(true)} />

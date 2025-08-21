@@ -1,4 +1,5 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
+import { jwtDecode } from 'jwt-decode';
 import type { UserInfoDTO } from '../services/api/apiService';
 
 interface AuthContextType {
@@ -19,22 +20,30 @@ export const AuthProvider = ({ children }) => {
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
-        const loadUserFromToken = async () => {
-            if (token) {
+        const loadUserFromToken = () => {
+            const storedToken = localStorage.getItem('accessToken');
+            if (storedToken) {
                 try {
-                    const storedUser = localStorage.getItem('user');
-                    if (storedUser) {
-                        setUser(JSON.parse(storedUser));
+                    const decodedToken: { exp: number } = jwtDecode(storedToken);
+                    // Check if token is expired
+                    if (decodedToken.exp * 1000 < Date.now()) {
+                        logout(); // Token is expired, log out
+                    } else {
+                        const storedUser = localStorage.getItem('user');
+                        if (storedUser) {
+                            setUser(JSON.parse(storedUser));
+                            setToken(storedToken);
+                        }
                     }
                 } catch (error) {
-                    console.error("Failed to load user from token", error);
-                    logout();
+                    console.error("Invalid token found", error);
+                    logout(); // Token is malformed, log out
                 }
             }
             setIsLoading(false);
         };
         loadUserFromToken();
-    }, [token]);
+    }, []);
 
     const login = (newToken: string, userData: UserInfoDTO) => {
         localStorage.setItem('accessToken', newToken);

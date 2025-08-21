@@ -20,4 +20,20 @@ apiClient.interceptors.request.use(
     }
 );
 
+apiClient.interceptors.response.use(
+    (response) => {
+        return response;
+    },
+    (error) => {
+        const { status } = error.response;
+        if (status === 401 || status === 403) {
+            console.log("Authorization error, logging out...");
+            localStorage.removeItem('accessToken');
+            localStorage.removeItem('user');
+            window.location.href = '/auth';
+        }
+        return Promise.reject(error);
+    }
+);
+
 export default apiClient;
