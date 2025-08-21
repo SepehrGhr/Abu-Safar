@@ -32,6 +32,28 @@ export interface UserUpdateData {
     birthdayDate?: string;
 }
 
+export interface TicketResultItemDTO {
+    tripId: number;
+    age: 'ADULT' | 'CHILD' | 'BABY';
+    originCity: string;
+    destinationCity: string;
+    departureTimestamp: string;
+    arrivalTimestamp: string;
+    tripVehicle: 'TRAIN' | 'BUS' | 'FLIGHT';
+    price: number;
+    vehicleCompany: string;
+}
+
+export interface ReserveRecordItemDTO {
+    status: 'UPCOMING_TRIP' | 'PAST_TRIP' | 'CANCELLED' | 'PENDING_PAYMENT';
+    reservationId: number;
+    paymentId: number;
+    paymentTimestamp: string;
+    seatNumbers: number[];
+    isRoundTrip: boolean;
+    ticketsInformation: TicketResultItemDTO[];
+}
+
 // --- Auth Functions ---
 export const requestLoginOtp = async (contactInfo: string) => {
     const response = await apiClient.post('/api/auth/login/otp/request', { contactInfo });
@@ -48,8 +70,34 @@ export const signUpUser = async (userData: SignUpData) => {
     return response.data;
 };
 
+
 // --- Profile Functions ---
 export const updateUserInfo = async (updateData: UserUpdateData) => {
     const response = await apiClient.put('/api/profile/update', updateData);
+    return response.data;
+};
+
+// --- Wallet Functions ---
+export const chargeWallet = async (amount: number) => {
+    const response = await apiClient.post('/api/wallet/charge', { amount });
+    return response.data;
+};
+
+
+export const getReservationHistory = async (status: string) => {
+    const response = await apiClient.get('/api/bookings/history', {
+        params: { status }
+    });
+    return response.data;
+};
+
+// --- Booking History & Cancellation Functions ---
+export const calculateCancellationPenalty = async (reservationId: number) => {
+    const response = await apiClient.post('/api/booking/cancel/calculate', { reservationId });
+    return response.data;
+};
+
+export const cancelReservation = async (reservationId: number) => {
+    const response = await apiClient.post('/api/booking/cancel/confirm', { reservationId });
     return response.data;
 };

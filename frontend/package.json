@@ -15,7 +15,8 @@
     "react-router-dom": "^6.23.1",
     "framer-motion": "^11.2.10",
     "lucide-react": "^0.395.0",
-    "axios": "^1.7.2"
+    "axios": "^1.7.2",
+    "jwt-decode": "^4.0.0"
   },
   "devDependencies": {
     "@types/react": "^18.2.66",
