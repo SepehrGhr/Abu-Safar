@@ -6,7 +6,8 @@ import HomePage from './pages/HomePage';
 import TicketSearchResultPage from './pages/TicketSearchResultPage';
 import AuthPage from './pages/AuthPage';
 import ProfilePage from './pages/ProfilePage';
-import ProtectedRoute from './components/common/ProtectedRoute'; 
+import ProtectedRoute from './components/common/ProtectedRoute';
+import { ReservationPage } from './pages/ReservationPage';
 
 function App() {
     const [theme, setTheme] = useState('dark');
@@ -26,9 +27,12 @@ function App() {
                         <Route path="/auth" element={<AuthPage />} />
                         <Route path="/ticket-search-result" element={<TicketSearchResultPage />} />
 
+
                         {/* Protected Routes */}
                         <Route element={<ProtectedRoute />}>
                             <Route path="/profile" element={<ProfilePage />} />
+                            <Route path="/reservation" element={<ReservationPage />} />
+
                         </Route>
                     </Routes>
                 </main>

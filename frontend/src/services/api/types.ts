@@ -73,3 +73,30 @@ export interface TicketDetails {
   age: 'ADULT' | 'CHILD' | 'BABY';
   service: string[];
 }
+
+export interface ReservationTicket {
+    tripId: number;
+    origin: string;
+    destination: string;
+    departureTimestamp: string;
+    arrivalTimestamp: string;
+    tripVehicle: 'TRAIN' | 'BUS' | 'FLIGHT';
+    price: number;
+    companyName: string;
+    vehicleDetails: BusDetails | FlightDetails | TrainDetails;
+    stopCount: number;
+    totalCapacity: number;
+    reservedCapacity: number;
+    age: 'ADULT' | 'CHILD' | 'BABY';
+    service: string[];
+}
+
+export interface ReserveConfirmation {
+  reservationId: number;
+  reservationDatetime: string;
+  expirationDatetime: string;
+  isRoundTrip: boolean;
+  tickets: ReservationTicket[];
+  seatNumbers: number[];
+  price: number;
+}
