@@ -65,36 +65,36 @@ export interface PaymentRecordDTO {
 
 // --- Auth Functions ---
 export const requestLoginOtp = async (contactInfo: string) => {
-    const response = await apiClient.post('/api/auth/login/otp/request', { contactInfo });
+    const response = await apiClient.post('/auth/login/otp/request', { contactInfo });
     return response.data;
 };
 
 export const verifyLoginOtp = async (contactInfo: string, otp: string) => {
-    const response = await apiClient.post('/api/auth/login/otp/verify', { contactInfo, otp });
+    const response = await apiClient.post('/auth/login/otp/verify', { contactInfo, otp });
     return response.data;
 };
 
 export const signUpUser = async (userData: SignUpData) => {
-    const response = await apiClient.post('/api/auth/signup', userData);
+    const response = await apiClient.post('/auth/signup', userData);
     return response.data;
 };
 
 
 // --- Profile Functions ---
 export const updateUserInfo = async (updateData: UserUpdateData) => {
-    const response = await apiClient.put('/api/profile/update', updateData);
+    const response = await apiClient.put('/profile/update', updateData);
     return response.data;
 };
 
 // --- Wallet Functions ---
 export const chargeWallet = async (amount: number) => {
-    const response = await apiClient.post('/api/wallet/charge', { amount });
+    const response = await apiClient.post('/wallet/charge', { amount });
     return response.data;
 };
 
 
 export const getReservationHistory = async (status: string) => {
-    const response = await apiClient.get('/api/bookings/history', {
+    const response = await apiClient.get('/bookings/history', {
         params: { status }
     });
     return response.data;
@@ -102,18 +102,18 @@ export const getReservationHistory = async (status: string) => {
 
 // --- Booking History & Cancellation Functions ---
 export const calculateCancellationPenalty = async (reservationId: number) => {
-    const response = await apiClient.post('/api/booking/cancel/calculate', { reservationId });
+    const response = await apiClient.post('/booking/cancel/calculate', { reservationId });
     return response.data;
 };
 
 export const cancelReservation = async (reservationId: number) => {
-    const response = await apiClient.post('/api/booking/cancel/confirm', { reservationId });
+    const response = await apiClient.post('/booking/cancel/confirm', { reservationId });
     return response.data;
 };
 
 // --- Payment History Functions ---
 
 export const getPaymentHistory = async () => {
-    const response = await apiClient.get('/api/payments');
+    const response = await apiClient.get('/payments');
     return response.data;
 };

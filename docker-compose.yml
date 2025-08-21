@@ -167,7 +167,7 @@ services:
         condition: service_started
     healthcheck:
       test: [ "CMD-SHELL", "curl -f http://localhost:8888/api/locations/cities || exit 1" ]
-      interval: 10s
+      interval: 5m
       timeout: 5s
       retries: 5
       start_period: 30s
@@ -181,6 +181,7 @@ services:
     ports:
       - "5173:5173"
     volumes:
+      - ./frontend/src:/app/src
       - ./frontend:/app
       - /app/node_modules
     depends_on:

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Clock, Wallet } from 'lucide-react';
+import { Clock } from 'lucide-react';
 
 import ActionButton from '../components/common/ActionButton';
 import { ReservationTicketCard } from '../components/reservation/ReservationTicketCard';
@@ -11,20 +11,23 @@ export const ReservationPage: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const [reservationDetails, setReservationDetails] = useState<ReserveConfirmation | null>(location.state?.reservationDetails);
+  // The state is initialized directly from the location state.
+  const [reservationDetails] = useState<ReserveConfirmation | null>(location.state?.reservationDetails);
 
   useEffect(() => {
+    // This effect now correctly checks for the absence of reservationDetails.
     if (!reservationDetails) {
       console.log("No reservation details found, redirecting.");
       navigate('/ticket-search-result');
     }
   }, [reservationDetails, navigate]);
 
+  // If reservationDetails are not available, we show a loading message and the useEffect will handle the redirect.
   if (!reservationDetails) {
     return <div className="pt-32 text-center">Loading Reservation...</div>;
   }
 
-  const { reservationId, tickets, price, expirationDatetime } = reservationDetails;
+  const { reservationId, tickets, price } = reservationDetails;
   const totalPrice = price;
 
   return (
@@ -51,7 +54,6 @@ export const ReservationPage: React.FC = () => {
           <div className="mt-8 bg-white/80 dark:bg-slate-950/50 backdrop-blur-md rounded-xl shadow-lg p-6">
             <h3 className="text-xl font-bold mb-4 text-slate-900 dark:text-white">Finalize your reservation</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Passenger details would come from user context or API */}
               <div className="space-y-4">
                   <div>
                       <label className="text-sm font-semibold text-gray-600 dark:text-gray-400">Passenger</label>
@@ -70,7 +72,6 @@ export const ReservationPage: React.FC = () => {
           <div className="mt-8 text-center p-4 bg-yellow-100/80 dark:bg-yellow-900/50 rounded-lg text-yellow-800 dark:text-yellow-200">
             <p className="font-semibold flex items-center justify-center">
               <Clock size={18} className="mr-2" />
-              {/* You can add a countdown timer here using the expirationDatetime */}
               Your reservation expires soon. Please complete the payment.
             </p>
           </div>

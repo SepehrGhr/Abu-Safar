@@ -1,12 +1,12 @@
 import React from 'react';
 import { motion, useMotionTemplate, useMotionValue } from 'framer-motion';
 
-interface ShinyButtonProps {
+interface ShinyButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement>{
     children: React.ReactNode;
     className?: string;
 }
 
-const ShinyButton: React.FC<ShinyButtonProps> = ({ children, className = '' }) => {
+const ShinyButton: React.FC<ShinyButtonProps> = ({ children, className = '', ...props }) => {
     const mouseX = useMotionValue(0);
     const mouseY = useMotionValue(0);
 
@@ -32,6 +32,7 @@ const ShinyButton: React.FC<ShinyButtonProps> = ({ children, className = '' }) =
                        dark:shadow-brand-night/20
                        dark:hover:shadow-brand-night/40
                        ${className}`}
+                         {...props}
         >
             <motion.div
                 className="pointer-events-none absolute -inset-px rounded-xl opacity-0 transition duration-300 group-hover:opacity-100"

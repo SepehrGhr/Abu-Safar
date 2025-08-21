@@ -76,8 +76,8 @@ export interface TicketDetails {
 
 export interface ReservationTicket {
     tripId: number;
-    origin: string;
-    destination: string;
+    originCity: string;
+    destinationCity: string;
     departureTimestamp: string;
     arrivalTimestamp: string;
     tripVehicle: 'TRAIN' | 'BUS' | 'FLIGHT';

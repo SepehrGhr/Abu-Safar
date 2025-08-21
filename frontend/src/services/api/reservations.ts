@@ -1,7 +1,6 @@
 import  apiClient  from './apiClient';
 import type { ReserveConfirmation, Ticket } from './types';
 
-
 interface TicketSelectRequest {
   tripId: number;
   ageCategory: string;
@@ -19,9 +18,9 @@ export const createReservation = async (
 
     let response;
     if (isRoundTrip) {
-      response = await apiClient.post('/api/reserve/two-way', ticketRequests);
+      response = await apiClient.post('/booking/reserve/two_way', ticketRequests);
     } else {
-      response = await apiClient.post('/api/reserve/one-way', ticketRequests[0]);
+      response = await apiClient.post('/booking/reserve/one_way', ticketRequests[0]);
     }
 
     return response.data.data;

@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronUp, ChevronDown } from 'lucide-react';
+import { ChevronUp, ChevronDown, AlertCircle } from 'lucide-react';
 import { searchTickets } from '../services/api/tickets';
 import { createReservation } from '../services/api/reservations';
-import { useAuth } from '@/context/AuthContext';
+import { useAuth } from '../context/AuthContext';
 import type { Ticket, TicketSearchRequest, ReserveConfirmation } from '../services/api/types';
 
 import PersistentSearchBar from '../components/search/PersistentSearchBar';
@@ -27,12 +27,10 @@ const TicketSearchResultPage = () => {
      const [selectedTickets, setSelectedTickets] = useState<Ticket[]>([]);
      const [isCreatingReservation, setIsCreatingReservation] = useState(false);
 
-     // --- Derived State from URL ---
      const tripType = searchParams.get('tripType')?.toUpperCase();
      const isRoundTrip = tripType === 'ROUNDTRIP';
      const ageCategory = searchParams.get('age')?.toUpperCase() || 'ADULT';
 
-     // --- Data Fetching Effect ---
      useEffect(() => {
          const fetchTickets = async () => {
              const vehicleType = searchParams.get('vehicle')?.toUpperCase();
@@ -93,21 +91,26 @@ const TicketSearchResultPage = () => {
      };
 
      const handleProceedToReservation = async () => {
-
+        console.log('*************Checking authentication. Is authenticated:', isAuthenticated);
          if (!isAuthenticated) {
              setError("You must be logged in to make a reservation.");
 
              setTimeout(() => setError(null), 5000);
              return;
          }
+console.log('***************Checking if a reservation is already being created:', isCreatingReservation);
 
          if (isCreatingReservation) return;
 
          setIsCreatingReservation(true);
          setError(null);
          try {
+             console.log('*****************Attempting to create reservation with tickets:', selectedTickets);
+
+
              const reservationDetails: ReserveConfirmation = await createReservation(selectedTickets, isRoundTrip);
 
+console.log("Reservation details received:", reservationDetails);
 
              navigate('/reservation', { state: { reservationDetails } });
          } catch (err: any) {
