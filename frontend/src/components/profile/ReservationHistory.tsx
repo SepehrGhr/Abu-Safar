@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { getReservationHistory, cancelReservation, calculateCancellationPenalty } from '../../services/api/apiService';
+import { getReservationHistory } from '../../services/api/apiService';
 import type { ReserveRecordItemDTO } from '../../services/api/apiService';
 import ReservationCard from './ReservationCard';
 import CancellationModal from './CancellationModal';
@@ -43,7 +43,6 @@ export default function ReservationHistory() {
         setSelectedReservationId(null);
     };
     
-    // Function to refresh the list after a successful cancellation
     const handleCancellationSuccess = () => {
         fetchHistory(activeTab); 
     };
@@ -66,27 +65,22 @@ export default function ReservationHistory() {
 
     return (
         <>
-            <div className="bg-white/80 dark:bg-slate-900/50 backdrop-blur-lg rounded-2xl shadow-xl mt-8">
-                <div className="p-4 border-b border-stone-200 dark:border-slate-800">
-                    <h3 className="font-bold text-lg text-stone-800 dark:text-white">Reservation History</h3>
-                </div>
-                <div className="flex p-2 bg-stone-100 dark:bg-slate-900/50 space-x-2">
-                    {statusTabs.map(tab => (
-                        <button
-                            key={tab}
-                            onClick={() => setActiveTab(tab)}
-                            className={`relative flex-1 px-3 py-2 text-sm font-semibold rounded-lg transition-colors ${
-                                activeTab === tab ? 'text-stone-900' : 'text-stone-500 hover:text-stone-800 dark:text-stone-400 dark:hover:text-white'
-                            }`}
-                        >
-                            {activeTab === tab && <motion.div layoutId="historyTab" className="absolute inset-0 bg-white dark:bg-slate-700 rounded-lg shadow-sm" />}
-                            <span className="relative z-10 capitalize">{tab.replace('_', ' ').toLowerCase()}</span>
-                        </button>
-                    ))}
-                </div>
-                <div className="p-4">
-                    {renderContent()}
-                </div>
+            <div className="flex p-2 bg-stone-100 dark:bg-slate-900/50 space-x-2">
+                {statusTabs.map(tab => (
+                    <button
+                        key={tab}
+                        onClick={() => setActiveTab(tab)}
+                        className={`relative flex-1 px-3 py-2 text-sm font-semibold rounded-lg transition-colors ${
+                            activeTab === tab ? 'text-stone-900' : 'text-stone-500 hover:text-stone-800 dark:text-stone-400 dark:hover:text-white'
+                        }`}
+                    >
+                        {activeTab === tab && <motion.div layoutId="historyTab" className="absolute inset-0 bg-white dark:bg-slate-700 rounded-lg shadow-sm" />}
+                        <span className="relative z-10 capitalize">{tab.replace('_', ' ').toLowerCase()}</span>
+                    </button>
+                ))}
+            </div>
+            <div className="p-4">
+                {renderContent()}
             </div>
 
             {selectedReservationId && (

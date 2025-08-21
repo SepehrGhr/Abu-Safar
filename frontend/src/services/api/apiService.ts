@@ -54,6 +54,15 @@ export interface ReserveRecordItemDTO {
     ticketsInformation: TicketResultItemDTO[];
 }
 
+export interface PaymentRecordDTO {
+    paymentId: number;
+    reservationId: number;
+    paymentStatus: 'SUCCESSFUL' | 'UNSUCCESSFUL' | 'PENDING';
+    paymentType: 'CARD' | 'WALLET' | 'CRYPTO';
+    paymentTimestamp: string;
+    price: number;
+}
+
 // --- Auth Functions ---
 export const requestLoginOtp = async (contactInfo: string) => {
     const response = await apiClient.post('/api/auth/login/otp/request', { contactInfo });
@@ -99,5 +108,12 @@ export const calculateCancellationPenalty = async (reservationId: number) => {
 
 export const cancelReservation = async (reservationId: number) => {
     const response = await apiClient.post('/api/booking/cancel/confirm', { reservationId });
+    return response.data;
+};
+
+// --- Payment History Functions ---
+
+export const getPaymentHistory = async () => {
+    const response = await apiClient.get('/api/payments');
     return response.data;
 };
