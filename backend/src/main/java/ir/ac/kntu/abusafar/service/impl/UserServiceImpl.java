@@ -1,5 +1,6 @@
 package ir.ac.kntu.abusafar.service.impl;
 
+import ir.ac.kntu.abusafar.dto.user.UserDetailDTO;
 import ir.ac.kntu.abusafar.dto.user.UserUpdateRequestDTO;
 import ir.ac.kntu.abusafar.dto.user.SignUpRequestDTO;
 import ir.ac.kntu.abusafar.dto.user.UserInfoDTO;
@@ -221,6 +222,31 @@ public class UserServiceImpl implements UserService {
         user.setWalletBalance(newBalance);
 
         return getUserInfoDTO(user);
+    }
+
+    @Override
+    public UserDetailDTO getUserDetails(Long userId) {
+        User user = userDAO.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException("User not found with ID: " + userId));
+        List<UserContact> contacts = userDAO.findContactByUserId(userId);
+        UserDetailDTO dto = new UserDetailDTO();
+
+        dto.setFirstName(user.getFirstName());
+        dto.setLastName(user.getLastName());
+        dto.setCity(user.getCity());
+        dto.setWalletBalance(user.getWalletBalance());
+        dto.setUserType(String.valueOf(user.getUserType()));
+        dto.setBirthdayDate(user.getBirthdayDate());
+        dto.setSignUpDate(user.getSignUpDate());
+        for (UserContact contact : contacts) {
+            if (contact.getContactType() == ContactType.EMAIL) {
+                dto.setEmail(contact.getContactInfo());
+            } else if (contact.getContactType() == ContactType.PHONE_NUMBER) {
+                dto.setPhoneNumber(contact.getContactInfo());
+            }
+        }
+
+        return dto;
     }
 
 }

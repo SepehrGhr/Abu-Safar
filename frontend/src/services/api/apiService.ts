@@ -12,6 +12,8 @@ export interface UserInfoDTO {
     walletBalance: number;
     birthdayDate?: string;
     profilePictureUrl?: string;
+    email?: string;
+    phoneNumber?: string;
 }
 
 export interface SignUpData {
@@ -89,6 +91,11 @@ export const signUpUser = async (userData: SignUpData) => {
 export const updateUserInfo = async (updateData: UserUpdateData) => {
     const response = await apiClient.put('/profile/update', updateData);
     return response.data;
+};
+
+export const getUserDetails = async (): Promise<UserInfoDTO> => {
+    const response = await apiClient.get('/profile/me');
+    return response.data.data;
 };
 
 // --- Wallet Functions ---

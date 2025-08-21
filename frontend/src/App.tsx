@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Header from './components/layout/Header';
 import Footer from './components/layout/Footer';
@@ -10,16 +10,15 @@ import ProtectedRoute from './components/common/ProtectedRoute';
 import { ReservationPage } from './pages/ReservationPage';
 
 function App() {
-    const [theme, setTheme] = useState('dark');
-
     useEffect(() => {
-        document.documentElement.classList.toggle('dark', theme === 'dark');
-    }, [theme]);
+        document.documentElement.classList.add('dark');
+    }, []);
 
     return (
         <div className="relative text-gray-800 dark:text-gray-200 font-sans antialiased transition-colors duration-300">
             <Router>
-                <Header theme={theme} setTheme={setTheme} />
+                {/* The theme props are no longer needed for the Header */}
+                <Header />
                 <main>
                     <Routes>
                         {/* Public Routes */}

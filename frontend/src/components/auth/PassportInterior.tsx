@@ -53,9 +53,10 @@ export default function PassportInterior({ isOpen, onSignOut }) {
             const response = await verifyLoginOtp(contactInfo, otp);
             const { accessToken, user } = response.data;
             if (accessToken && user) {
-                login(accessToken, user as UserInfoDTO);
                 setSuccessMessage("Login Successful");
                 setAuthStep('success');
+                await login(accessToken, user as UserInfoDTO); 
+                
                 setTimeout(() => {
                     onSignOut();
                     navigate('/profile');
@@ -137,9 +138,6 @@ export default function PassportInterior({ isOpen, onSignOut }) {
         </div>
     );
 }
-
-
-// --- Form Components ---
 
 const LoginForm = ({ onSubmit, isLoading, setContactInfo, onSignupClick, error }) => (
     <div className="h-full flex flex-col justify-between"> <div/>

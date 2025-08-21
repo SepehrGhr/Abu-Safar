@@ -1,103 +1,64 @@
-import { Twitter, Facebook, Instagram } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { ArrowUp } from 'lucide-react';
 import CarpetLogo from '../icons/Carpet';
 
 const Footer = () => {
-    const companyLinks = [
-        { name: 'About Us', href: '#' },
-        { name: 'Careers', href: '#' },
-        { name: 'Press', href: '#' },
-    ];
+    const [isVisible, setIsVisible] = useState(false);
 
-    const serviceLinks = [
-        { name: 'Flights', href: '#' },
-        { name: 'Buses', href: '#' },
-        { name: 'Trains', href: '#' },
-    ];
+    // Show button when page is scrolled up to a certain amount
+    const toggleVisibility = () => {
+        if (window.pageYOffset > 300) {
+            setIsVisible(true);
+        } else {
+            setIsVisible(false);
+        }
+    };
 
-    const supportLinks = [
-        { name: 'Help Center', href: '#' },
-        { name: 'Contact Us', href: '#' },
-        { name: 'FAQs', href: '#' },
-    ];
+    const scrollToTop = () => {
+        window.scrollTo({
+            top: 0,
+            behavior: 'smooth'
+        });
+    };
 
-    const legalLinks = [
-        { name: 'Terms of Service', href: '#' },
-        { name: 'Privacy Policy', href: '#' },
-    ];
-
+    useEffect(() => {
+        window.addEventListener('scroll', toggleVisibility);
+        return () => window.removeEventListener('scroll', toggleVisibility);
+    }, []);
 
     return (
-        <footer className="bg-brand-sandLight text-gray-600 dark:bg-brand-sandDark dark:text-gray-300 relative backdrop-blur-sm">
-            <div className="container mx-auto py-16 px-4 sm:px-6 lg:px-8">
-                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-8">
-                    {/* Logo and Social Links Section */}
-                    <div className="col-span-2 md:col-span-4 lg:col-span-1">
-                        <a href="#" className="flex items-center space-x-3 text-slate-950 dark:text-white">
-                            <CarpetLogo className="h-8 w-8" />
-                            <span className="font-aladin font-bold text-2xl">AbuSafar</span>
-                        </a>
-                        <p className="mt-4 text-sm text-gray-500 dark:text-gray-400">Your journey starts here. Book with confidence.</p>
-                        <div className="flex space-x-4 mt-6">
-                            <a href="#" className="text-gray-400 hover:text-white"><Twitter/></a>
-                            <a href="#" className="text-gray-400 hover:text-white"><Facebook/></a>
-                            <a href="#" className="text-gray-400 hover:text-white"><Instagram/></a>
+        <>
+            <footer className="bg-brand-sandLight text-gray-600 dark:bg-slate-950/50 dark:text-gray-400 backdrop-blur-sm">
+                <div className="container mx-auto py-8 px-4 sm:px-6 lg:px-8">
+                    <div className="flex justify-center items-center">
+                        <div className="flex items-center space-x-3">
+                            <CarpetLogo className="h-6 w-6 text-slate-700 dark:text-white" />
+                            <p className="text-sm text-gray-500 dark:text-gray-400">
+                                &copy; {new Date().getFullYear()} AbuSafar Technologies Inc. All rights reserved.
+                            </p>
                         </div>
                     </div>
-
-                    {/* Company Links */}
-                    <div>
-                        <h3 className="text-sm font-semibold text-slate-800 dark:text-white tracking-wider uppercase">Company</h3>
-                        <ul className="mt-4 space-y-3">
-                            {companyLinks.map((link) => (
-                                <li key={link.name}>
-                                    <a href={link.href} className="text-base text-gray-500 dark:text-gray-400 hover:text-brand-primary dark:hover:text-white">{link.name}</a>
-                                </li>
-                            ))}
-                        </ul>
-                    </div>
-
-                    {/* Services Links */}
-                    <div>
-                        <h3 className="text-sm font-semibold text-slate-800 dark:text-white tracking-wider uppercase">Services</h3>
-                        <ul className="mt-4 space-y-3">
-                            {serviceLinks.map((link) => (
-                                <li key={link.name}>
-                                    <a href={link.href} className="text-base text-gray-500 dark:text-gray-400 hover:text-brand-primary dark:hover:text-white">{link.name}</a>
-                                </li>
-                            ))}
-                        </ul>
-                    </div>
-
-                    {/* Support Links */}
-                    <div>
-                        <h3 className="text-sm font-semibold text-slate-800 dark:text-white tracking-wider uppercase">Support</h3>
-                        <ul className="mt-4 space-y-3">
-                            {supportLinks.map((link) => (
-                                <li key={link.name}>
-                                    <a href={link.href} className="text-base text-gray-500 dark:text-gray-400 hover:text-brand-primary dark:hover:text-white">{link.name}</a>
-                                </li>
-                            ))}
-                        </ul>
-                    </div>
-
-                    {/* Legal Links */}
-                    <div>
-                        <h3 className="text-sm font-semibold text-slate-800 dark:text-white tracking-wider uppercase">Legal</h3>
-                        <ul className="mt-4 space-y-3">
-                            {legalLinks.map((link) => (
-                                <li key={link.name}>
-                                    <a href={link.href} className="text-base text-gray-500 dark:text-gray-400 hover:text-brand-primary dark:hover:text-white">{link.name}</a>
-                                </li>
-                            ))}
-                        </ul>
-                    </div>
                 </div>
-
-                <div className="mt-12 border-t border-slate-300 dark:border-slate-700/50 pt-8 text-center text-sm text-gray-500 dark:text-gray-400">
-                    <p>&copy; {new Date().getFullYear()} AbuSafar Technologies Inc. All rights reserved.</p>
-                </div>
-            </div>
-        </footer>
+            </footer>
+            
+            {/* Back to Top Button */}
+            <AnimatePresence>
+                {isVisible && (
+                    <motion.button
+                        onClick={scrollToTop}
+                        className="fixed bottom-8 right-8 bg-passport-gold text-passport-cover-rich p-3 rounded-full shadow-lg z-50"
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 20 }}
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.9 }}
+                    >
+                        <ArrowUp size={20} />
+                    </motion.button>
+                )}
+            </AnimatePresence>
+        </>
     );
 };
 

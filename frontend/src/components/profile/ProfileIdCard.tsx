@@ -37,7 +37,9 @@ export default function ProfileIdCard({ user }) {
         firstName: user.firstName,
         lastName: user.lastName,
         city: user.city,
-        // email and phone are not editable in this version, but can be added
+        email: user.email,
+        phoneNumber: user.phoneNumber,
+        birthdayDate: user.birthdayDate
     });
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -49,12 +51,13 @@ export default function ProfileIdCard({ user }) {
         setIsLoading(true);
         setError('');
         try {
-            const changes = Object.keys(formData).reduce((acc, key) => {
+            const changes: Partial<UserUpdateData> = {};
+            // Build the changes object with only the fields that have been modified
+            for (const key in formData) {
                 if (formData[key] !== user[key]) {
-                    acc[key] = formData[key];
+                    changes[key] = formData[key];
                 }
-                return acc;
-            }, {});
+            }
 
             if (Object.keys(changes).length > 0) {
                 const response = await updateUserInfo(changes);
@@ -102,7 +105,8 @@ export default function ProfileIdCard({ user }) {
                             <EditField name="firstName" label="First Name" defaultValue={formData.firstName} onChange={handleInputChange} />
                             <EditField name="lastName" label="Last Name" defaultValue={formData.lastName} onChange={handleInputChange} />
                             <EditField name="city" label="City" defaultValue={formData.city} onChange={handleInputChange} />
-                            {/* In this version, email/phone are not editable, but can be added back */}
+                            <EditField name="email" label="Email" defaultValue={formData.email} onChange={handleInputChange} type="email"/>
+                            <EditField name="phoneNumber" label="Phone" defaultValue={formData.phoneNumber} onChange={handleInputChange} />
                             <EditField name="birthdayDate" label="Birthday" defaultValue={formData.birthdayDate} onChange={handleInputChange} type="date"/>
                         </div>
                         <div className="flex items-center justify-end space-x-4 mt-4">
