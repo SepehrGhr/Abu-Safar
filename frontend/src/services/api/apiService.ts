@@ -128,6 +128,6 @@ export const processPayment = async (reservationId: number) => {
         reservationId,
         paymentMeans: 'WALLET'
     };
-    const response = await apiClient.post('/api/payment/pay', paymentRequest);
+    const response = await apiClient.post('/payment/pay', paymentRequest);
     return response.data;
 };

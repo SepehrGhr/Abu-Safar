@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Plane, Bus, Train, Calendar, CheckCircle, XCircle, Clock } from 'lucide-react';
-import { ActionButton } from '../common/ActionButton';
+import ActionButton from '../common/ActionButton';
 import { Spinner } from '../auth/common';
 import { processPayment } from '../../services/api/apiService';
+import { useAuth } from '../../context/AuthContext';
 
 const statusInfo = {
     UPCOMING_TRIP: { icon: <Calendar size={16} />, color: 'text-blue-500', label: 'Upcoming' },
@@ -25,12 +26,19 @@ export default function ReservationCard({ record, onCancelClick, onPaymentSucces
 
     const [isPaying, setIsPaying] = useState(false);
     const [paymentError, setPaymentError] = useState('');
+    const { user, updateUser } = useAuth();
 
     const handlePayNow = async () => {
         setIsPaying(true);
         setPaymentError('');
         try {
             await processPayment(reservationId);
+
+            if (user) {
+                const newBalance = user.walletBalance - primaryTicket.price;
+                updateUser({ ...user, walletBalance: newBalance });
+            }
+            
             onPaymentSuccess();
         } catch (err) {
             setPaymentError(err.response?.data?.message || 'Payment failed.');
