@@ -1,4 +1,14 @@
+import React from 'react';
+import WhyUsSection from './WhyUsSection';
+import TestimonialsSection from './TestimonialsSection';
+
 const FeaturesSection = () => {
-    return <div className="py-24 text-center">This is the Features Section</div>;
+    return (
+        <div>
+            <WhyUsSection />
+            <TestimonialsSection />
+        </div>
+    );
 };
+
 export default FeaturesSection;
