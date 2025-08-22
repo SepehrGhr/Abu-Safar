@@ -38,11 +38,17 @@ export const ReservationPage: React.FC = () => {
       setPaymentSuccessDetails(response.data);
 
       setTimeout(() => {
-        navigate('/profile');
+        navigate('/profile', { state: { refresh: true } });
       }, 5000);
 
     } catch (err: any) {
-      setPaymentError(err.message || 'An unknown error occurred during payment.');
+        const serverMessage = err.response?.data?.message || err.message;
+
+        if (serverMessage.includes("Insufficient wallet balance")) {
+            setPaymentError("You do not have enough wallet balance for this transaction.");
+        } else {
+            setPaymentError("An unexpected error occurred during payment. Please try again.");
+        }
     } finally {
       setIsPaying(false);
     }
@@ -57,7 +63,6 @@ export const ReservationPage: React.FC = () => {
 
   const passengerAges = tickets.map(t => t.age).join(', ');
 
-  // Safely construct the full name from firstName and lastName
   const passengerName = (user?.firstName && user?.lastName)
     ? `${user.firstName} ${user.lastName}`
     : 'Passenger';
@@ -73,7 +78,7 @@ export const ReservationPage: React.FC = () => {
       >
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="max-w-4xl mx-auto">
-            <h2 className="text-4xl font-bold text-center mb-8 font-kameron text-slate-900 dark:text-white">
+            <h2 className="text-4xl font-bold text-center mb-8 font-aladin text-slate-900 dark:text-white">
               Confirm Your Reservation
             </h2>
             <p className="text-center text-gray-500 -mt-4 mb-8">Reservation ID: {reservationId}</p>

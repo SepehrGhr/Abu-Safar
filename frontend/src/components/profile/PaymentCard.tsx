@@ -37,8 +37,7 @@ export default function PaymentCard({ record }: { record: PaymentRecordDTO }) {
                     <p>
                         {new Date(paymentTimestamp).toLocaleString('en-US', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                     </p>
-                    {/* The paymentType (CARD, WALLET, etc.) will be displayed here */}
-                    <p>Reservation ID: {reservationId} &bull; Type: <span className="capitalize">{paymentType.toLowerCase()}</span></p>
+                    <p>Reservation ID: {reservationId} &bull; Type: Wallet</p>
                 </div>
             </div>
             <div className="flex-shrink-0 ml-4">

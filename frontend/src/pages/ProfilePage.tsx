@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { LogOut, History, CreditCard } from 'lucide-react';
 import ProfileIdCard from '../components/profile/ProfileIdCard';
 import WalletWidget from '../components/profile/WalletWidget';
@@ -9,39 +9,65 @@ import ChargeWalletModal from '../components/profile/ChargeWalletModal';
 import ReservationHistory from '../components/profile/ReservationHistory';
 import PaymentHistory from '../components/profile/PaymentHistory';
 import background from '../assets/images/night.jpg';
+import { getUserDetails } from '../services/api/apiService';
 
 type ProfileView = 'RESERVATIONS' | 'PAYMENTS';
 
 export default function ProfilePage() {
-    const { user, logout } = useAuth();
+    const { user: initialUser, logout } = useAuth();
     const navigate = useNavigate();
+    const location = useLocation(); // Hook to access navigation state
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [activeView, setActiveView] = useState<ProfileView>('RESERVATIONS');
+
+    // Create a local state for user, initialized from the context
+    const [currentUser, setCurrentUser] = useState(initialUser);
+
+    useEffect(() => {
+        const refreshUserData = async () => {
+            console.log("Refreshing user data...");
+            try {
+                const freshUser = await getUserDetails();
+                setCurrentUser(freshUser);
+            } catch (error) {
+                console.error("Failed to refresh user data:", error);
+            }
+        };
+
+        // If we navigated here with the refresh flag, call the refresh function
+        if (location.state?.refresh) {
+            refreshUserData();
+        } else {
+            // Otherwise, ensure the local state is in sync with the context
+            setCurrentUser(initialUser);
+        }
+    }, [location.state, initialUser]); // Rerun this effect if the refresh signal or initial user changes
 
     const handleLogout = () => {
         logout();
         navigate('/');
     };
 
-    if (!user) {
+    // Use the local currentUser state for the loading check
+    if (!currentUser) {
         return <div>Loading profile...</div>;
     }
 
     return (
         <>
-            <motion.div 
+            <motion.div
                 className="min-h-screen pt-24 pb-16 relative font-kameron"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
             >
-                <div className="absolute inset-0 bg-cover bg-center opacity-20 dark:opacity-30 -z-10" style={{ backgroundImage: `url(${background})` }}></div>
+                <div className="absolute inset-0 bg-cover bg-top opacity-20 dark:opacity-50 -z-10" style={{ backgroundImage: `url(${background})` }}></div>
                 <div className="absolute inset-0 bg-brand-sandLight dark:bg-brand-night -z-20"></div>
 
                 <div className="container mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex justify-end mb-4">
-                        <motion.button 
-                            onClick={handleLogout} 
+                        <motion.button
+                            onClick={handleLogout}
                             className="flex items-center space-x-2 text-sm font-semibold px-4 py-2 rounded-lg bg-white/60 dark:bg-slate-800/50 text-stone-600 dark:text-stone-300 hover:bg-red-500/10 hover:text-red-500 dark:hover:bg-red-500/10 dark:hover:text-red-500 transition-all duration-300"
                             whileHover={{ scale: 1.05 }}
                             whileTap={{ scale: 0.95 }}
@@ -51,13 +77,13 @@ export default function ProfilePage() {
                         </motion.button>
                     </div>
 
-                    {/* Top Section */}
+                    {/* Top Section - Use currentUser for all props */}
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                         <div className="lg:col-span-2">
-                            <ProfileIdCard user={user} />
+                            <ProfileIdCard user={currentUser} />
                         </div>
                         <div className="lg:col-span-1">
-                            <WalletWidget balance={user.walletBalance} onAddFunds={() => setIsModalOpen(true)} />
+                            <WalletWidget balance={currentUser.walletBalance} onAddFunds={() => setIsModalOpen(true)} />
                         </div>
                     </div>
 
@@ -74,10 +100,10 @@ export default function ProfilePage() {
                     </div>
                 </div>
             </motion.div>
-            <ChargeWalletModal 
-                isOpen={isModalOpen} 
-                onClose={() => setIsModalOpen(false)} 
-                currentBalance={user.walletBalance}
+            <ChargeWalletModal
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+                currentBalance={currentUser.walletBalance}
             />
         </>
     );

@@ -21,6 +21,7 @@ import ir.ac.kntu.abusafar.util.constants.enums.TrainRoomType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.elasticsearch.client.elc.NativeQuery;
 import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
 import org.springframework.data.elasticsearch.core.SearchHits;
@@ -119,7 +120,10 @@ public class TicketSearchServiceImpl implements TicketSearchService {
         }
 
         Query finalQuery = new Query.Builder().bool(boolQueryBuilder.build()).build();
-        NativeQuery nativeQuery = NativeQuery.builder().withQuery(finalQuery).build();
+        NativeQuery nativeQuery = NativeQuery.builder()
+                .withQuery(finalQuery)
+                .withSort(Sort.by(Sort.Direction.ASC, "departureTimestamp"))
+                .build();
 
         SearchHits<TicketDocument> searchHits = elasticsearchOperations.search(nativeQuery, TicketDocument.class);
 

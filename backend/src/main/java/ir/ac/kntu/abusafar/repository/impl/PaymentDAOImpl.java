@@ -68,7 +68,7 @@ public class PaymentDAOImpl implements PaymentDAO {
 
     @Override
     public List<Payment> findByUserId(Long userId) {
-        String sql = "SELECT * FROM payments WHERE user_id = ?";
+        String sql = "SELECT * FROM payments WHERE user_id = ? ORDER BY payment_timestamp DESC";
         return jdbcTemplate.query(sql, paymentRowMapper, userId);
     }
 }

@@ -36,6 +36,13 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(BaseResponse.fail(errors));
     }
 
+    @ExceptionHandler(InsufficientBalanceException.class)
+    public ResponseEntity<BaseResponse<Object>> handleInsufficientBalance(InsufficientBalanceException ex) {
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(BaseResponse.fail(null, "Insufficient wallet balance.", HttpStatus.BAD_REQUEST.value()));
+    }
+
     @ExceptionHandler(ConstraintViolationException.class)
     public ResponseEntity<BaseResponse<List<BindExceptionResponseDTO>>> handleConstraintViolationException(ConstraintViolationException ex) {
         List<BindExceptionResponseDTO> errors = ex.getConstraintViolations().stream()
@@ -107,7 +114,7 @@ public class GlobalExceptionHandler {
                 .body(BaseResponse.fail(null, ex.getMessage(), HttpStatus.CONFLICT.value()));
     }
 
-    @ExceptionHandler({OtpValidationException.class, PaymentFailedException.class, InsufficientBalanceException.class, InvalidRoundTripException.class, ReservationFailedException.class})
+    @ExceptionHandler({OtpValidationException.class, PaymentFailedException.class, InvalidRoundTripException.class, ReservationFailedException.class})
     public ResponseEntity<BaseResponse<String>> handleBadRequestExceptions(RuntimeException ex) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(BaseResponse.fail(null, ex.getMessage(), HttpStatus.BAD_REQUEST.value()));
