@@ -4,10 +4,10 @@ import ir.ac.kntu.abusafar.dto.reservation.InitialReserveResultDTO;
 import ir.ac.kntu.abusafar.dto.reservation.ReserveConfirmationDTO;
 import ir.ac.kntu.abusafar.dto.reservation.ReservationInputDTO;
 import ir.ac.kntu.abusafar.dto.reservation.TicketReserveDetailsDTO;
-import ir.ac.kntu.abusafar.dto.ticket.TicketResultItemDTO;
+import ir.ac.kntu.abusafar.dto.ticket.TicketResultDetailsDTO;
 import ir.ac.kntu.abusafar.dto.ticket.TicketSelectRequestDTO;
 import ir.ac.kntu.abusafar.exception.*;
-import ir.ac.kntu.abusafar.mapper.custom.TicketItemMapper;
+import ir.ac.kntu.abusafar.mapper.custom.TicketDetailsMapper;
 import ir.ac.kntu.abusafar.model.Reservation;
 import ir.ac.kntu.abusafar.model.Ticket;
 import ir.ac.kntu.abusafar.model.Trip;
@@ -39,7 +39,7 @@ public class BookingServiceImpl implements BookingService {
     private final TicketDAO ticketDAO;
     private final ReservationDAO reservationDAO;
     private final RedisReserveService redisService;
-    private final TicketItemMapper ticketItemMapper;
+    private final TicketDetailsMapper ticketDetailsMapper;
 
     private static final String REDIS_RESERVATION_EXPIRE_PREFIX = "reservation:expire:";
     private static final String REDIS_RESERVATION_REMIND_PREFIX = "reservation:remind:";
@@ -50,11 +50,11 @@ public class BookingServiceImpl implements BookingService {
     private record ProcessedTicketInfo(Ticket ticket, BigDecimal price, Short seatNumber) {}
 
     @Autowired
-    public BookingServiceImpl(TicketDAO ticketDAO, ReservationDAO reservationDAO, RedisReserveService redisService, TicketItemMapper ticketItemMapper) {
+    public BookingServiceImpl(TicketDAO ticketDAO, ReservationDAO reservationDAO, RedisReserveService redisService, TicketDetailsMapper ticketDetailsMapper) {
         this.ticketDAO = ticketDAO;
         this.reservationDAO = reservationDAO;
         this.redisService = redisService;
-        this.ticketItemMapper = ticketItemMapper;
+        this.ticketDetailsMapper = ticketDetailsMapper;
     }
 
     @Override
@@ -76,7 +76,7 @@ public class BookingServiceImpl implements BookingService {
                         processedTicket.seatNumber())
         );
 
-        List<TicketResultItemDTO> tickets = List.of(ticketItemMapper.toDTO(processedTicket.ticket()));
+        List<TicketResultDetailsDTO> tickets = List.of(ticketDetailsMapper.toDTO(processedTicket.ticket()));
         List<Short> seatNumbers = List.of(processedTicket.seatNumber());
 
         return completeReservationProcess(userId, ticketDetailsList, processedTicket.price(), false, tickets, seatNumbers);
@@ -111,9 +111,9 @@ public class BookingServiceImpl implements BookingService {
                         returnProcessedTicket.seatNumber())
         );
 
-        List<TicketResultItemDTO> tickets = List.of(
-                ticketItemMapper.toDTO(outgoingProcessedTicket.ticket()),
-                ticketItemMapper.toDTO(returnProcessedTicket.ticket())
+        List<TicketResultDetailsDTO> tickets = List.of(
+                ticketDetailsMapper.toDTO(outgoingProcessedTicket.ticket()),
+                ticketDetailsMapper.toDTO(returnProcessedTicket.ticket())
         );
         List<Short> seatNumbers = List.of(outgoingProcessedTicket.seatNumber(), returnProcessedTicket.seatNumber());
 
@@ -171,7 +171,7 @@ public class BookingServiceImpl implements BookingService {
             List<TicketReserveDetailsDTO> ticketDetailsList,
             BigDecimal totalPrice,
             boolean isRoundTrip,
-            List<TicketResultItemDTO> tickets,
+            List<TicketResultDetailsDTO> tickets,
             List<Short> seatNumbers) {
 
         ReservationInputDTO reservationInput = new ReservationInputDTO(userId, isRoundTrip);
@@ -195,11 +195,17 @@ public class BookingServiceImpl implements BookingService {
         String reminderKey = REDIS_RESERVATION_REMIND_PREFIX + daoResult.reservationId();
         redisService.setKeyWithTTL(reminderKey, REDIS_KEY_VALUE, FIVE_MINUTES_IN_SECONDS);
 
+
+        List<Long> tripIds = ticketDetailsList.stream()
+                .map(TicketReserveDetailsDTO::tripId)
+                .collect(Collectors.toList());
+
         return new ReserveConfirmationDTO(
                 daoResult.reservationId(),
                 daoResult.reservationDatetime(),
                 daoResult.expirationDatetime(),
                 isRoundTrip,
+                tripIds,
                 tickets,
                 seatNumbers,
                 totalPrice

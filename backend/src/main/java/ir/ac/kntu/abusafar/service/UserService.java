@@ -1,5 +1,6 @@
 package ir.ac.kntu.abusafar.service;
 
+import ir.ac.kntu.abusafar.dto.user.UserDetailDTO;
 import ir.ac.kntu.abusafar.dto.user.UserUpdateRequestDTO;
 import ir.ac.kntu.abusafar.dto.user.SignUpRequestDTO;
 import ir.ac.kntu.abusafar.dto.user.UserInfoDTO;
@@ -27,4 +28,8 @@ public interface UserService {
     Optional<UserInfoDTO> findByPhoneNumber(String phoneNumber);
 
     void debitFromWallet(Long userId, BigDecimal amount);
+
+    UserInfoDTO chargeWallet(Long userId, BigDecimal amount);
+
+    UserDetailDTO getUserDetails(Long userId);
 }

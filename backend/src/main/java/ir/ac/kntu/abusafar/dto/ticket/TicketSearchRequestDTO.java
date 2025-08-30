@@ -15,21 +15,18 @@ import lombok.ToString;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.List;
 
 @Setter
 @Getter
 @EqualsAndHashCode
 @ToString
 public class TicketSearchRequestDTO {
-    @NotBlank(message = "Origin city cannot be blank.")
-    private String originCity;
-    private String originProvince;
-    private String originCountry;
+    @NotNull(message = "Origin ID cannot be null.")
+    private Long originId;
 
-    @NotBlank(message = "Destination city cannot be blank.")
-    private String destinationCity;
-    private String destinationProvince;
-    private String destinationCountry;
+    @NotNull(message = "Destination ID cannot be null.")
+    private Long destinationId;
 
     @NotNull(message = "Departure date cannot be blank.")
     private LocalDate departureDate;
@@ -41,7 +38,7 @@ public class TicketSearchRequestDTO {
     private AgeRange ageCategory;
     private BigDecimal minPrice;
     private BigDecimal maxPrice;
-    private BusClass busClass;
-    private FlightClass flightClass;
+    private List<BusClass> busClass;
+    private List<FlightClass> flightClass;
     private Short trainStars;
 }

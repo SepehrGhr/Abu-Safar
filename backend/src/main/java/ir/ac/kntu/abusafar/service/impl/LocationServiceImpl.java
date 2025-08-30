@@ -42,17 +42,6 @@ public class LocationServiceImpl implements LocationService {
     }
 
     @Override
-    public List<LocationResponseDTO> getLocationsByCity(String cityName) {
-        List<Location> locations = locationDAO.findByCity(cityName);
-        if (locations.isEmpty()) {
-            throw new LocationNotFoundException("No locations found for city: " + cityName);
-        }
-        return locations.stream()
-                .map(LocationMapper.INSTANCE::toDTO)
-                .collect(Collectors.toList());
-    }
-
-    @Override
     public List<LocationResponseDTO> findLocationsByCityName(String cityName) {
         List<Location> locations = locationDAO.findByCity(cityName);
         return locations.stream()

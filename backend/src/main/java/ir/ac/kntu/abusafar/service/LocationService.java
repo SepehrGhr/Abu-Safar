@@ -12,8 +12,6 @@ public interface LocationService {
 
     List<String> getProvincesByCountry(String countryName);
 
-    List<LocationResponseDTO> getLocationsByCity(String cityName);
-
     List<LocationResponseDTO> findLocationsByCityName(String cityName);
 
     List<LocationResponseDTO> getLocationsByProvince(String provinceName);

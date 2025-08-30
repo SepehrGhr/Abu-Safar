@@ -21,6 +21,8 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.OffsetDateTime;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class PaymentServiceImpl implements PaymentService {
@@ -82,5 +84,13 @@ public class PaymentServiceImpl implements PaymentService {
                 .orElseThrow(() -> new PaymentFailedException("Failed to retrieve payment details after processing."));
 
         return PaymentMapper.INSTANCE.toDTO(successfulPayment);
+    }
+
+    @Override
+    public List<PaymentRecordDTO> getPaymentHistory(Long userId) {
+        List<Payment> payments = paymentDAO.findByUserId(userId);
+        return payments.stream()
+                .map(PaymentMapper.INSTANCE::toDTO)
+                .collect(Collectors.toList());
     }
 }

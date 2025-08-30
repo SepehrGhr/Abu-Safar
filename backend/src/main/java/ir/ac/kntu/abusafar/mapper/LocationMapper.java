@@ -15,5 +15,6 @@ public interface LocationMapper {
     @Mapping(target = "locationId", ignore = true)
     Location toEntity(LocationResponseDTO dto);
 
+    @Mapping(source = "locationId", target = "locationId")
     LocationResponseDTO toDTO(Location location);
 }

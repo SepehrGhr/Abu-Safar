@@ -1,3 +1,7 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 :root {
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
@@ -13,56 +17,50 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
-}
-a:hover {
-  color: #535bf2;
-}
+/* ... existing styles ... */
 
-body {
-  margin: 0;
-  display: flex;
-  place-items: center;
-  min-width: 320px;
-  min-height: 100vh;
-}
+@layer components {
+    .form-header {
+        @apply text-lg font-bold text-center mb-6 text-stone-700 dark:text-stone-200 tracking-wider;
+        font-family: 'Merriweather', serif;
+    }
+    .input-field {
+        @apply w-full bg-stone-200/60 dark:bg-stone-800/60 border border-stone-300 dark:border-stone-700 rounded-lg py-2.5 pl-11 pr-3 text-sm text-stone-800 dark:text-stone-200 placeholder-stone-400 dark:placeholder-stone-500 focus:ring-1 focus:ring-passport-gold/50 focus:border-passport-gold outline-none transition-all;
+    }
+    .otp-container {
+        @apply bg-stone-200/50 dark:bg-stone-800/50 border-2 border-dashed border-stone-400 dark:border-stone-600 rounded-xl p-8 text-center;
+    }
+    .otp-input {
+        /* Reduced size from w-8 h-10 to w-7 h-9 */
+        @apply w-7 h-9 bg-stone-200 dark:bg-stone-900/80 border border-stone-300 dark:border-stone-700 rounded-lg text-center text-lg font-bold text-passport-gold focus:ring-2 focus:ring-passport-gold/50 focus:border-passport-gold outline-none transition-all;
+    }
+    .shiny-button {
+        @apply relative w-full rounded-xl border border-passport-gold/20 bg-passport-cover-rich/10 px-4 py-2.5 text-passport-gold shadow-lg transition-shadow duration-300 hover:shadow-yellow-400/20 dark:bg-passport-gold/10 dark:shadow-yellow-900/20 dark:hover:shadow-yellow-900/40;
+    }
+    .shiny-button-spotlight {
+        @apply pointer-events-none absolute -inset-px rounded-xl opacity-0 transition duration-300 group-hover:opacity-100;
+    }
+    .form-back-button {
+        @apply flex items-center space-x-1 text-xs font-bold text-stone-500 dark:text-stone-400 hover:underline;
+    }
 
-h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
-}
+    /* Updated styles for the new PageInfo design */
+    .page-info-title {
+        @apply text-2xl font-bold text-stone-800 dark:text-stone-100;
+    }
+    .page-info-text {
+        @apply mt-2 text-sm text-stone-500 dark:text-stone-400 max-w-xs mx-auto;
+    }
 
-button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
-  background-color: #1a1a1a;
-  cursor: pointer;
-  transition: border-color 0.25s;
-}
-button:hover {
-  border-color: #646cff;
-}
-button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
-}
+    /* The animated clone of the ticket card */
+    .carpet-pattern {
+        background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ca8a04' fill-opacity='0.4'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2-H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+        @apply border-2 border-yellow-600 shadow-lg;
+        box-shadow: 0 0 15px rgba(250, 204, 21, 0.5);
+    }
 
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
-  }
-  a:hover {
-    color: #747bff;
-  }
-  button {
-    background-color: #f9f9f9;
-  }
+    /* Deselect Icon on Hover */
+    .deselect-overlay {
+        @apply absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 transition-opacity duration-300 rounded-lg;
+    }
 }

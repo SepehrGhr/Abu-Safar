@@ -73,7 +73,8 @@ public class LocationDAOImpl implements LocationDAO {
 
     @Override
     public List<Location> findByCity(String cityName) {
-        return jdbcTemplate.query(SELECT_LOCATIONS_BY_CITY_SQL, LOCATION_ROW_MAPPER, cityName);
+        String searchTerm = cityName + "%";
+        return jdbcTemplate.query(SELECT_LOCATIONS_BY_CITY_SQL, LOCATION_ROW_MAPPER, searchTerm);
     }
 
     @Override

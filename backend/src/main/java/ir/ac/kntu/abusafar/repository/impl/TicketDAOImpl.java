@@ -5,8 +5,7 @@ import ir.ac.kntu.abusafar.model.Ticket;
 import ir.ac.kntu.abusafar.model.Trip;
 import ir.ac.kntu.abusafar.repository.TicketDAO;
 import ir.ac.kntu.abusafar.repository.params.TicketSearchParameters;
-import ir.ac.kntu.abusafar.util.constants.enums.AgeRange;
-import ir.ac.kntu.abusafar.util.constants.enums.TripType;
+import ir.ac.kntu.abusafar.util.constants.enums.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -14,18 +13,85 @@ import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Repository;
 
 
+import java.math.BigDecimal;
+import java.sql.Array;
+import java.sql.SQLException;
 import java.time.OffsetDateTime;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.function.BiConsumer;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @Repository
 public class TicketDAOImpl implements TicketDAO {
     private final JdbcTemplate jdbcTemplate;
+
+    public record DenormalizedTicketData(
+            Long tripId, AgeRange age, BigDecimal price, TripType tripVehicle,
+            OffsetDateTime departureTimestamp, OffsetDateTime arrivalTimestamp, Short stopCount,
+            Integer totalCapacity, Integer reservedCapacity,
+            String companyName, String companyLogo,
+            Long originId, String originCity, String originProvince, String originCountry,
+            Long destId, String destCity, String destProvince, String destCountry,
+            Short trainStars, TrainRoomType trainRoomType,
+            FlightClass flightClass, String departureAirport, String arrivalAirport,
+            BusClass busClass, BusChairCountType chairType,
+            List<ServiceType> services
+    ) {
+    }
+
+    private static final String FULLY_JOINED_SELECT_SQL = """
+            SELECT
+                tck.age, tck.price, tck.trip_vehicle,
+                tr.trip_id, tr.departure_timestamp, tr.arrival_timestamp, tr.stop_count, tr.total_capacity, tr.reserved_capacity,
+                c.name AS company_name, c.logo_picture_url AS company_logo,
+                ol.location_id AS origin_location_id, ol.city AS origin_city, ol.province AS origin_province, ol.country AS origin_country,
+                dl.location_id AS dest_location_id, dl.city AS dest_city, dl.province AS dest_province, dl.country AS dest_country,
+                tn.stars AS train_stars, tn.room_type AS train_room_type,
+                f.class AS flight_class, f.departure_airport, f.arrival_airport,
+                b.class AS bus_class, b.chair_type,
+                ARRAY_AGG(ads.service_type) FILTER (WHERE ads.service_type IS NOT NULL) AS services
+            FROM tickets tck
+            INNER JOIN trips tr ON tck.trip_id = tr.trip_id
+            INNER JOIN companies c ON tr.company_id = c.company_id
+            INNER JOIN location_details ol ON tr.origin_location_id = ol.location_id
+            INNER JOIN location_details dl ON tr.destination_location_id = dl.location_id
+            LEFT JOIN trains tn ON tr.trip_id = tn.trip_id
+            LEFT JOIN flights f ON tr.trip_id = f.trip_id
+            LEFT JOIN buses b ON tr.trip_id = b.trip_id
+            LEFT JOIN additional_services ads ON tr.trip_id = ads.trip_id
+            """;
+
+    private final RowMapper<DenormalizedTicketData> DENORMALIZED_TICKET_ROW_MAPPER = (rs, rowNum) -> new DenormalizedTicketData(
+            rs.getLong("trip_id"),
+            AgeRange.valueOf(rs.getString("age").toUpperCase()),
+            rs.getBigDecimal("price"),
+            TripType.valueOf(rs.getString("trip_vehicle").toUpperCase()),
+            rs.getObject("departure_timestamp", OffsetDateTime.class),
+            rs.getObject("arrival_timestamp", OffsetDateTime.class),
+            rs.getShort("stop_count"),
+            rs.getInt("total_capacity"),
+            rs.getInt("reserved_capacity"),
+            rs.getString("company_name"),
+            rs.getString("company_logo"),
+            rs.getLong("origin_location_id"),
+            rs.getString("origin_city"),
+            rs.getString("origin_province"),
+            rs.getString("origin_country"),
+            rs.getLong("dest_location_id"),
+            rs.getString("dest_city"),
+            rs.getString("dest_province"),
+            rs.getString("dest_country"),
+            rs.getObject("train_stars", Short.class),
+            rs.getString("train_room_type") != null ? TrainRoomType.fromString(rs.getString("train_room_type")) : null,
+            rs.getString("flight_class") != null ? FlightClass.fromString(rs.getString("flight_class")) : null,
+            rs.getString("departure_airport"),
+            rs.getString("arrival_airport"),
+            rs.getString("bus_class") != null ? BusClass.fromString(rs.getString("bus_class")) : null,
+            rs.getString("chair_type") != null ? BusChairCountType.getEnumValue(rs.getString("chair_type")) : null,
+            convertSqlArrayToList(rs.getArray("services"), ServiceType::getEnumName)
+    );
 
     private static final String SELECT_COLUMNS =
             "tck.age AS tck_age, tck.price AS tck_price, tck.trip_vehicle AS tck_trip_vehicle, " +
@@ -183,6 +249,23 @@ public class TicketDAOImpl implements TicketDAO {
     }
 
     @Override
+    public Optional<DenormalizedTicketData> findFullyJoinedTicket(Long tripId, AgeRange age) {
+        if (tripId == null || age == null) {
+            return Optional.empty();
+        }
+        String sql = FULLY_JOINED_SELECT_SQL
+                + "WHERE tck.trip_id = ? AND tck.age = CAST(? AS age_range) "
+                + "GROUP BY tck.trip_id, tck.age, tr.trip_id, c.company_id, ol.location_id, dl.location_id, tn.trip_id, f.trip_id, b.trip_id";
+
+        try {
+            DenormalizedTicketData data = jdbcTemplate.queryForObject(sql, DENORMALIZED_TICKET_ROW_MAPPER, tripId, age.name());
+            return Optional.ofNullable(data);
+        } catch (EmptyResultDataAccessException e) {
+            return Optional.empty();
+        }
+    }
+
+    @Override
     public Optional<Ticket> findById(Long tripId, AgeRange age) {
         if (tripId == null || age == null) {
             return Optional.empty();
@@ -197,5 +280,13 @@ public class TicketDAOImpl implements TicketDAO {
         } catch (EmptyResultDataAccessException e) {
             return Optional.empty();
         }
+    }
+
+    private <T extends Enum<T>> List<T> convertSqlArrayToList(Array sqlArray, Function< String, T > enumConverter) throws SQLException {
+        if (sqlArray == null) {
+            return Collections.emptyList();
+        }
+        String[] stringArray = (String[]) sqlArray.getArray();
+        return Arrays.stream(stringArray).map(enumConverter).collect(Collectors.toList());
     }
 }

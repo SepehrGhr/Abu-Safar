@@ -12,6 +12,7 @@ import org.springframework.stereotype.Repository;
 
 import java.time.OffsetDateTime;
 import java.util.Optional;
+import java.util.List;
 
 @Repository
 public class PaymentDAOImpl implements PaymentDAO {
@@ -63,5 +64,11 @@ public class PaymentDAOImpl implements PaymentDAO {
     @Override
     public int updatePaymentStatus(Long paymentId, PaymentStatus status) {
         return jdbcTemplate.update(UPDATE_PAYMENT_STATUS_SQL, status.name(), paymentId);
+    }
+
+    @Override
+    public List<Payment> findByUserId(Long userId) {
+        String sql = "SELECT * FROM payments WHERE user_id = ? ORDER BY payment_timestamp DESC";
+        return jdbcTemplate.query(sql, paymentRowMapper, userId);
     }
 }
