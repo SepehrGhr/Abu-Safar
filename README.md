@@ -6,14 +6,14 @@
  <p>
  <img src="https://img.shields.io/badge/Java-23-ED8B00?style=for-the-badge&logo=openjdk&logoColor=white" alt="Java 23"/>
  <img src="https://img.shields.io/badge/Spring%20Boot-3.3.0-6DB33F?style=for-the-badge&logo=spring&logoColor=white" alt="Spring Boot 3.3.0"/>
- <img src="https://www.google.com/search?q=https://img.shields.io/badge/PostgreSQL-16-4169E1%3Fstyle%3Dfor-the-badge%26logo%3Dpostgresql%26logoColor%3Dwhite" alt="PostgreSQL"/>
- <img src="https://www.google.com/search?q=https://img.shields.io/badge/Elasticsearch-8.x-005571%3Fstyle%3Dfor-the-badge%26logo%3Delasticsearch%26logoColor%3Dwhite" alt="Elasticsearch"/>
- <img src="https://www.google.com/search?q=https://img.shields.io/badge/Apache%2520Kafka-3.x-231F20%3Fstyle%3Dfor-the-badge%26logo%3Dapachekafka%26logoColor%3Dwhite" alt="Kafka"/>
- <img src="https://www.google.com/search?q=https://img.shields.io/badge/Redis-7.x-DC382D%3Fstyle%3Dfor-the-badge%26logo%3Dredis%26logoColor%3Dwhite" alt="Redis"/>
- <img src="https://img.shields.io/badge/Docker-24.0-2496ED?style=for-the-badge&logo=docker&logoColor=white" alt="Docker"/>
- <img src="https://img.shields.io/badge/License-Apache%202.0-blue?style=for-the-badge" alt="License"/>
- </p>
- </div>
+<img src="https://img.shields.io/badge/PostgreSQL-16-4169E1?style=for-the-badge&logo=postgresql&logoColor=white" alt="PostgreSQL"/>
+<img src="https://img.shields.io/badge/Elasticsearch-8.x-005571?style=for-the-badge&logo=elasticsearch&logoColor=white" alt="Elasticsearch"/>
+<img src="https://img.shields.io/badge/Apache%20Kafka-3.x-231F20?style=for-the-badge&logo=apachekafka&logoColor=white" alt="Kafka"/>
+<img src="https://img.shields.io/badge/Redis-7.x-DC382D?style=for-the-badge&logo=redis&logoColor=white" alt="Redis"/>
+<img src="https://img.shields.io/badge/Docker-24.0-2496ED?style=for-the-badge&logo=docker&logoColor=white" alt="Docker"/>
+<img src="https://img.shields.io/badge/License-Apache%202.0-blue?style=for-the-badge" alt="License"/>
+</p>
+</div>
 
  ---
 
@@ -69,11 +69,11 @@
  <img src="https://img.shields.io/badge/Java-ED8B00?style=for-the-badge&logo=openjdk&logoColor=white" alt="Java"/>
  <img src="https://img.shields.io/badge/Spring-6DB33F?style=for-the-badge&logo=spring&logoColor=white" alt="Spring"/>
  <img src="https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white" alt="PostgreSQL"/>
- <img src="https://www.google.com/search?q=https://img.shields.io/badge/Elasticsearch-005571%3Fstyle%3Dfor-the-badge%26logo%3Delasticsearch%26logoColor%3Dwhite" alt="Elasticsearch"/>
- <img src="https://www.google.com/search?q=https://img.shields.io/badge/Apache%2520Kafka-231F20%3Fstyle%3Dfor-the-badge%26logo%3Dapachekafka%26logoColor%3Dwhite" alt="Kafka"/>
+<img src="https://img.shields.io/badge/Elasticsearch-8.x-005571?style=for-the-badge&logo=elasticsearch&logoColor=white" alt="Elasticsearch"/>
+<img src="https://img.shields.io/badge/Apache%20Kafka-3.x-231F20?style=for-the-badge&logo=apachekafka&logoColor=white" alt="Kafka"/>
  <img src="https://img.shields.io/badge/Redis-DC382D?style=for-the-badge&logo=redis&logoColor=white" alt="Redis"/>
  <img src="https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white" alt="Docker"/>
- <img src="https://www.google.com/search?q=https://img.shields.io/badge/Debezium-6E35F4%3Fstyle%3Dfor-the-badge" alt="Debezium"/>
+<img src="https://img.shields.io/badge/Debezium-2.5-6E35F4?style=for-the-badge" alt="Debezium"/>
  <img src="https://img.shields.io/badge/JWT-000000?style=for-the-badge&logo=jsonwebtokens&logoColor=white" alt="JWT"/>
  <img src="https://img.shields.io/badge/Apache%20Maven-C71A36?style=for-the-badge&logo=apachemaven&logoColor=white" alt="Maven"/>
  </p>
