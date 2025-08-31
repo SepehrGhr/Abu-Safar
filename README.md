@@ -106,9 +106,9 @@
 
  | Service                   | URL                       | Description                                  |
  | :------------------------ | :------------------------ | :------------------------------------------- |
- | AbuSafar Backend | http://localhost:8888   | The main application API.                    |
- | Kibana (Elasticsearch) | http://localhost:5601   | Visualize, explore, and manage search data.  |
- | AKHQ (Kafka) | http://localhost:8081   | Monitor Kafka topics and Debezium connectors.|
+ | AbuSafar Backend | localhost:8888   | The main application API.                    |
+ | Kibana (Elasticsearch) | localhost:5601   | Visualize, explore, and manage search data.  |
+ | AKHQ (Kafka) | localhost:8081   | Monitor Kafka topics and Debezium connectors.|
  | PostgreSQL Database | localhost:5432          | Primary transactional database.              |
  | Redis | localhost:6379          | Cache and session store.                     |
 
@@ -135,7 +135,7 @@ A standalone, interactive documentation page is generated from our `openapi.yml`
 
 Once the application is running on your local machine, you can access the built-in Swagger UI to test the endpoints directly:
 
-> [**http://localhost:8080/swagger-ui.html**](http://localhost:8888/swagger-ui.html)
+> [**http://localhost:8888/swagger-ui.html**](http://localhost:8888/swagger-ui.html)
 
  ---
 
@@ -149,16 +149,3 @@ Once the application is running on your local machine, you can access the built-
 
  ---
 
- ## 📖 API Endpoint Overview
-
- The AbuSafar API is logically grouped by functionality. For complete details, refer to the Swagger UI.
-
- | Tag                    | Description                                | Key Endpoints                                                                    |
- | :--------------------- | :----------------------------------------- | :------------------------------------------------------------------------------- |
- | User Authentication| User sign-up and login.                    | POST /api/auth/signup, POST /api/auth/login/otp/verify                       |
- | Ticket Search | Public endpoints for finding tickets.      | POST /api/tickets/search, POST /api/tickets/select                           |
- | Ticket Reservation | Create one-way and two-way reservations.   | POST /api/booking/reserve/one_way                                              |
- | Payment Processing | Finalize bookings by processing payments.  | POST /api/payment/pay                                                          |
- | Booking Cancellation| Calculate penalties and cancel bookings.   | POST /api/booking/cancel/confirm                                               |
- | Booking History | View a user's past and upcoming trips.     | GET /api/bookings/history                                                      |
- | Admin Management | Endpoints for administrative operations.   | GET /api/admin/reservations/cancelled, PUT /api/admin/reservations/change-seat |
