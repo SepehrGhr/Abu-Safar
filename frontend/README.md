@@ -80,7 +80,6 @@ The application stack is configured using an `.env` file in the project root. Cr
 From the root directory of the `Abu-Safar-phase-4` project, run the following command to start the entire application stack, including the frontend:
 
 ```bash
-# Build the images and start all containers in detached mode
 docker-compose up --build -d
 ```
 
@@ -100,23 +99,64 @@ docker-compose down -v
 
 ## 🖼️ Screenshots
 
-
 ### <p align="center">Home Page</p>
-
-<table> <tr> <td><img src="https://raw.githubusercontent.com/SepehrGhr/Abu-Safar/main/assets/screenshots/home.png" alt="Home Page"></td> <td><img src="https://raw.githubusercontent.com/SepehrGhr/Abu-Safar/main/assets/screenshots/home-resp.png" alt="Home Page Responsive"></td> </tr> </table>
-
-### <p align="center">Authentication</p>
-
-<table> <tr> <td><img src="https://raw.githubusercontent.com/SepehrGhr/Abu-Safar/main/assets/screenshots/passport.png" alt="Passport Page"></td> <td><img src="https://raw.githubusercontent.com/SepehrGhr/Abu-Safar/main/assets/screenshots/login.png" alt="Login Page"></td> </tr> <tr> <td><img src="https://raw.githubusercontent.com/SepehrGhr/Abu-Safar/main/assets/screenshots/auth-token.png" alt="Auth Token Page"></td> <td><img src="https://raw.githubusercontent.com/SepehrGhr/Abu-Safar/main/assets/screenshots/signup.png" alt="Signup Page"></td> </tr> </table>
+<table>
+  <tr>
+    <td><img src="https://raw.githubusercontent.com/SepehrGhr/Abu-Safar/main/assets/screenshots/home.png" alt="Home Page"></td>
+    <td rowspan="2"><img src="https://raw.githubusercontent.com/SepehrGhr/Abu-Safar/main/assets/screenshots/home-resp.png" alt="Home Page Responsive"></td>
+  </tr>
+  <tr>
+    <td><img src="https://raw.githubusercontent.com/SepehrGhr/Abu-Safar/main/assets/screenshots/locations-search.png" alt="Locations Search"></td>
+  </tr>
+</table>
 
 ### <p align="center">Search Tickets</p>
+<table>
+  <tr>
+    <td><img src="https://raw.githubusercontent.com/SepehrGhr/Abu-Safar/main/assets/screenshots/search.png" alt="Search Page"></td>
+    <td rowspan="2"><img src="https://raw.githubusercontent.com/SepehrGhr/Abu-Safar/main/assets/screenshots/search-resp.png" alt="Search Page Responsive"></td>
+  </tr>
+  <tr>
+    <td><img src="https://raw.githubusercontent.com/SepehrGhr/Abu-Safar/main/assets/screenshots/to-proceed.png" alt="Proceed to Reserve"></td>
+  </tr>
+</table>
 
-<table> <tr> <td><img src="https://raw.githubusercontent.com/SepehrGhr/Abu-Safar/main/assets/screenshots/search.png" alt="Search Page"></td> <td><img src="https://raw.githubusercontent.com/SepehrGhr/Abu-Safar/main/assets/screenshots/search-resp.png" alt="Search Page Responsive"></td> </tr> </table>
+### <p align="center">Authentication</p>
+<table>
+  <tr>
+    <td><img src="https://raw.githubusercontent.com/SepehrGhr/Abu-Safar/main/assets/screenshots/passport.png" alt="Passport Page"></td>
+    <td><img src="https://raw.githubusercontent.com/SepehrGhr/Abu-Safar/main/assets/screenshots/login.png" alt="Login Page"></td>
+  </tr>
+  <tr>
+    <td><img src="https://raw.githubusercontent.com/SepehrGhr/Abu-Safar/main/assets/screenshots/auth-token.png" alt="Auth Token Page"></td>
+    <td><img src="https://raw.githubusercontent.com/SepehrGhr/Abu-Safar/main/assets/screenshots/signup.png" alt="Signup Page"></td>
+  </tr>
+</table>
 
 ### <p align="center">Reserve Tickets</p>
-
-<table> <tr> <td><img src="https://raw.githubusercontent.com/SepehrGhr/Abu-Safar/main/assets/screenshots/reserve.png" alt="Reserve Page"></td> <td><img src="https://raw.githubusercontent.com/SepehrGhr/Abu-Safar/main/assets/screenshots/reserve-resp.png" alt="Reserve Page Responsive"></td> </tr> </table>
+<table>
+  <tr>
+    <td><img src="https://raw.githubusercontent.com/SepehrGhr/Abu-Safar/main/assets/screenshots/reserve.png" alt="Reserve Page"></td>
+    <td><img src="https://raw.githubusercontent.com/SepehrGhr/Abu-Safar/main/assets/screenshots/reserve-resp.png" alt="Reserve Page Responsive"></td>
+  </tr>
+</table>
 
 ### <p align="center">Profile Management</p>
-
-<table> <tr> <td><img src="https://raw.githubusercontent.com/SepehrGhr/Abu-Safar/main/assets/screenshots/profile.png" alt="Profile Page"></td> <td rowspan="5"><img src="https://raw.githubusercontent.com/SepehrGhr/Abu-Safar/main/assets/screenshots/profile-resp.png" alt="Profile Page Responsive" style="object-fit: contain; max-height: 100%;"></td> </tr> <tr> <td><img src="https://raw.githubusercontent.com/SepehrGhr/Abu-Safar/main/assets/screenshots/payments.png" alt="Payments Page"></td> </tr> <tr> <td><img src="https://raw.githubusercontent.com/SepehrGhr/Abu-Safar/main/assets/screenshots/cancelling.png" alt="Cancelling Page"></td> </tr> <tr> <td><img src="https://raw.githubusercontent.com/SepehrGhr/Abu-Safar/main/assets/screenshots/cancelled.png" alt="Cancelled Page"></td> </tr> <tr> <td><img src="https://raw.githubusercontent.com/SepehrGhr/Abu-Safar/main/assets/screenshots/upcoming.png" alt="Upcoming Page"></td> </tr> </table>
+<table>
+  <tr>
+    <td><img src="https://raw.githubusercontent.com/SepehrGhr/Abu-Safar/main/assets/screenshots/profile.png" alt="Profile Page"></td>
+    <td rowspan="5"><img src="https://raw.githubusercontent.com/SepehrGhr/Abu-Safar/main/assets/screenshots/profile-resp.png" alt="Profile Page Responsive" style="object-fit: contain; max-height: 100%;"></td>
+  </tr>
+  <tr>
+    <td><img src="https://raw.githubusercontent.com/SepehrGhr/Abu-Safar/main/assets/screenshots/payments.png" alt="Payments Page"></td>
+  </tr>
+  <tr>
+    <td><img src="https://raw.githubusercontent.com/SepehrGhr/Abu-Safar/main/assets/screenshots/cancelling.png" alt="Cancelling Page"></td>
+  </tr>
+  <tr>
+    <td><img src="https://raw.githubusercontent.com/SepehrGhr/Abu-Safar/main/assets/screenshots/cancelled.png" alt="Cancelled Page"></td>
+  </tr>
+  <tr>
+    <td><img src="https://raw.githubusercontent.com/SepehrGhr/Abu-Safar/main/assets/screenshots/upcoming.png" alt="Upcoming Page"></td>
+  </tr>
+</table>
